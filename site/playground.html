@@ -28,10 +28,11 @@
           <span id="picker-title">Examples</span>
           <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
         </button>
-        <label class="pill field" hidden>
+        <button id="part-open" class="pill field" type="button" popovertarget="part-menu" aria-haspopup="menu" hidden>
           <span>Part</span>
-          <select id="part"></select>
-        </label>
+          <strong id="part-title"></strong>
+          <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
       </header>
 
       <nav class="corner top-right">
@@ -75,6 +76,8 @@
       <div id="picker-list" class="picker-list"></div>
       <p id="picker-empty" class="picker-empty" hidden>No example matches. Try a shorter word.</p>
     </div>
+
+    <div id="part-menu" class="menu" popover role="menu" aria-label="Part"></div>
 
     <script type="module" src="assets/playground.js"></script>
   </body>

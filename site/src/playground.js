@@ -10,7 +10,6 @@ const DEFAULT_EXAMPLE = 'knob';
 const EVALUATE_DELAY = 350;
 
 const canvas = document.getElementById('view');
-const partSelect = document.getElementById('part');
 const statusEl = document.getElementById('status');
 const errorEl = document.getElementById('error');
 const errorText = document.getElementById('error-text');
@@ -25,6 +24,7 @@ const view = createScene(canvas, {
 });
 
 let currentExample = ''; // the example the code came from, or '' for code from elsewhere
+let currentPart = ''; // the part asked for, or '' for the program's default
 
 // --- Editor ------------------------------------------------------------------
 
@@ -103,7 +103,7 @@ const DRAFT_KEY = 'cadcode:playground';
 
 function saveDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ code: model.getValue(), example: currentExample, part: partSelect.value }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ code: model.getValue(), example: currentExample, part: currentPart }));
   } catch {
     // Storage unavailable (private window): the code just isn't kept across reloads.
   }
@@ -132,7 +132,7 @@ async function unpack(packed) {
 
 async function shareLink() {
   const params = new URLSearchParams({ code: await pack(model.getValue()) });
-  if (partSelect.value) params.set('part', partSelect.value);
+  if (currentPart) params.set('part', currentPart);
   return `${location.origin}${location.pathname}#${params}`;
 }
 
@@ -175,10 +175,52 @@ function showReadout({ triangles, size }) {
   readout.mesh.textContent = `${triangles.toLocaleString()} triangles`;
 }
 
+// --- Parts -------------------------------------------------------------------
+// A pill naming the part on screen; it opens a menu of the program's parts.
+
+const partOpen = document.getElementById('part-open');
+const partMenu = document.getElementById('part-menu');
+
 function showParts(names, current) {
-  partSelect.replaceChildren(...names.map((name) => new Option(name, name, false, name === current)));
-  partSelect.parentElement.hidden = names.length < 2;
+  currentPart = current;
+  document.getElementById('part-title').textContent = current;
+  partMenu.replaceChildren(
+    ...names.map((name) => {
+      const item = Object.assign(document.createElement('button'), { type: 'button', textContent: name });
+      item.setAttribute('role', 'menuitemradio');
+      item.setAttribute('aria-checked', String(name === current));
+      item.addEventListener('click', () => choosePart(name));
+      return item;
+    }),
+  );
+  partOpen.hidden = names.length < 2;
 }
+
+function choosePart(name) {
+  partMenu.hidePopover();
+  if (name === currentPart) return;
+  currentPart = name;
+  evaluate();
+}
+
+partMenu.addEventListener('toggle', (event) => {
+  partOpen.setAttribute('aria-expanded', String(event.newState === 'open'));
+  if (event.newState !== 'open') return;
+  const box = partOpen.getBoundingClientRect();
+  partMenu.style.left = `${box.left}px`;
+  partMenu.style.top = `${box.bottom + 8}px`;
+  const items = [...partMenu.children];
+  (items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus();
+});
+
+// Arrows move through the menu; Escape closes it (the popover's own).
+partMenu.addEventListener('keydown', (event) => {
+  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
+  if (!step) return;
+  event.preventDefault();
+  const items = [...partMenu.children];
+  items[(items.indexOf(document.activeElement) + step + items.length) % items.length]?.focus();
+});
 
 /** Underlines the line a runtime error points at, when its stack names one. */
 function markError(stack) {
@@ -227,7 +269,7 @@ async function evaluate() {
   setStatus('evaluating', 'building');
   setBusy(true);
   let worker;
-  const result = await run({ code: model.getValue(), part: partSelect.value || undefined }, (w) => (preview = worker = w));
+  const result = await run({ code: model.getValue(), part: currentPart || undefined }, (w) => (preview = worker = w));
   if (preview !== worker) return; // a newer run took over
   preview = null;
 
@@ -303,7 +345,7 @@ function setCurrentExample(name) {
 
 function loadExample(name) {
   setCurrentExample(name);
-  partSelect.replaceChildren();
+  currentPart = '';
   fitNext = true;
   model.setValue(examples[name]);
 }
@@ -341,8 +383,6 @@ picker.addEventListener('toggle', (event) => {
   pickerFilter.focus();
   pickerItems.find((item) => item.dataset.name === currentExample)?.scrollIntoView({ block: 'nearest' });
 });
-
-partSelect.addEventListener('change', evaluate);
 
 // --- Code panel ----------------------------------------------------------------
 // The code floats on the stage: on the right, or across the bottom on phones. Its
@@ -456,7 +496,7 @@ shareButton.addEventListener('click', async () => {
 });
 
 window.addEventListener('keydown', (event) => {
-  if (editor.hasTextFocus() || event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return;
+  if (editor.hasTextFocus() || event.target instanceof HTMLInputElement) return;
   if (event.key === 'f' || event.key === 'F') view.fitView();
 });
 
@@ -468,7 +508,7 @@ window.addEventListener('keydown', (event) => {
 /** Shows code that came from outside an example, selecting its part before the first run. */
 function loadCode(code, part) {
   setCurrentExample(Object.keys(examples).find((name) => examples[name] === code) ?? '');
-  if (part) partSelect.replaceChildren(new Option(part, part, true, true));
+  currentPart = part ?? '';
   model.setValue(code);
 }
 

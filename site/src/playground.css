@@ -211,18 +211,16 @@ p {
 }
 
 .field {
-  padding-right: 6px;
   color: var(--ink-soft);
 }
 
-.field select {
-  height: 28px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
+.field strong {
+  font-weight: 600;
   color: var(--ink);
-  font-weight: 500;
+}
+
+.field svg {
+  margin-left: -2px;
 }
 
 .link {
@@ -500,7 +498,8 @@ p {
   transform-origin: 40px 0;
 }
 
-.picker:popover-open {
+.picker:popover-open,
+.menu:popover-open {
   display: flex;
   animation: drop 0.14s ease-out;
 }
@@ -589,6 +588,61 @@ p {
   color: var(--ink-soft);
 }
 
+/* --- Part menu ------------------------------------------------------------------ */
+/* The picker's smaller sibling: a list of names hanging under the Part pill. */
+
+.menu {
+  position: fixed;
+  inset: auto;
+  min-width: 180px;
+  max-height: min(420px, calc(100dvh - 84px));
+  margin: 0;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(31, 40, 51, 0.06), 0 18px 48px -12px rgba(31, 40, 51, 0.28);
+  transform-origin: 24px 0;
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 12px;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+  background: var(--stage-mid);
+  outline: none;
+}
+
+.menu button[aria-checked='true'] {
+  background: #fdf6e3;
+  font-weight: 600;
+}
+
+.menu button[aria-checked='true']::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--filament-deep);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .progress::before {
     animation: none;
@@ -600,7 +654,8 @@ p {
   .empty {
     transition: none !important;
   }
-  .picker:popover-open {
+  .picker:popover-open,
+  .menu:popover-open {
     animation: none;
   }
 }
