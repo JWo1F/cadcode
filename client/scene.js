@@ -9,12 +9,14 @@ const EDGE_ANGLE = 25;
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1); // CAD convention: Z is up
 
 /**
+ * The colours default to the dev viewer's; the playground passes its own.
  * @param {HTMLCanvasElement} canvas
+ * @param {{ background?: number, gridMajor?: number, gridMinor?: number, edges?: number }} [colors]
  */
-export function createScene(canvas) {
+export function createScene(canvas, { background = 0xeef0f3, gridMajor = 0xb9bec7, gridMinor = 0xd6d9df, edges = 0x2a2f36 } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0xeef0f3);
+  renderer.setClearColor(background);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
@@ -84,7 +86,7 @@ export function createScene(canvas) {
     grid.clear();
     const step = 10 ** Math.floor(Math.log10(Math.max(sphere.radius, 1)));
     const size = Math.ceil((sphere.radius * 3) / step) * step;
-    const helper = new THREE.GridHelper(size, size / step, 0xb9bec7, 0xd6d9df);
+    const helper = new THREE.GridHelper(size, size / step, gridMajor, gridMinor);
     helper.rotation.x = Math.PI / 2;
     helper.position.set(Math.round(sphere.center.x / step) * step, Math.round(sphere.center.y / step) * step, 0);
     grid.add(helper);
@@ -122,11 +124,11 @@ export function createScene(canvas) {
       mesh.renderOrder = transparent ? 1 : 0;
       next.add(mesh);
 
-      const edges = new THREE.LineSegments(
+      const outline = new THREE.LineSegments(
         new THREE.EdgesGeometry(geometry, EDGE_ANGLE),
-        new THREE.LineBasicMaterial({ color: 0x2a2f36, transparent: true, opacity: transparent ? 0.25 : 0.55 }),
+        new THREE.LineBasicMaterial({ color: edges, transparent: true, opacity: transparent ? 0.25 : 0.55 }),
       );
-      next.add(edges);
+      next.add(outline);
     }
 
     scene.remove(model);
@@ -160,7 +162,14 @@ export function createScene(canvas) {
     return blob;
   }
 
-  return { camera, controls, fitView, showModel, snapshotPNG };
+  /** The model's bounding box size in model units (mm): [x, y, z], or null when empty. */
+  function modelSize() {
+    const box = new THREE.Box3().setFromObject(model);
+    if (box.isEmpty()) return null;
+    return box.getSize(new THREE.Vector3()).toArray();
+  }
+
+  return { camera, controls, fitView, modelSize, showModel, snapshotPNG };
 }
 
 /** Starts a download of a blob under the given file name. */

@@ -1,14 +1,24 @@
+/* The playground as a drafting table: the model sits on a drawing sheet, framed and
+   stamped like an engineering drawing; the code sits beside it on plain paper.
+   Graphite-blue ink for everything, filament yellow only for the one primary action
+   and the current selection, red only for faults. */
 :root {
-  --bg: #eef0f3;
-  --panel: rgba(255, 255, 255, 0.86);
-  --text: #1d2228;
-  --muted: #6b7480;
-  --border: rgba(20, 30, 40, 0.12);
-  --ok: #2f9e5b;
+  --paper: #eceee9; /* the sheet under the model; scene.js clears to the same colour */
+  --sheet: #f7f8f5; /* panels and the editor */
+  --ink: #1d3550;
+  --ink-soft: #5b6b7c;
+  --rule: rgba(29, 53, 80, 0.2);
+  --rule-strong: rgba(29, 53, 80, 0.55);
+  --filament: #f2c14e;
+  --filament-deep: #d9a321;
+  --fault: #b8392b;
+  --ok: #3f8a5a;
   --busy: #c98a12;
-  --bad: #c8372d;
-  font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  color: var(--text);
+  --ui: 'B612', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 13px/1.4 var(--ui);
+  color: var(--ink);
+  accent-color: var(--ink);
 }
 
 * {
@@ -20,7 +30,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--paper);
 }
 
 body {
@@ -32,43 +42,16 @@ body {
   display: none !important;
 }
 
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  white-space: nowrap;
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
-.brand {
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  color: inherit;
-  text-decoration: none;
-}
-
-.field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-}
-
-.spacer {
-  flex: 1;
-}
-
+button,
 select,
-button {
+input {
   font: inherit;
-  color: var(--text);
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 8px;
+  color: inherit;
 }
 
 button {
@@ -77,50 +60,245 @@ button {
 
 button:disabled {
   cursor: progress;
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
-button:hover,
-select:hover {
-  border-color: rgba(20, 30, 40, 0.28);
+/* --- Bar ------------------------------------------------------------------ */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 12px;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--rule-strong);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.brand {
+  padding-right: 12px;
+  margin-right: 2px;
+  border-right: 1px solid var(--rule);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.picker-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 2px 10px 2px 3px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.picker-open:hover,
+.picker-open[aria-expanded='true'] {
+  border-color: var(--rule-strong);
+  background: #fff;
+}
+
+.picker-open img {
+  width: 40px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.picker-open img:not([src]) {
+  visibility: hidden;
+  width: 0;
+}
+
+.picker-open svg {
+  color: var(--ink-soft);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+
+.field select,
+.panes button,
+.github {
+  height: 30px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.field select {
+  color: var(--ink);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.panes {
+  display: inline-flex;
+}
+
+.panes button {
+  border-radius: 0;
+}
+
+.panes button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.panes button:last-child {
+  border-radius: 0 4px 4px 0;
+  margin-left: -1px;
+}
+
+.panes button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--sheet);
+}
+
+.panes button:hover,
+.field select:hover,
+.github:hover {
+  border-color: var(--rule-strong);
+}
+
+.share {
+  height: 30px;
+  padding: 0 14px;
+  background: var(--filament);
+  border: 1px solid var(--filament-deep);
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.share:hover {
+  background: var(--filament-deep);
 }
 
 .github {
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-soft);
   text-decoration: none;
 }
 
 .github:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+/* --- Example picker -------------------------------------------------------- */
+
+.picker {
+  position: fixed;
+  inset: 52px auto auto 12px;
+  width: min(760px, calc(100vw - 24px));
+  max-height: min(640px, calc(100dvh - 64px));
+  margin: 0;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--sheet);
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  box-shadow: 0 18px 40px -12px rgba(29, 53, 80, 0.35);
 }
 
-.status::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--muted);
+.picker:popover-open {
+  display: flex;
 }
 
-.status[data-state='ready']::before {
-  background: var(--ok);
+.picker-filter {
+  margin: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
 }
 
-.status[data-state='evaluating']::before {
-  background: var(--busy);
+.picker-filter:focus {
+  outline: none;
+  border-color: var(--ink);
 }
 
-.status[data-state='error']::before {
-  background: var(--bad);
+.picker-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+  padding: 0 10px 10px;
+  overflow-y: auto;
 }
+
+.picker-list button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 4px 8px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.picker-list button:hover {
+  background: #fff;
+  border-color: var(--rule);
+}
+
+.picker-list button[aria-current='true'] {
+  background: #fff;
+  border-color: var(--filament-deep);
+  box-shadow: inset 0 0 0 1px var(--filament-deep);
+}
+
+.picker-list img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  margin-bottom: 6px;
+  border-radius: 2px;
+  background: var(--paper);
+}
+
+.picker-list strong {
+  padding: 0 2px;
+  font-size: 13px;
+}
+
+.picker-list span {
+  padding: 0 2px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.picker-empty {
+  margin: 0;
+  padding: 4px 14px 16px;
+  color: var(--ink-soft);
+}
+
+/* --- Panes ----------------------------------------------------------------- */
 
 /* The model on the left, the code on the right; --split is the model's share. */
 .split {
@@ -128,7 +306,7 @@ select:hover {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--split) 6px 1fr;
+  grid-template-columns: var(--split) 7px 1fr;
 }
 
 .split[data-hide] {
@@ -151,43 +329,40 @@ select:hover {
   pointer-events: none;
 }
 
+/* A rule with a grip in the middle. */
 .divider {
+  position: relative;
   cursor: col-resize;
-  background: var(--border);
   touch-action: none;
+  background: linear-gradient(var(--rule-strong), var(--rule-strong)) center / 1px 100% no-repeat;
 }
 
-.divider:hover,
-.split.dragging .divider {
-  background: rgba(20, 30, 40, 0.28);
+.divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 36px;
+  translate: -50% -50%;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--sheet);
 }
 
-.panes {
-  display: inline-flex;
+.divider:hover::after,
+.split.dragging .divider::after {
+  background: var(--filament);
+  border-color: var(--filament-deep);
 }
 
-.panes button {
-  border-radius: 0;
-}
-
-.panes button:first-child {
-  border-radius: 6px 0 0 6px;
-}
-
-.panes button:last-child {
-  border-radius: 0 6px 6px 0;
-  margin-left: -1px;
-}
-
-.panes button[aria-pressed='false'] {
-  color: var(--muted);
-  background: var(--bg);
-}
+/* --- The drawing sheet ------------------------------------------------------ */
 
 .view {
   position: relative;
   min-width: 0;
   min-height: 0;
+  background: var(--paper);
 }
 
 #view {
@@ -198,24 +373,154 @@ select:hover {
   display: block;
 }
 
-.code {
-  min-width: 0;
-  min-height: 0;
+/* The drawing border: an outer line, a zone strip ticked every 50px, an inner line. */
+.sheet {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+  border: 1px solid var(--rule-strong);
+}
+
+.sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  --tick: var(--rule-strong);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 49px, var(--tick) 49px 50px) top / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 49px, var(--tick) 49px 50px) bottom / 100% 6px no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 49px, var(--tick) 49px 50px) left / 6px 100% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 49px, var(--tick) 49px 50px) right / 6px 100% no-repeat;
+}
+
+.sheet::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--rule-strong);
+}
+
+.hint {
+  position: absolute;
+  top: 26px;
+  left: 28px;
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+/* The title block, in the sheet's bottom-right corner, like a drawing's. */
+.stamp {
+  position: absolute;
+  right: 17px;
+  bottom: 17px;
+  min-width: 220px;
+  border-collapse: collapse;
+  background: var(--sheet);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stamp th,
+.stamp td {
+  padding: 4px 10px;
+  border: 1px solid var(--rule-strong);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.stamp th {
+  width: 1%;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.stamp .stamp-name {
+  padding: 7px 10px;
+  font-size: 15px;
+  font-weight: 700;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.status[data-state='ready']::before {
+  background: var(--ok);
+}
+
+.status[data-state='evaluating']::before,
+.status[data-state='loading']::before {
+  background: var(--busy);
+  animation: pulse 0.9s ease-in-out infinite alternate;
+}
+
+.status[data-state='error'] {
+  color: var(--fault);
+  font-weight: 700;
+}
+
+.status[data-state='error']::before {
+  background: var(--fault);
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.3;
+  }
+}
+
+.tools {
+  position: absolute;
+  left: 17px;
+  bottom: 17px;
+  display: inline-flex;
+  background: var(--sheet);
+  border: 1px solid var(--rule-strong);
+}
+
+.tools button {
+  height: 32px;
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--rule);
+  font-weight: 700;
+}
+
+.tools button:last-child {
+  border-right: 0;
+}
+
+.tools button:hover {
   background: #fff;
 }
 
 .logs {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  max-width: min(420px, 80%);
+  top: 46px; /* under the hint */
+  right: 24px;
+  max-width: min(420px, 70%);
   max-height: 40%;
   overflow: auto;
   padding: 8px 10px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font: 12px/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  background: var(--sheet);
+  border: 1px solid var(--rule-strong);
+  font: 12px/1.5 var(--mono);
   white-space: pre-wrap;
 }
 
@@ -224,45 +529,54 @@ select:hover {
 }
 
 .logs .log-error {
-  color: var(--bad);
+  color: var(--fault);
 }
 
+/* Faults sit above the tools, across the sheet, marked like a redline. */
 .error {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 36px;
+  left: 17px;
+  right: 17px;
+  bottom: 60px;
   max-height: 45%;
   overflow: auto;
-  background: #fff6f5;
-  border: 1px solid rgba(200, 55, 45, 0.35);
-  border-left: 4px solid var(--bad);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background: #fbf3f1;
+  border: 1px solid var(--fault);
+  border-left-width: 4px;
 }
 
 .error pre {
   margin: 0;
   padding: 12px 14px;
-  font: 12px/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
+  font: 12px/1.55 var(--mono);
   white-space: pre-wrap;
-  color: #7a1d16;
+  color: #7a2318;
 }
 
-.hint {
-  position: absolute;
-  left: 12px;
-  bottom: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  pointer-events: none;
+/* The stamp is taller than the tools; keep the fault clear of it. */
+@media (min-width: 721px) {
+  .error {
+    bottom: 140px;
+  }
 }
 
-/* Phones: the model above the code. */
+.code {
+  min-width: 0;
+  min-height: 0;
+  background: var(--sheet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status::before {
+    animation: none !important;
+  }
+}
+
+/* Phones: the model above the code, a smaller stamp. */
 @media (max-width: 720px) {
   .split {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--split) 6px 1fr;
+    grid-template-rows: var(--split) 7px 1fr;
   }
   .split[data-hide] {
     grid-template-rows: 1fr;
@@ -271,7 +585,33 @@ select:hover {
   .divider {
     cursor: row-resize;
   }
-  .hint {
+  .divider {
+    background-size: 100% 1px;
+  }
+  .divider::after {
+    width: 36px;
+    height: 7px;
+  }
+  .hint,
+  .github {
     display: none;
+  }
+  .stamp {
+    min-width: 0;
+    font-size: 11px;
+  }
+  .stamp tr:nth-child(3) {
+    display: none;
+  }
+  .stamp .stamp-name {
+    font-size: 13px;
+    max-width: 160px;
+  }
+  .error {
+    bottom: 60px;
+    right: 180px;
+  }
+  .picker-list {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }

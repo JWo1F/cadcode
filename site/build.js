@@ -44,8 +44,9 @@ const exampleFiles = Object.fromEntries(
     .map((file) => [file.replace(/\.js$/, ''), readExample(file)]),
 );
 
-// Examples, for the playground's picker.
+// Examples, for the playground's picker: the code, and the title and description it shows.
 const examples = Object.fromEntries(Object.entries(exampleFiles).map(([name, { code }]) => [name, code]));
+const catalog = Object.fromEntries(Object.entries(exampleFiles).map(([name, { meta }]) => [name, { title: meta.title, description: meta.description }]));
 
 // The library's typings, generated from its JSDoc, for the editor's completion and hovers.
 const typesDir = fs.mkdtempSync(path.join(DIST, '.types-'));
@@ -109,7 +110,7 @@ const worker = await bundle(workerEntries);
 const workers = Object.fromEntries(Object.keys(workerEntries).map((name) => [name, worker(name)]));
 
 const playgroundEntries = { playground: path.join(SITE, 'src/playground.js') };
-const playground = await bundle(playgroundEntries, { 'virtual:examples': examples, 'virtual:typings': typings, 'virtual:workers': workers });
+const playground = await bundle(playgroundEntries, { 'virtual:examples': examples, 'virtual:catalog': catalog, 'virtual:typings': typings, 'virtual:workers': workers });
 
 // manifold's glue finds its WASM next to the script it was bundled into.
 fs.copyFileSync(path.join(ROOT, 'node_modules/manifold-3d/manifold.wasm'), path.join(ASSETS, 'manifold.wasm'));

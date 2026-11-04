@@ -8,41 +8,67 @@
     <link rel="icon" href="favicon.ico" sizes="48x48" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="assets/playground.css" />
     <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
   </head>
   <body>
     <header class="bar">
-      <a class="brand" href="./">cadcode</a>
-      <label class="field">
-        <span>example</span>
-        <select id="example"></select>
-      </label>
+      <a class="brand" href="./" title="cadcode home">cadcode</a>
+
+      <button id="picker-open" class="picker-open" type="button" popovertarget="picker" aria-haspopup="dialog">
+        <img id="picker-thumb" alt="" width="40" height="30" />
+        <span id="picker-title">Examples</span>
+        <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+      </button>
+
       <label class="field" hidden>
-        <span>part</span>
+        <span>Part</span>
         <select id="part"></select>
       </label>
-      <span id="status" class="status" data-state="loading">loading</span>
+
       <span class="spacer"></span>
+
       <span class="panes" role="group" aria-label="Panes">
         <button id="show-view" type="button" aria-pressed="true" title="Show or hide the model">Model</button>
         <button id="show-code" type="button" aria-pressed="true" title="Show or hide the code">Code</button>
       </span>
-      <button id="fit" type="button" title="Fit model to view (F)">Fit</button>
-      <button id="png" type="button" title="Save the current view as PNG">PNG</button>
-      <button id="stl" type="button" title="Download the part as STL">STL</button>
-      <button id="share" type="button" title="Copy a link to this code">Share</button>
+      <button id="share" class="share" type="button" title="Copy a link to this code">Copy link</button>
       <a class="github" href="https://github.com/JWo1F/cadcode">GitHub</a>
     </header>
+
+    <div id="picker" class="picker" popover>
+      <input id="picker-filter" class="picker-filter" type="search" placeholder="Find an example" aria-label="Find an example" autocomplete="off" />
+      <div id="picker-list" class="picker-list"></div>
+      <p id="picker-empty" class="picker-empty" hidden>No example matches. Try a shorter word.</p>
+    </div>
 
     <main class="split">
       <section class="view">
         <canvas id="view"></canvas>
+        <div class="sheet" aria-hidden="true"></div>
+
+        <p class="hint">Drag to rotate, shift-drag to pan, scroll to zoom</p>
         <section id="logs" class="logs" hidden></section>
+
+        <div class="tools" role="group" aria-label="View">
+          <button id="fit" type="button" title="Fit the model to the view (F)">Fit</button>
+          <button id="png" type="button" title="Save the current view as PNG">PNG</button>
+          <button id="stl" type="button" title="Download the part as STL">STL</button>
+        </div>
+
         <section id="error" class="error" hidden>
           <pre id="error-text"></pre>
         </section>
-        <footer class="hint">drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit</footer>
+
+        <table class="stamp" aria-label="Model">
+          <tr><td colspan="2" id="stamp-name" class="stamp-name"></td></tr>
+          <tr><th>Size</th><td id="stamp-size">—</td></tr>
+          <tr><th>Mesh</th><td id="stamp-mesh">—</td></tr>
+          <tr><th>Run</th><td><span id="status" class="status" data-state="loading">loading</span></td></tr>
+        </table>
       </section>
       <div id="divider" class="divider" role="separator" aria-orientation="vertical" title="Drag to resize, double-click to reset"></div>
       <section id="editor" class="code"></section>

@@ -1,6 +1,7 @@
 import * as monaco from 'monaco-editor';
 import { createScene, saveBlob } from '../../client/scene.js';
 import examples from 'virtual:examples';
+import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
 import workers from 'virtual:workers'; // file names, which carry their content's hash
 import './playground.css';
@@ -9,14 +10,17 @@ const DEFAULT_EXAMPLE = 'knob';
 const EVALUATE_DELAY = 350;
 
 const canvas = document.getElementById('view');
-const exampleSelect = document.getElementById('example');
 const partSelect = document.getElementById('part');
 const statusEl = document.getElementById('status');
 const errorEl = document.getElementById('error');
 const errorText = document.getElementById('error-text');
 const logsEl = document.getElementById('logs');
+const stamp = { name: document.getElementById('stamp-name'), size: document.getElementById('stamp-size'), mesh: document.getElementById('stamp-mesh') };
 
-const view = createScene(canvas);
+// The drafting-sheet colours of playground.css.
+const view = createScene(canvas, { background: 0xeceee9, gridMajor: 0xa9b6c3, gridMinor: 0xd2d8da, edges: 0x1d3550 });
+
+let currentExample = ''; // the example the code came from, or '' for code from elsewhere
 
 // --- Editor ------------------------------------------------------------------
 
@@ -38,15 +42,51 @@ js.setCompilerOptions({
 });
 for (const [file, content] of Object.entries(typings)) js.addExtraLib(content, `file:///node_modules/cadcode/${file}`);
 
+// Graphite ink on paper, to match the sheet; strings and numbers in the model's filament.
+monaco.editor.defineTheme('drafting', {
+  base: 'vs',
+  inherit: true,
+  rules: [
+    { token: '', foreground: '1d3550' },
+    { token: 'comment', foreground: '8592a0', fontStyle: 'italic' },
+    { token: 'keyword', foreground: '1d3550', fontStyle: 'bold' },
+    { token: 'string', foreground: '9a6a00' },
+    { token: 'number', foreground: 'b25a12' },
+    { token: 'identifier', foreground: '1d3550' },
+    { token: 'delimiter', foreground: '5b6b7c' },
+  ],
+  colors: {
+    'editor.background': '#f7f8f5',
+    'editor.foreground': '#1d3550',
+    'editorLineNumber.foreground': '#a9b3bd',
+    'editorLineNumber.activeForeground': '#1d3550',
+    'editor.lineHighlightBackground': '#eceee9',
+    'editor.lineHighlightBorder': '#00000000',
+    'editor.selectionBackground': '#f2c14e66',
+    'editor.inactiveSelectionBackground': '#f2c14e33',
+    'editorCursor.foreground': '#1d3550',
+    'editorIndentGuide.background1': '#1d355014',
+    'editorIndentGuide.activeBackground1': '#1d355040',
+    'editorGutter.background': '#f7f8f5',
+  },
+});
+
 const model = monaco.editor.createModel('', 'javascript', monaco.Uri.parse('file:///program.js'));
 const editor = monaco.editor.create(document.getElementById('editor'), {
   model,
+  theme: 'drafting',
   automaticLayout: true,
+  fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
   fontSize: 13,
+  lineHeight: 21,
+  padding: { top: 12 },
+  renderLineHighlight: 'line',
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
   tabSize: 2,
 });
+// Monaco measures its font once; the web font may arrive later.
+document.fonts.ready.then(() => monaco.editor.remeasureFonts());
 
 // --- Saving and sharing ------------------------------------------------------
 // Every edit is saved to localStorage, so a reload comes back to it. A share link
@@ -56,7 +96,7 @@ const DRAFT_KEY = 'cadcode:playground';
 
 function saveDraft() {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ code: model.getValue(), example: exampleSelect.value, part: partSelect.value }));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ code: model.getValue(), example: currentExample, part: partSelect.value }));
   } catch {
     // Storage unavailable (private window): the code just isn't kept across reloads.
   }
@@ -111,6 +151,23 @@ function showLogs(logs = []) {
     }),
   );
   logsEl.hidden = logs.length === 0;
+}
+
+const formatMm = (n) => (Math.round(n * 10) / 10).toLocaleString();
+
+/** The title block's name: the example's title, and the part when there are several. */
+function showStampName() {
+  const part = shown && shown.partNames.length > 1 ? ` / ${shown.part}` : '';
+  stamp.name.textContent = (catalog[currentExample]?.title ?? 'Your model') + part;
+  stamp.name.title = stamp.name.textContent;
+}
+
+/** Fills the title block: the model's name, its overall size and its mesh. */
+function showStamp(triangles) {
+  showStampName();
+  const size = view.modelSize();
+  stamp.size.textContent = size ? `${size.map(formatMm).join(' × ')} mm` : 'empty';
+  stamp.mesh.textContent = `${triangles.toLocaleString()} triangles`;
 }
 
 function showParts(names, current) {
@@ -181,7 +238,8 @@ async function evaluate() {
   markError(null);
   showParts(result.partNames, result.part);
   const triangles = view.showModel(result.groups);
-  setStatus('ready', `${triangles.toLocaleString()} tris · ${result.ms} ms`);
+  showStamp(triangles);
+  setStatus('ready', `${result.ms} ms`);
   if (fitNext) {
     fitNext = false;
     view.fitView();
@@ -198,23 +256,81 @@ model.onDidChangeContent(() => {
 
 // --- Examples ----------------------------------------------------------------
 
-exampleSelect.replaceChildren(...Object.keys(examples).map((name) => new Option(name, name)));
+// A popover of the gallery's renders, filtered as you type. The button that opens it
+// shows the current example's render and title.
+
+const picker = document.getElementById('picker');
+const pickerOpen = document.getElementById('picker-open');
+const pickerFilter = document.getElementById('picker-filter');
+const pickerList = document.getElementById('picker-list');
+const pickerEmpty = document.getElementById('picker-empty');
+const thumbnail = (name) => `gallery/${name}.png`;
+
+const pickerItems = Object.keys(examples).map((name) => {
+  const { title, description } = catalog[name];
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.name = name;
+  button.dataset.search = `${name} ${title} ${description}`.toLowerCase();
+  const img = Object.assign(document.createElement('img'), { src: thumbnail(name), alt: '', loading: 'lazy', width: 160, height: 120 });
+  const strong = Object.assign(document.createElement('strong'), { textContent: title });
+  const span = Object.assign(document.createElement('span'), { textContent: description });
+  button.append(img, strong, span);
+  button.addEventListener('click', () => chooseExample(name));
+  return button;
+});
+pickerList.replaceChildren(...pickerItems);
+
+function setCurrentExample(name) {
+  currentExample = name in examples ? name : '';
+  shown = null; // until the new code has run
+  showStampName();
+  for (const item of pickerItems) item.setAttribute('aria-current', String(item.dataset.name === currentExample));
+  document.getElementById('picker-title').textContent = catalog[currentExample]?.title ?? 'Examples';
+  const thumb = document.getElementById('picker-thumb');
+  if (currentExample) thumb.src = thumbnail(currentExample);
+  else thumb.removeAttribute('src');
+}
 
 function loadExample(name) {
-  exampleSelect.value = name;
+  setCurrentExample(name);
   partSelect.replaceChildren();
   fitNext = true;
   model.setValue(examples[name]);
 }
 
-exampleSelect.addEventListener('change', () => {
+function chooseExample(name) {
+  picker.hidePopover();
+  if (name === currentExample && model.getValue() === examples[name]) return;
   const edited = !Object.values(examples).includes(model.getValue());
-  if (edited && !confirm('Replace your code with this example?')) {
-    exampleSelect.value = exampleSelect.dataset.current;
-    return;
+  if (edited && !confirm('Replace your code with this example?')) return;
+  loadExample(name);
+}
+
+pickerFilter.addEventListener('input', () => {
+  const words = pickerFilter.value.toLowerCase().split(/\s+/).filter(Boolean);
+  let matches = 0;
+  for (const item of pickerItems) {
+    item.hidden = !words.every((word) => item.dataset.search.includes(word));
+    if (!item.hidden) matches++;
   }
-  exampleSelect.dataset.current = exampleSelect.value;
-  loadExample(exampleSelect.value);
+  pickerEmpty.hidden = matches > 0;
+});
+
+// Enter picks the first match.
+pickerFilter.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  const first = pickerItems.find((item) => !item.hidden);
+  if (first) chooseExample(first.dataset.name);
+});
+
+picker.addEventListener('toggle', (event) => {
+  pickerOpen.setAttribute('aria-expanded', String(event.newState === 'open'));
+  if (event.newState !== 'open') return;
+  pickerFilter.value = '';
+  pickerFilter.dispatchEvent(new Event('input'));
+  pickerFilter.focus();
+  pickerItems.find((item) => item.dataset.name === currentExample)?.scrollIntoView({ block: 'nearest' });
 });
 
 partSelect.addEventListener('change', evaluate);
@@ -281,7 +397,7 @@ applyLayout();
 
 /** The download name: the example the code came from, plus the part when there are several. */
 function fileName(ext) {
-  const base = exampleSelect.value || 'model';
+  const base = currentExample || 'model';
   return shown && shown.partNames.length > 1 ? `${base}-${shown.part}.${ext}` : `${base}.${ext}`;
 }
 
@@ -309,12 +425,12 @@ stlButton.addEventListener('click', async () => {
 const shareButton = document.getElementById('share');
 shareButton.addEventListener('click', async () => {
   await navigator.clipboard.writeText(await shareLink());
-  shareButton.textContent = 'Copied';
-  setTimeout(() => (shareButton.textContent = 'Share'), 1500);
+  shareButton.textContent = 'Link copied';
+  setTimeout(() => (shareButton.textContent = 'Copy link'), 1500);
 });
 
 window.addEventListener('keydown', (event) => {
-  if (editor.hasTextFocus() || event.target instanceof HTMLSelectElement) return;
+  if (editor.hasTextFocus() || event.target instanceof HTMLSelectElement || event.target instanceof HTMLInputElement) return;
   if (event.key === 'f' || event.key === 'F') view.fitView();
 });
 
@@ -325,7 +441,7 @@ window.addEventListener('keydown', (event) => {
 
 /** Shows code that came from outside an example, selecting its part before the first run. */
 function loadCode(code, part) {
-  exampleSelect.value = Object.keys(examples).find((name) => examples[name] === code) ?? '';
+  setCurrentExample(Object.keys(examples).find((name) => examples[name] === code) ?? '');
   if (part) partSelect.replaceChildren(new Option(part, part, true, true));
   model.setValue(code);
 }
@@ -347,8 +463,7 @@ if (hash.has('code')) {
   loadExample(requested in examples ? requested : DEFAULT_EXAMPLE);
 } else if (typeof draft?.code === 'string') {
   loadCode(draft.code, draft.part);
-  if (draft.example in examples) exampleSelect.value = draft.example;
+  if (draft.example in examples) setCurrentExample(draft.example);
 } else {
   loadExample(DEFAULT_EXAMPLE);
 }
-exampleSelect.dataset.current = exampleSelect.value;
