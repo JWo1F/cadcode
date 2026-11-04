@@ -437,7 +437,6 @@ p {
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
-  padding: 14px 0 0;
 }
 
 /* The panel's left edge: drag to resize. A short bar shows where to hold it. */

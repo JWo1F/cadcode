@@ -85,7 +85,7 @@ const editor = monaco.editor.create(document.getElementById('editor'), {
   fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
   fontSize: 13,
   lineHeight: 21,
-  padding: { top: 8, bottom: 16 },
+  padding: { top: 12, bottom: 16 },
   lineNumbersMinChars: 3,
   renderLineHighlight: 'line',
   minimap: { enabled: false },
