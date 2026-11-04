@@ -114,7 +114,7 @@ export default (p) => {
           .rotate([0, 90, 0])
           .translate([-wall - 1, usbCy, usbCz]),
 
-        // Fingernail notch under the lid's one: a gap to pry the lid up from, 0.6 mm of wall left inside
+        // Fingernail notch on the USB end: a gap to pry the lid up from, 0.6 mm of wall left inside
         cube([wall - 0.6 + 1, 10, 1.2 + 1]).translate([-wall - 1, iW / 2 - 5, iH - 1.2]),
 
         // Snap grooves
@@ -161,7 +161,6 @@ export default (p) => {
       difference(
         roundedBox(iL + 2 * wall, iW + 2 * wall, lidT, cornerR),
         poreGrid(sensL - fit - lipT, iW - 2 * (fit + lipT)).translate([sx0 + wall, wall + fit + lipT, 0]), // inside the skirt
-        cube([wall + 1, 10, 1]).translate([-1, iW / 2 + wall - 5, lidT - 0.8]), // fingernail notch on the USB end
       ).translate([-wall, -wall, iH]),
 
       // Skirt with snap bumps
