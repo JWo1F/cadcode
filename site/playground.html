@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Playground · cadcode</title>
+    <meta name="description" content="Write a cadcode model in JavaScript and see it in 3D, right in the browser." />
+    <link rel="stylesheet" href="assets/playground.css" />
+    <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="./">cadcode</a>
+      <label class="field">
+        <span>example</span>
+        <select id="example"></select>
+      </label>
+      <label class="field" hidden>
+        <span>part</span>
+        <select id="part"></select>
+      </label>
+      <span id="status" class="status" data-state="loading">loading</span>
+      <span class="spacer"></span>
+      <button id="fit" type="button" title="Fit model to view (F)">Fit</button>
+      <button id="png" type="button" title="Save the current view as PNG">PNG</button>
+      <button id="stl" type="button" title="Download the part as STL">STL</button>
+      <button id="share" type="button" title="Copy a link to this code">Share</button>
+      <a class="github" href="https://github.com/JWo1F/cadcode">GitHub</a>
+    </header>
+
+    <main class="split">
+      <section class="view">
+        <canvas id="view"></canvas>
+        <section id="logs" class="logs" hidden></section>
+        <section id="error" class="error" hidden>
+          <pre id="error-text"></pre>
+        </section>
+        <footer class="hint">drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit</footer>
+      </section>
+      <section id="editor" class="code"></section>
+    </main>
+
+    <script type="module" src="assets/playground.js"></script>
+  </body>
+</html>
