@@ -1,0 +1,36 @@
+{
+  "name": "cadcode",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "keywords": [
+    "cad",
+    "csg",
+    "3d-printing",
+    "stl",
+    "manifold"
+  ],
+  "license": "MIT",
+  "description": "Code-first CAD: write models in JavaScript, preview live in the browser, export STL and PNG.",
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "manifold-3d": "^3.5.4",
+    "three": "^0.187.0",
+    "ws": "^8.22.1"
+  },
+  "type": "module",
+  "bin": {
+    "cadcode": "src/cli.js"
+  },
+  "exports": {
+    ".": "./src/lib/index.js"
+  },
+  "files": [
+    "src",
+    "client"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}
