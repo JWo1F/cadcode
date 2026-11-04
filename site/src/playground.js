@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor';
 import { createScene, saveBlob } from '../../client/scene.js';
 import examples from 'virtual:examples';
 import typings from 'virtual:typings';
+import workers from 'virtual:workers'; // file names, which carry their content's hash
 import './playground.css';
 
 const DEFAULT_EXAMPLE = 'knob';
@@ -21,7 +22,7 @@ const view = createScene(canvas);
 
 self.MonacoEnvironment = {
   getWorker(_id, label) {
-    const file = label === 'typescript' || label === 'javascript' ? 'ts.worker.js' : 'editor.worker.js';
+    const file = label === 'typescript' || label === 'javascript' ? workers['ts.worker'] : workers['editor.worker'];
     return new Worker(new URL(file, import.meta.url), { type: 'module', name: label });
   },
 };
@@ -140,7 +141,7 @@ function markError(stack) {
 /** Runs the code in a fresh worker; `onWorker` gets it so a newer run can cancel it. */
 function run(message, onWorker) {
   return new Promise((resolve) => {
-    const worker = new Worker(new URL('eval-worker.js', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL(workers['eval-worker'], import.meta.url), { type: 'module' });
     onWorker?.(worker);
     worker.onmessage = ({ data }) => {
       if (data.ready) return worker.postMessage(message);
@@ -157,6 +158,7 @@ function run(message, onWorker) {
 let preview = null; // the worker of the run whose result the view is waiting for
 let shown = null; // the result on screen
 let fitNext = true; // a new example is framed; edits keep the camera
+let notice = ''; // shown in place of the error after the next good run, e.g. a link to a missing example
 
 async function evaluate() {
   preview?.terminate();
@@ -174,7 +176,8 @@ async function evaluate() {
     return;
   }
   shown = result;
-  showError('');
+  showError(notice);
+  notice = '';
   markError(null);
   showParts(result.partNames, result.part);
   const triangles = view.showModel(result.groups);
@@ -339,8 +342,9 @@ if (hash.has('code')) {
     showError('The code in this link could not be read');
     loadExample(DEFAULT_EXAMPLE);
   }
-} else if (requested in examples) {
-  loadExample(requested);
+} else if (requested) {
+  if (!(requested in examples)) notice = `There is no example "${requested}"; showing ${DEFAULT_EXAMPLE} instead`;
+  loadExample(requested in examples ? requested : DEFAULT_EXAMPLE);
 } else if (typeof draft?.code === 'string') {
   loadCode(draft.code, draft.part);
   if (draft.example in examples) exampleSelect.value = draft.example;

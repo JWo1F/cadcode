@@ -38,24 +38,31 @@ execFileSync(
 const typings = Object.fromEntries(fs.readdirSync(typesDir).map((file) => [file, fs.readFileSync(path.join(typesDir, file), 'utf8')]));
 fs.rmSync(typesDir, { recursive: true });
 
-const virtualModules = {
+const virtualModules = (modules) => ({
   name: 'virtual-modules',
   setup(build) {
-    const modules = { 'virtual:examples': examples, 'virtual:typings': typings };
     build.onResolve({ filter: /^virtual:/ }, (args) => ({ path: args.path, namespace: 'virtual' }));
     build.onLoad({ filter: /.*/, namespace: 'virtual' }, (args) => ({ contents: JSON.stringify(modules[args.path]), loader: 'json' }));
   },
-};
+});
 
 const monaco = (file) => path.join(ROOT, 'node_modules/monaco-editor/esm/vs', file);
 
-await esbuild.build({
-  entryPoints: {
-    playground: path.join(SITE, 'src/playground.js'),
-    'eval-worker': path.join(SITE, 'src/eval-worker.js'),
-    'editor.worker': monaco('editor/editor.worker.js'),
-    'ts.worker': monaco('language/typescript/ts.worker.js'),
-  },
+// Every script and stylesheet is named by its content's hash. Pages serves them with a
+// 10-minute cache, and an unchanged name would keep a browser on the previous build's
+// code — with the previous build's list of examples.
+const bundle = async (entryPoints, modules = {}) => {
+  const result = await esbuild.build({ ...bundleOptions, entryPoints, plugins: [virtualModules(modules)] });
+  const outputs = {};
+  for (const [file, output] of Object.entries(result.metafile.outputs)) {
+    if (!output.entryPoint) continue;
+    outputs[output.entryPoint] = path.basename(file);
+    if (output.cssBundle) outputs[`${output.entryPoint}.css`] = path.basename(output.cssBundle);
+  }
+  return (entry, ext = '') => outputs[`${path.relative(ROOT, entryPoints[entry])}${ext}`];
+};
+
+const bundleOptions = {
   outdir: ASSETS,
   bundle: true,
   splitting: true,
@@ -63,13 +70,26 @@ await esbuild.build({
   platform: 'browser',
   target: 'es2022',
   minify: true,
+  entryNames: '[name]-[hash]',
   chunkNames: 'chunk-[hash]',
+  metafile: true,
   loader: { '.ttf': 'file' },
   // manifold's Emscripten glue imports these only when it runs under Node.
   external: ['module', 'node:module', 'fs', 'path', 'url', 'worker_threads'],
-  plugins: [virtualModules],
   logLevel: 'warning',
-});
+};
+
+// Workers first: the playground needs their names.
+const workerEntries = {
+  'eval-worker': path.join(SITE, 'src/eval-worker.js'),
+  'editor.worker': monaco('editor/editor.worker.js'),
+  'ts.worker': monaco('language/typescript/ts.worker.js'),
+};
+const worker = await bundle(workerEntries);
+const workers = Object.fromEntries(Object.keys(workerEntries).map((name) => [name, worker(name)]));
+
+const playgroundEntries = { playground: path.join(SITE, 'src/playground.js') };
+const playground = await bundle(playgroundEntries, { 'virtual:examples': examples, 'virtual:typings': typings, 'virtual:workers': workers });
 
 // manifold's glue finds its WASM next to the script it was bundled into.
 fs.copyFileSync(path.join(ROOT, 'node_modules/manifold-3d/manifold.wasm'), path.join(ASSETS, 'manifold.wasm'));
@@ -87,5 +107,12 @@ const cards = Object.keys(examples)
   .map((name) => `<a href="playground.html?example=${name}"><img src="gallery/${name}.png" alt="${name}" width="640" height="480" loading="lazy" /><span>${name}</span></a>`)
   .join('\n');
 fs.writeFileSync(path.join(DIST, 'index.html'), fs.readFileSync(path.join(SITE, 'index.html'), 'utf8').replace('<!-- gallery -->', cards));
-for (const file of ['playground.html', 'site.css']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
+fs.writeFileSync(
+  path.join(DIST, 'playground.html'),
+  fs
+    .readFileSync(path.join(SITE, 'playground.html'), 'utf8')
+    .replace('assets/playground.js', `assets/${playground('playground')}`)
+    .replace('assets/playground.css', `assets/${playground('playground', '.css')}`),
+);
+fs.copyFileSync(path.join(SITE, 'site.css'), path.join(DIST, 'site.css'));
 console.log(`site → ${path.relative(ROOT, DIST)}`);
