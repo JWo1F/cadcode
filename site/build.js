@@ -130,6 +130,10 @@ for (const name of Object.keys(examples)) {
   });
 }
 
+// The home page's hero: the rocket, tall and large. Its backdrop is the renderer's vertical
+// sweep, which site.css repeats behind it so the picture has no edges.
+execFileSync('node', [CLI, 'png', path.join(EXAMPLES, 'rocket.js'), '--size', '1200x1440', '-o', path.join(DIST, 'hero.png')], { stdio: 'inherit' });
+
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const cards = Object.entries(exampleFiles)
   .map(([name, { meta }]) => {

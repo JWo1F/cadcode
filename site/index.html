@@ -11,12 +11,15 @@
     <link rel="icon" href="favicon.ico" sizes="48x48" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="site.css" />
     <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
   </head>
   <body>
-    <header class="nav">
-      <a class="brand" href="./">cadcode</a>
+    <header class="bar">
+      <a class="brand" href="./"><img src="favicon.svg" alt="" width="28" height="28" />cadcode</a>
       <nav>
         <a href="playground.html">Playground</a>
         <a href="#examples">Examples</a>
@@ -26,6 +29,8 @@
     </header>
 
     <main>
+      <!-- The opening is a photograph: the rocket stands on the renderer's own sweep,
+           which the section repeats behind it, so the picture has no edges. -->
       <section class="hero">
         <div class="pitch">
           <h1>CAD for people who write code</h1>
@@ -35,24 +40,24 @@
             send the STL to your slicer.
           </p>
           <div class="actions">
-            <a class="button primary" href="playground.html">Try it in the browser</a>
-            <a class="button" href="https://github.com/JWo1F/cadcode">GitHub</a>
+            <a class="pill primary" href="playground.html">Try it in the browser</a>
+            <a class="pill" href="https://github.com/JWo1F/cadcode">GitHub</a>
           </div>
-          <pre class="install"><code>npm install cadcode</code></pre>
+          <code class="install">npm install cadcode</code>
         </div>
-        <figure class="hero-model">
-          <img src="gallery/knob.png" alt="A knurled potentiometer knob rendered by cadcode" width="640" height="480" />
-        </figure>
+        <a class="hero-shot" href="playground.html?example=rocket" title="Open this rocket in the playground">
+          <img src="hero.png" alt="A red and grey toy rocket with portholes and three fins, rendered by cadcode" width="1200" height="1440" />
+        </a>
       </section>
 
       <section class="example">
-        <div>
+        <div class="example-text">
           <h2>A box in a dozen lines</h2>
           <p>
             No sketches, constraints or toolbars. Sizes are numbers, so changing the box means changing a number, not
             redrawing it.
           </p>
-          <pre><code>npx cadcode dev box.js</code></pre>
+          <code class="command">npx cadcode dev box.js</code>
           <p>
             Keep the preview open next to your editor. Save the file and the model updates in place, at the same camera
             angle.
