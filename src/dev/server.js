@@ -9,7 +9,6 @@ import { WebSocketServer } from 'ws';
 import { bundleOptions } from '../core/program.js';
 
 const CLIENT_DIR = fileURLToPath(new URL('../../client/', import.meta.url));
-const THREE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.resolve('three'))), '..');
 const WORKER_URL = new URL('./worker.js', import.meta.url);
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
@@ -119,6 +118,12 @@ export async function startDevServer({ file, port, host, part, overrides, open }
     worker.once('error', (error) => fail(error.message));
   }
 
+  // The viewer's scene runs in a worker, where an import map cannot resolve 'three';
+  // it is bundled once, three.js included, and served from memory.
+  const renderWorker = (
+    await esbuild.build({ entryPoints: [path.join(CLIENT_DIR, 'render-worker.js')], bundle: true, format: 'esm', write: false, logLevel: 'warning' })
+  ).outputFiles[0].contents;
+
   const options = bundleOptions(file);
   const ctx = await esbuild.context({
     ...options,
@@ -145,7 +150,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
     const url = new URL(req.url ?? '/', 'http://localhost');
     if (url.pathname === '/') return serveFile(res, CLIENT_DIR, 'index.html');
     if (url.pathname === '/stl') return downloadSTL(res, url.searchParams.get('part') ?? state.part);
-    if (url.pathname.startsWith('/vendor/three/')) return serveFile(res, THREE_DIR, url.pathname.slice('/vendor/three/'.length));
+    if (url.pathname === '/render-worker.js') return void res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-cache' }).end(renderWorker);
     serveFile(res, CLIENT_DIR, url.pathname.slice(1));
   });
 

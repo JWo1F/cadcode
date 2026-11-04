@@ -8,14 +8,15 @@ const errorEl = document.getElementById('error');
 const errorText = document.getElementById('error-text');
 const logsEl = document.getElementById('logs');
 
-const view = createScene(canvas);
-const { camera, controls } = view;
+// The dev server bundles the render worker, three.js included, at /render-worker.js.
+const view = createScene(canvas, { workerUrl: '/render-worker.js', onCamera: cameraMoved });
 
 // --- Camera persistence ------------------------------------------------------
 // The camera survives model reloads untouched; it is also stored per file so a
 // browser refresh or a restarted server comes back to the same view.
 
 let fileKey = null;
+let camera = null; // the latest from the view: { position, target, zoom }
 
 const storage = {
   get(key) {
@@ -35,35 +36,28 @@ const storage = {
 };
 
 function saveCamera() {
-  if (!fileKey) return;
-  storage.set(`cadcode:camera:${fileKey}`, {
-    position: camera.position.toArray(),
-    target: controls.target.toArray(),
-    zoom: camera.zoom,
-  });
+  if (!fileKey || !camera) return;
+  storage.set(`cadcode:camera:${fileKey}`, camera);
 }
 
 function restoreCamera() {
   const saved = storage.get(`cadcode:camera:${fileKey}`);
   if (!saved) return false;
-  camera.position.fromArray(saved.position);
-  controls.target.fromArray(saved.target);
-  camera.zoom = saved.zoom ?? 1;
-  camera.updateProjectionMatrix();
-  controls.update();
+  view.setCamera(saved);
   return true;
 }
 
 let saveTimer = 0;
-controls.addEventListener('change', () => {
+function cameraMoved(moved) {
+  camera = moved;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveCamera, 200);
-});
+}
 window.addEventListener('beforeunload', saveCamera);
 
+// The fitted camera arrives as a move and is saved from there.
 function fitView() {
   view.fitView();
-  saveCamera();
 }
 
 document.getElementById('fit').addEventListener('click', fitView);
@@ -91,9 +85,10 @@ function decodeModel(buffer) {
 
 let shown = null; // header of the model on screen
 
-function showModel({ header, groups }) {
+async function showModel({ header, groups }) {
   shown = header;
-  const triangles = view.showModel(groups);
+  const { triangles } = await view.showModel(groups);
+  if (shown !== header) return; // a newer frame arrived meanwhile
   setStatus('ready', `${header.part} · ${triangles.toLocaleString()} tris · ${header.ms} ms`);
 }
 

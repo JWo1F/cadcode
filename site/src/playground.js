@@ -18,7 +18,10 @@ const logsEl = document.getElementById('logs');
 const stamp = { name: document.getElementById('stamp-name'), size: document.getElementById('stamp-size'), mesh: document.getElementById('stamp-mesh') };
 
 // The drafting-sheet colours of playground.css.
-const view = createScene(canvas, { background: 0xeceee9, gridMajor: 0xa9b6c3, gridMinor: 0xd2d8da, edges: 0x1d3550 });
+const view = createScene(canvas, {
+  workerUrl: new URL(workers['render-worker'], import.meta.url),
+  colors: { background: 0xeceee9, gridMajor: 0xa9b6c3, gridMinor: 0xd2d8da, edges: 0x1d3550 },
+});
 
 let currentExample = ''; // the example the code came from, or '' for code from elsewhere
 
@@ -163,9 +166,8 @@ function showStampName() {
 }
 
 /** Fills the title block: the model's name, its overall size and its mesh. */
-function showStamp(triangles) {
+function showStamp({ triangles, size }) {
   showStampName();
-  const size = view.modelSize();
   stamp.size.textContent = size ? `${size.map(formatMm).join(' × ')} mm` : 'empty';
   stamp.mesh.textContent = `${triangles.toLocaleString()} triangles`;
 }
@@ -237,8 +239,9 @@ async function evaluate() {
   notice = '';
   markError(null);
   showParts(result.partNames, result.part);
-  const triangles = view.showModel(result.groups);
-  showStamp(triangles);
+  const mesh = await view.showModel(result.groups); // the view's worker builds the meshes
+  if (shown !== result) return; // a newer run was shown meanwhile
+  showStamp(mesh);
   setStatus('ready', `${result.ms} ms`);
   if (fitNext) {
     fitNext = false;

@@ -103,6 +103,7 @@ const bundleOptions = {
 // Workers first: the playground needs their names.
 const workerEntries = {
   'eval-worker': path.join(SITE, 'src/eval-worker.js'),
+  'render-worker': path.join(ROOT, 'client/render-worker.js'),
   'editor.worker': monaco('editor/editor.worker.js'),
   'ts.worker': monaco('language/typescript/ts.worker.js'),
 };
