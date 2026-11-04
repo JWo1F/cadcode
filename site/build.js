@@ -114,5 +114,5 @@ fs.writeFileSync(
     .replace('assets/playground.js', `assets/${playground('playground')}`)
     .replace('assets/playground.css', `assets/${playground('playground', '.css')}`),
 );
-fs.copyFileSync(path.join(SITE, 'site.css'), path.join(DIST, 'site.css'));
+for (const file of ['site.css', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
 console.log(`site → ${path.relative(ROOT, DIST)}`);

@@ -4,3 +4,4 @@ out/
 *.stl
 *.png
 site/dist/
+!site/apple-touch-icon.png
