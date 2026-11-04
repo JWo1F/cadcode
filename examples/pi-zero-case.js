@@ -1,5 +1,5 @@
 // Raspberry Pi Zero / Zero 2 W case with a sliding lid that clicks shut.
-// Board dimensions from the official mechanical drawing. Base prints bottom down, lid top down.
+// Board dimensions from the official mechanical drawing. Both parts print as they sit in use.
 //
 //   cadcode dev examples/pi-zero-case.js
 //   cadcode stl examples/pi-zero-case.js --part print
@@ -36,7 +36,7 @@ export const params = {
   tongueT: 1.2, // the part that runs in the grooves
   groove: 1, // groove depth in the walls
   slide: 0.2, // clearance in the grooves
-  detent: 0.3, // how far the click bump stands out
+  detent: 0.5, // how far the click bumps stand out of the tongue's edges
 };
 
 export default (p) => {
@@ -46,6 +46,7 @@ export default (p) => {
   const boardTop = boardZ + p.boardT;
   const lidZ = boardTop + p.headroom; // underside of the lid
   const H = lidZ + p.lidT; // top, from the inside floor
+  const detentX = iL + p.wall - 1.5; // click bumps, just inside the open end
 
   // Board coordinates to case coordinates
   const bx = (x) => p.gap + x;
@@ -99,9 +100,13 @@ export default (p) => {
       lidZ,
     ]);
     const entry = cube([p.wall + 2, iW, p.lidT + 1]).translate([iL - 1, 0, lidZ]);
-    const dimple = cylinder({ r: 0.7, h: iW - 6 })
-      .rotate([-90, 0, 0])
-      .translate([iL + p.wall / 2, 3, lidZ + 0.7 - p.detent - 0.1]);
+    // Pockets in the back of each groove for the lid's click bumps
+    const notches = [-1, 1].map((s) => {
+      // 0.05 deeper than the bump reaches
+      const reach = p.groove - p.slide + p.detent + 0.05;
+      const y = s < 0 ? -reach + 0.7 : iW + reach - 0.7;
+      return cylinder({ r: 0.7, h: p.tongueT + p.slide }).translate([detentX, y, lidZ]);
+    });
 
     const standoffs = holes.map(([x, y]) =>
       cylinder({ d: 5.5, h: p.standoff })
@@ -110,7 +115,7 @@ export default (p) => {
     );
 
     return shell
-      .subtract(cube([iL, iW, H + 1]), ports, sd, camera, grooves, entry, dimple)
+      .subtract(cube([iL, iW, H + 1]), ports, sd, camera, grooves, entry, notches)
       .union(standoffs);
   };
 
@@ -122,15 +127,18 @@ export default (p) => {
       -p.groove + p.slide,
       lidZ,
     ]);
-    const bump = cylinder({ r: 0.6, h: iW - 8 })
-      .rotate([-90, 0, 0])
-      .translate([iL + p.wall / 2, 4, lidZ + 0.6 - p.detent]);
+    // Click bumps on both edges of the tongue, near the outer end: they only enter the grooves
+    // in the last couple of millimetres and drop into the pockets there. The underside stays flat.
+    const bumps = [-1, 1].map((s) => {
+      const edge = s < 0 ? -p.groove + p.slide : iW + p.groove - p.slide;
+      return cylinder({ r: 0.6, h: p.tongueT }).translate([detentX, edge - s * 0.6 + s * p.detent, lidZ]);
+    });
 
     // GPIO header: 2×20 pins centred along the far edge
     const gpio = p.gpioSlot && cube([52, 6.5, p.lidT + 2]).translate([bx(p.boardL / 2) - 26, by(p.boardW - 3.5) - 3.25, lidZ - 1]);
     const vents = range(0, 9).map((i) => cube([1.5, 14, p.lidT + 2]).translate([bx(20) + i * 3, by(4), lidZ - 1]));
 
-    return body.union(tongue, bump).subtract(gpio, vents);
+    return body.union(tongue, bumps).subtract(gpio, vents);
   };
 
   const board = () => {
@@ -150,13 +158,13 @@ export default (p) => {
 
   console.log(`outer ${(iL + 2 * p.wall).toFixed(1)} × ${(iW + 2 * p.wall).toFixed(1)} × ${(p.floor + H).toFixed(1)} mm`);
 
+  // As it sits in the case, tongue on the bed: the wide part prints first, the narrower body on top.
+  const lidForPrint = () => lid().translate([p.groove, p.groove + p.detent, -lidZ]);
+
   return {
     assembly: () => [base().color('lightgray', 0.6), lid().translate([12, 0, 0]).color('orange', 0.5), board()],
     base: () => base().translate([p.wall, p.wall, p.floor]),
-    lid: () => lid().rotate([180, 0, 0]).translate([p.groove, iW + p.groove, H]),
-    print: () => [
-      base().translate([p.wall, p.wall, p.floor]),
-      lid().rotate([180, 0, 0]).translate([p.groove, 2 * iW + 2 * p.wall + 8, H]),
-    ],
+    lid: lidForPrint,
+    print: () => [base().translate([p.wall, p.wall, p.floor]), lidForPrint().translate([0, iW + 2 * p.wall + 8, 0])],
   };
 };
