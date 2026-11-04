@@ -61,6 +61,7 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Zoom**: mouse wheel
 - **Fit the model to the view**: F, or the Fit button
 - **Switch parts**: the part dropdown
+- **Download the part as STL**: the STL button. It is the same file `cadcode stl` writes.
 
 Errors appear in the page and in the terminal, with the line in your file. The last good model stays on screen until you fix them. Whatever the program prints with `console.log` appears in the corner of the page.
 
