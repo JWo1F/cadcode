@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cadcode · code-first CAD</title>
+    <meta
+      name="description"
+      content="Write 3D-printable models in JavaScript, preview them live in the browser, export STL and PNG."
+    />
+    <link rel="stylesheet" href="site.css" />
+    <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./">cadcode</a>
+      <nav>
+        <a href="playground.html">Playground</a>
+        <a href="#examples">Examples</a>
+        <a href="https://github.com/JWo1F/cadcode">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="pitch">
+          <h1>Code-first CAD</h1>
+          <p class="lead">
+            Write a model in JavaScript, see it live in the browser while you edit, and export STL for printing and PNG
+            for previews. There is no modeling UI: your editor is the CAD system.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="playground.html">Open the playground</a>
+            <a class="button" href="https://github.com/JWo1F/cadcode">GitHub</a>
+          </div>
+          <pre class="install"><code>npm install cadcode</code></pre>
+        </div>
+        <figure class="hero-model">
+          <img src="gallery/knob.png" alt="A knurled potentiometer knob rendered by cadcode" width="640" height="480" />
+        </figure>
+      </section>
+
+      <section class="example">
+        <div>
+          <h2>A model is a module</h2>
+          <p>
+            Its default export is the model. The API keeps OpenSCAD's ideas — cube, cylinder, hull, difference,
+            <code>$fn</code> — so OpenSCAD models port line by line.
+          </p>
+          <pre><code>npx cadcode dev plate.js</code></pre>
+          <p>
+            The dev viewer rebuilds the model on every save and swaps it into the page without touching the camera.
+          </p>
+        </div>
+        <pre class="code"><code><span class="k">import</span> { cube, cylinder, difference } <span class="k">from</span> <span class="s">'cadcode'</span>;
+
+<span class="k">export default</span> difference(
+  cube([<span class="n">20</span>, <span class="n">20</span>, <span class="n">5</span>], { center: <span class="k">true</span> }),
+  cylinder({ d: <span class="n">6</span>, h: <span class="n">10</span>, center: <span class="k">true</span> }),
+);</code></pre>
+      </section>
+
+      <section class="features">
+        <article>
+          <h3>Watertight, always</h3>
+          <p>
+            Geometry runs on <a href="https://github.com/elalish/manifold">manifold</a>, the boolean engine recent
+            OpenSCAD uses. Every solid comes out printable.
+          </p>
+        </article>
+        <article>
+          <h3>Parameters and parts</h3>
+          <p>
+            Declare <code>params</code> and override them with <code>--set</code>. Export an object of named parts — an
+            assembly, a box, a lid — and pick one per export.
+          </p>
+        </article>
+        <article>
+          <h3>STL and PNG</h3>
+          <p>
+            <code>cadcode stl</code> writes binary STL for the slicer. <code>cadcode png</code> renders previews,
+            including a four-view sheet, without a browser.
+          </p>
+        </article>
+        <article>
+          <h3>Just JavaScript</h3>
+          <p>
+            Loops, functions, helper files, npm packages and TypeScript all work, because a program is an ordinary
+            module.
+          </p>
+        </article>
+      </section>
+
+      <section id="examples" class="gallery">
+        <h2>Examples</h2>
+        <p>Each one opens in the playground, where you can change it and download the STL.</p>
+        <div class="grid">
+          <!-- gallery -->
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>MIT licensed</span>
+      <a href="https://github.com/JWo1F/cadcode">github.com/JWo1F/cadcode</a>
+    </footer>
+  </body>
+</html>

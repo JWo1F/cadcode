@@ -2,6 +2,8 @@
 
 Code-first CAD. Write a model in JavaScript, see it live in the browser while you edit, and export STL for printing and PNG for previews. There is no modeling UI: your editor is the CAD system.
 
+Try it in the browser: [the playground](https://jwo1f.github.io/cadcode/playground.html).
+
 The geometry runs on [manifold](https://github.com/elalish/manifold), the same boolean engine recent OpenSCAD uses, so solids always come out watertight. The API keeps OpenSCAD's ideas (cube, cylinder, hull, difference, `$fn`), so OpenSCAD models port line by line.
 
 ```js
