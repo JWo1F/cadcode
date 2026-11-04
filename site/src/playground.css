@@ -122,6 +122,12 @@ p {
   pointer-events: auto;
 }
 
+/* View controls, apart from the export actions: at the bottom-right of the uncovered stage. */
+.bottom-right {
+  right: calc(var(--panel-cover, 0px) + var(--gap));
+  bottom: var(--gap);
+}
+
 /* --- Floating controls -------------------------------------------------------- */
 
 .brand {
@@ -170,6 +176,13 @@ p {
   background: var(--ink);
   border-color: var(--ink);
   color: #fff;
+}
+
+.pill.round {
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
 }
 
 .picker-open {
@@ -469,12 +482,13 @@ p {
 }
 
 /* --- Example picker ------------------------------------------------------------ */
+/* A popup hanging from its button: the page stays as it is around it. */
 
 .picker {
   position: fixed;
-  inset: 68px auto auto var(--gap);
-  width: min(800px, calc(100vw - 2 * var(--gap)));
-  max-height: min(660px, calc(100dvh - 88px));
+  inset: 64px auto auto var(--gap);
+  width: min(420px, calc(100vw - 2 * var(--gap)));
+  max-height: min(560px, calc(100dvh - 84px));
   margin: 0;
   padding: 0;
   display: none;
@@ -482,24 +496,27 @@ p {
   background: #fff;
   color: var(--ink);
   border: 1px solid var(--hairline);
-  border-radius: 20px;
-  box-shadow: var(--panel-lift);
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(31, 40, 51, 0.06), 0 18px 48px -12px rgba(31, 40, 51, 0.28);
+  transform-origin: 40px 0;
 }
 
 .picker:popover-open {
   display: flex;
+  animation: drop 0.14s ease-out;
 }
 
-/* Everything under the open picker steps back. */
-.picker::backdrop {
-  background: rgba(31, 40, 51, 0.08);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+@keyframes drop {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 -4px;
+  }
 }
 
 .picker-filter {
-  margin: 16px 16px 8px;
-  padding: 10px 16px;
+  margin: 10px 10px 4px;
+  padding: 8px 14px;
   background: var(--stage-mid);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -513,22 +530,24 @@ p {
 }
 
 .picker-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
-  gap: 6px;
-  padding: 8px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px 8px;
   overflow-y: auto;
 }
 
 .picker-list button {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 6px 6px 12px;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 6px;
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .picker-list button:hover {
@@ -537,38 +556,37 @@ p {
 
 .picker-list button[aria-current='true'] {
   background: #fdf6e3;
-  box-shadow: inset 0 0 0 1.5px var(--filament-deep);
 }
 
 .picker-list img {
+  grid-row: span 2;
   display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
+  width: 64px;
+  height: 48px;
   object-fit: cover;
-  margin-bottom: 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--stage-mid);
 }
 
 .picker-list strong {
-  padding: 0 4px;
+  align-self: end;
   font-size: 14px;
   font-weight: 600;
 }
 
 .picker-list span {
-  padding: 0 4px;
+  align-self: start;
   font-size: 12.5px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--ink-soft);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .picker-empty {
-  padding: 4px 22px 22px;
+  padding: 4px 18px 16px;
   color: var(--ink-soft);
 }
 
@@ -582,6 +600,9 @@ p {
   .progress,
   .empty {
     transition: none !important;
+  }
+  .picker:popover-open {
+    animation: none;
   }
 }
 
@@ -633,6 +654,10 @@ p {
   .stage.dragging {
     cursor: row-resize;
   }
+  .bottom-right {
+    right: var(--gap);
+    bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap));
+  }
   .bottom-left {
     right: var(--gap);
     bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap));
@@ -650,10 +675,7 @@ p {
     top: calc((100% - var(--panel-cover-bottom, 0px)) / 2);
   }
   .picker {
-    inset: 60px var(--gap) auto var(--gap);
+    inset: 56px var(--gap) auto var(--gap);
     width: auto;
-  }
-  .picker-list {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
