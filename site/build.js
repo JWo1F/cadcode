@@ -7,6 +7,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
+import { renderReference } from './reference/render.js';
 
 const SITE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(SITE);
@@ -17,6 +18,10 @@ const CLI = path.join(ROOT, 'src/cli.js');
 
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(ASSETS, { recursive: true });
+
+// The reference, rendered from site/reference/content.js. First, because it fails the
+// build when an export is undocumented, and the rest takes a while.
+const reference = renderReference();
 
 // Every example opens with a frontmatter block — `key: value` lines between /*--- and ---*/ —
 // that names it for the gallery. The playground gets the code without it.
@@ -140,5 +145,9 @@ fs.writeFileSync(
     .replace('assets/playground.js', `assets/${playground('playground')}`)
     .replace('assets/playground.css', `assets/${playground('playground', '.css')}`),
 );
-for (const file of ['site.css', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
+fs.writeFileSync(
+  path.join(DIST, 'reference.html'),
+  fs.readFileSync(path.join(SITE, 'reference.html'), 'utf8').replace('<!-- index -->', reference.index).replace('<!-- reference -->', reference.body),
+);
+for (const file of ['site.css', 'reference.css', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
 console.log(`site → ${path.relative(ROOT, DIST)}`);

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reference · cadcode</title>
+    <meta name="description" content="Every cadcode function, method, parameter and command, with defaults and examples." />
+    <link rel="icon" href="favicon.ico" sizes="48x48" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="reference.css" />
+    <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="./"><img src="favicon.svg" alt="" width="24" height="24" />cadcode</a>
+      <nav>
+        <a href="playground.html">Playground</a>
+        <a href="./#examples">Examples</a>
+        <a href="reference.html" aria-current="page">Reference</a>
+        <a href="https://github.com/JWo1F/cadcode">GitHub</a>
+      </nav>
+    </header>
+
+    <div class="layout">
+      <aside class="index" aria-label="Contents">
+        <label class="find">
+          <span class="visually-hidden">Find a function</span>
+          <input id="find" type="search" placeholder="Find a function" autocomplete="off" spellcheck="false" />
+          <kbd aria-hidden="true">/</kbd>
+        </label>
+        <ul id="toc">
+          <!-- index -->
+        </ul>
+      </aside>
+
+      <main class="body">
+        <h1>Reference</h1>
+        <p class="lead">
+          Every function, method and command cadcode has, with each parameter and its default. Shapes never change in
+          place: every method returns a new shape. Wherever a list of shapes is accepted, it may hold nested arrays and
+          falsy values, so loops and conditions read naturally.
+        </p>
+        <!-- reference -->
+        <p id="nothing" class="nothing" hidden>Nothing matches. Try part of a name, like <code>extr</code>.</p>
+      </main>
+    </div>
+
+    <script>
+      // Filtering, and lighting a parameter's row and its name in the signature together.
+      const find = document.getElementById('find');
+      const entries = [...document.querySelectorAll('.entry')];
+      const groups = [...document.querySelectorAll('.body .group')];
+
+      function filter() {
+        const words = find.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        let shown = 0;
+        for (const entry of entries) {
+          const match = words.every((word) => entry.dataset.search.includes(word));
+          entry.hidden = !match;
+          document.querySelector(`[data-entry="${entry.id}"]`).hidden = !match;
+          if (match) shown++;
+        }
+        for (const group of groups) {
+          const empty = !group.querySelector('.entry:not([hidden])');
+          group.hidden = empty;
+          document.querySelector(`#toc > [data-section="${group.id}"]`).hidden = empty;
+        }
+        document.getElementById('nothing').hidden = shown > 0;
+      }
+      find.addEventListener('input', filter);
+      find.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          find.value = '';
+          filter();
+          find.blur();
+        }
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === '/' && document.activeElement !== find) {
+          event.preventDefault();
+          find.focus();
+        }
+      });
+
+      for (const entry of entries) {
+        const light = (arg, on) => entry.querySelectorAll(`[data-arg="${arg}"]`).forEach((el) => el.classList.toggle('lit', on));
+        entry.addEventListener('pointerover', (event) => {
+          const arg = event.target.closest('[data-arg]')?.dataset.arg;
+          if (arg) light(arg, true);
+        });
+        entry.addEventListener('pointerout', (event) => {
+          const arg = event.target.closest('[data-arg]')?.dataset.arg;
+          if (arg) light(arg, false);
+        });
+      }
+    </script>
+  </body>
+</html>
