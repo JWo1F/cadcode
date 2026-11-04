@@ -40,7 +40,7 @@ test('colors survive into mesh groups', async () => {
 
 test('STL has a triangle count matching its size', async () => {
   const stl = toSTL((await evaluateProgram(bundle, { part: 'single' })).solids);
-  assert.equal(stl.readUInt32LE(80), 12);
+  assert.equal(new DataView(stl.buffer).getUint32(80, true), 12);
   assert.equal(stl.length, 84 + 12 * 50);
 });
 
