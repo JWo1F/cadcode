@@ -1,3 +1,7 @@
+/*---
+title: Phone stand
+description: A desk stand for a phone in its case, with a slot for the charging cable.
+---*/
 // Desk stand for a phone, upright or sideways, case on. The phone leans back on a sloped plate and
 // sits on a raised seat behind a lip; a slot through the seat and lip lets the charging plug hang
 // below the phone and the cable leave at the front. The side profile is open like a truss.

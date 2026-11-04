@@ -1,3 +1,7 @@
+/*---
+title: Gear bearing
+description: A planetary bearing with herringbone teeth that turns straight off the bed.
+---*/
 import { circle, cylinder, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 96 });

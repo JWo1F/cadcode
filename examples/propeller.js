@@ -1,3 +1,7 @@
+/*---
+title: Propeller
+description: A fan propeller with twisted, tapered blades and a domed spinner.
+---*/
 import { cube, cylinder, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });

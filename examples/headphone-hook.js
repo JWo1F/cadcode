@@ -1,3 +1,7 @@
+/*---
+title: Headphone hook
+description: A rounded strap that screws under a desk and holds headphones by the band.
+---*/
 // Headphone hanger that screws to the underside of a desk. It is one bent strap: a plate with two
 // countersunk holes, a bend down into the stem, and a wide curved saddle that ends in a lip.
 // Every edge of the strap is rounded, so the headband's cushion never rests on a corner.

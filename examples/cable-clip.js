@@ -1,3 +1,7 @@
+/*---
+title: Cable clip
+description: Snap-in channels for cables under a desk, one per cable size.
+---*/
 // Cable clip for the underside or back of a desk: a row of snap-in channels, one per cable size,
 // on a base that takes double-sided tape or two countersunk wood screws. The mouth of each channel
 // is narrower than its cable, so the cable clicks in and stays. Prints as it stands, no support.

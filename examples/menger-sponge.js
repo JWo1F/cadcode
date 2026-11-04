@@ -1,3 +1,7 @@
+/*---
+title: Menger sponge
+description: The fractal cube, built with three cutters and one boolean.
+---*/
 import { cube, range, square, union } from 'cadcode';
 
 // A Menger sponge: a cube with the middle ninth of every face bored through, repeated on every

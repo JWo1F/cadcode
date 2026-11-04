@@ -1,3 +1,7 @@
+/*---
+title: Chess set
+description: A Staunton-style set turned on a virtual lathe, every piece printed standing.
+---*/
 // A Staunton-style chess set turned on a virtual lathe: every piece but the knight is one profile
 // revolved, with the details cut in afterwards. Each piece prints standing on its base, no supports.
 //

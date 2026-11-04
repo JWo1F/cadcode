@@ -1,3 +1,7 @@
+/*---
+title: Torus knot
+description: A tube that winds around a torus, any (p, q) you give it.
+---*/
 import { cube, hull, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 20 });

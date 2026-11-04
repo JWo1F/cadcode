@@ -1,3 +1,7 @@
+/*---
+title: Die
+description: A rounded six-sided die with spherical pips, opposite faces adding up to seven.
+---*/
 // A six-sided die with rounded edges: a cube cut by a sphere, with spherical pips in the standard
 // layout, so opposite faces add up to seven. Prints on any face, no supports.
 //

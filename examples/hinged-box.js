@@ -1,3 +1,7 @@
+/*---
+title: Hinged box
+description: A small box and lid joined by a hinge that comes off the bed already assembled.
+---*/
 // Small box with a print-in-place hinge: five knuckles along the back, the box's three carry a
 // pin that runs through the lid's two with clearance all round, so the hinge comes off the bed
 // already assembled. The hinge axis sits halfway up the closed box, which makes the lid land flat

@@ -1,3 +1,7 @@
+/*---
+title: Hose adapter
+description: From a shop-vacuum hose cuff to a garden hose, revolved from one cross-section.
+---*/
 // Hose adapter: a tapered friction cone that pushes into a shop-vacuum hose cuff on one end, a
 // barbed spigot for a garden or pond hose on the other, and a gripping collar between them.
 // The whole body is one half cross-section revolved around Z. Prints standing on the cone end;

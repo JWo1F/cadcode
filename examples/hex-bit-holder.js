@@ -1,3 +1,7 @@
+/*---
+title: Hex bit holder
+description: A stepped tray for 1/4" screwdriver bits, with a strip in front for a label.
+---*/
 // Tray for 1/4" hex screwdriver bits. The rows climb in steps towards the back so every bit is easy
 // to see and pull, and a sloped strip in front takes a label. Prints as it stands, no support.
 //

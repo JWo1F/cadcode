@@ -1,3 +1,7 @@
+/*---
+title: Snowflake
+description: A flat ornament grown from one branching arm, with a loop for a thread.
+---*/
 import { circle, polygon, range, union } from 'cadcode';
 
 // A snowflake ornament. One arm is drawn as a 2D dendrite — a tapering spine with side branches,

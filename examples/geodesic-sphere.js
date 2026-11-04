@@ -1,3 +1,7 @@
+/*---
+title: Geodesic sphere
+description: A frame of struts from a subdivided icosahedron, cut flat to stand and print.
+---*/
 import { cube, hull, range, sphere, union } from 'cadcode';
 
 // A geodesic frame: an icosahedron whose faces are split into frequency^2 triangles, every new

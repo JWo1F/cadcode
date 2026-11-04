@@ -1,3 +1,7 @@
+/*---
+title: Twisted vase
+description: A lobed vase that twists and flares as it rises.
+---*/
 import { cube, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 64 });

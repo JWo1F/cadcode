@@ -1,3 +1,7 @@
+/*---
+title: SD card holder
+description: A desk block with slots for SD and microSD cards, tilted so labels face you.
+---*/
 // Desk holder for memory cards: a tall block with a row of SD slots beside a lower one with two
 // columns of microSD slots. The slots lean back so the labels face you, and a finger notch runs
 // down each column so a card can be pinched out by its middle. Prints as it stands, no supports.

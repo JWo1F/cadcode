@@ -1,3 +1,7 @@
+/*---
+title: Sierpinski pyramid
+description: A tetrahedron of half-size tetrahedra, again and again, printed without supports.
+---*/
 import { polyhedron, union } from 'cadcode';
 
 // A Sierpinski tetrahedron: a tetrahedron split into four half-size copies at its corners, again

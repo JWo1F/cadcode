@@ -1,3 +1,7 @@
+/*---
+title: Knob
+description: A knurled knob with a pointer, for a 6 mm D-shaft potentiometer.
+---*/
 import { cube, cylinder, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });

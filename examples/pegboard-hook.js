@@ -1,3 +1,7 @@
+/*---
+title: Pegboard hook
+description: A J-hook for 1/4" pegboard that locks into two holes so it cannot twist.
+---*/
 // J-hook for 1/4" pegboard (6.35 mm holes on a 25.4 mm grid). The upper prong goes through a hole
 // and turns down behind the board, the lower one plugs the hole below so the hook cannot twist.
 // The whole hook is one side profile pushed through its thickness, so it prints lying flat with

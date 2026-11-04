@@ -1,3 +1,7 @@
+/*---
+title: Cookie cutter
+description: A thin blade grown from any 2D outline, with a wide rim to press on.
+---*/
 // A cookie cutter from a 2D outline: a thin blade grown outwards from the shape with offset(), and a
 // wide rim to press on. Prints rim down with the cutting edge up, no supports.
 //

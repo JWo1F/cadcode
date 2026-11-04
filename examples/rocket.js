@@ -1,3 +1,7 @@
+/*---
+title: Rocket
+description: A retro model rocket with swept fins, portholes and a nozzle, printed in one piece.
+---*/
 // A retro model rocket: a turned body with an ogive nose, four swept fins it stands on, a nozzle
 // and two portholes. Prints in one piece standing up: the fin feet and the nozzle rim are on the
 // bed, and the boat tail above the nozzle widens at 45° so nothing hangs in the air.

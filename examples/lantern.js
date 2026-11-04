@@ -1,3 +1,7 @@
+/*---
+title: Lantern
+description: A hexagonal tealight lantern with honeycomb windows and a roof that drops on.
+---*/
 import { circle, cube, cylinder, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });

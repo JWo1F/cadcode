@@ -1,3 +1,7 @@
+/*---
+title: Planter
+description: A twisted, faceted plant pot with a drainage hole and a matching saucer.
+---*/
 // A faceted plant pot: a twelve-sided star extruded with a twist and a flare, with a drainage hole,
 // channels underneath so water can reach it, and a saucer that follows its outline.
 // Both print as they stand, no supports; the pot's flare stays well under 45°.

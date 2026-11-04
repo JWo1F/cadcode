@@ -1,3 +1,7 @@
+/*---
+title: Keycap
+description: A sloped, dished keycap with the cross stem for Cherry MX style switches.
+---*/
 // Keyboard keycap for Cherry MX style switches: sloped sides, a top tilted towards the typist with
 // a cylindrical dish across it, and the standard cross stem. The assembly shows it seated on a
 // switch. Prints stem up, resting on the two edges of the dish; turn on supports touching the bed

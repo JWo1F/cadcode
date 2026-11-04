@@ -1,3 +1,7 @@
+/*---
+title: L-bracket
+description: A shelf bracket with a gusset, a filleted corner and countersunk screw holes.
+---*/
 // Shelf L-bracket: a wall leg and a shelf leg with a filleted inside corner, a triangular gusset
 // between them and countersunk holes for 4 mm wood screws on both legs.
 // Prints lying on the shelf leg; the countersinks face up on the shelf leg and sideways on the wall leg.

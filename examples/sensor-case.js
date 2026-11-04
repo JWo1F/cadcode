@@ -1,3 +1,7 @@
+/*---
+title: Sensor case
+description: A box and lid for a Pro Micro board, a Li-ion cell and a climate sensor.
+---*/
 // Sensor case: nRF52840 Pro Micro + Li-ion 12x30 + 15x15 T/H/P sensor.
 // FDM print, 0.4 nozzle, 0.12 layer. Box prints bottom down, lid prints top down.
 //

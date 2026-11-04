@@ -1,3 +1,7 @@
+/*---
+title: Soap dish
+description: An oval dish with draining ribs, standing in an optional drip tray.
+---*/
 // Oval soap dish: a soft, flared bowl with ribs that hold the bar off the floor and slots between
 // them that let the water through, and an optional drip tray it stands in on four little posts.
 // Both are a half cross-section revolved and then stretched into an oval. They print as they stand.

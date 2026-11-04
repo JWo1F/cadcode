@@ -1,3 +1,7 @@
+/*---
+title: Stacking bin
+description: A parts bin with a front scoop and a label shelf that stacks without sliding.
+---*/
 // Stacking parts bin: a rounded tub with a curved scoop where the floor meets the front wall, a
 // label shelf on the front, and a stepped base that drops into the top of the bin below so a stack
 // cannot slide apart. Prints as it stands; the step and the shelf are 45° underneath.

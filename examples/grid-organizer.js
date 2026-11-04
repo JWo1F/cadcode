@@ -1,3 +1,7 @@
+/*---
+title: Grid organizer
+description: A drawer tray of pockets with finger scoops, any number of rows and columns.
+---*/
 import { cylinder, hull, product, range, setResolution, sphere, square } from 'cadcode';
 
 setResolution({ fn: 48 });

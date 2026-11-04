@@ -1,3 +1,7 @@
+/*---
+title: Raspberry Pi 3 case
+description: A base with port windows and a snap-on cover for the Pi 3 Model B+.
+---*/
 // Raspberry Pi 3 Model B+ case: a base with the port windows and a cover that snaps onto it.
 // Board dimensions from the official mechanical drawing. Base prints bottom down, cover top down.
 //

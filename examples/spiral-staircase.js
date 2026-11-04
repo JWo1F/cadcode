@@ -1,3 +1,7 @@
+/*---
+title: Spiral staircase
+description: A desk model with wedge treads, balusters and a handrail around a column.
+---*/
 import { cylinder, hull, polygon, range, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 48 });

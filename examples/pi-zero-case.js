@@ -1,3 +1,7 @@
+/*---
+title: Raspberry Pi Zero case
+description: A case for the Pi Zero and Zero 2 W with a sliding lid that clicks shut.
+---*/
 // Raspberry Pi Zero / Zero 2 W case with a sliding lid that clicks shut.
 // Board dimensions from the official mechanical drawing. Both parts print as they sit in use.
 //
