@@ -31,10 +31,26 @@ body {
   display: block;
 }
 
-.bar {
+/* Toolbar on the left, program output on the right; they share one row so they never overlap. */
+.top {
   position: fixed;
   top: 12px;
   left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.top > * {
+  pointer-events: auto;
+}
+
+.bar {
+  flex: 0 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -44,7 +60,10 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  max-width: calc(100vw - 24px);
+}
+
+.bar > :not(.file) {
+  flex-shrink: 0;
 }
 
 .brand {
@@ -53,13 +72,23 @@ body {
 }
 
 .file {
+  display: flex;
+  min-width: 0;
   color: var(--muted);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 12px;
-  max-width: 32vw;
   white-space: nowrap;
+}
+
+/* A long path gives up its directory first; the file name always stays. */
+.file .dir {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.file .name {
+  flex-shrink: 0;
 }
 
 .part {
@@ -142,10 +171,9 @@ select:hover {
 }
 
 .logs {
-  position: fixed;
-  right: 12px;
-  top: 12px;
-  max-width: min(420px, calc(100vw - 24px));
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(420px, 40vw);
   max-height: 40vh;
   overflow: auto;
   padding: 8px 10px;
@@ -179,7 +207,10 @@ select:hover {
     display: none;
   }
   .logs {
-    top: auto;
+    position: fixed;
+    left: 12px;
+    right: 12px;
     bottom: 40px;
+    max-width: none;
   }
 }

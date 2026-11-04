@@ -280,7 +280,10 @@ function connect() {
     const { header } = frame;
     if (fileKey !== header.file) {
       fileKey = header.file;
-      fileEl.textContent = header.file;
+      const slash = header.file.lastIndexOf('/') + 1;
+      fileEl.querySelector('.dir').textContent = header.file.slice(0, slash);
+      fileEl.querySelector('.name').textContent = header.file.slice(slash);
+      fileEl.title = header.file;
       document.title = `${header.file} · cadcode`;
     }
     showParts(header.partNames, header.part);

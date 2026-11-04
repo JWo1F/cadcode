@@ -17,24 +17,34 @@
   <body>
     <canvas id="view"></canvas>
 
-    <header class="bar">
-      <span class="brand">cadcode</span>
-      <span id="file" class="file"></span>
-      <label class="part">
-        <span>part</span>
-        <select id="part"></select>
-      </label>
-      <span id="status" class="status" data-state="connecting">connecting</span>
-      <button id="fit" type="button" title="Fit model to view (F)">Fit</button>
-    </header>
+    <div class="top">
+      <header class="bar">
+        <span class="brand">cadcode</span>
+        <span id="file" class="file"
+          ><span class="dir"></span><span class="name"></span
+        ></span>
+        <label class="part">
+          <span>part</span>
+          <select id="part"></select>
+        </label>
+        <span id="status" class="status" data-state="connecting"
+          >connecting</span
+        >
+        <button id="fit" type="button" title="Fit model to view (F)">
+          Fit
+        </button>
+      </header>
+
+      <section id="logs" class="logs" hidden></section>
+    </div>
 
     <section id="error" class="error" hidden>
       <pre id="error-text"></pre>
     </section>
 
-    <section id="logs" class="logs" hidden></section>
-
-    <footer class="hint">drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit</footer>
+    <footer class="hint">
+      drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit
+    </footer>
 
     <script type="module" src="/viewer.js"></script>
   </body>
