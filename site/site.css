@@ -214,11 +214,22 @@ p {
   border-color: rgba(20, 30, 40, 0.3);
 }
 
+.grid strong,
 .grid span {
   display: block;
-  margin-top: 8px;
   padding: 0 4px;
+}
+
+.grid strong {
+  margin-top: 10px;
   font-weight: 600;
+}
+
+.grid span {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .foot {

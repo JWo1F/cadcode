@@ -18,14 +18,34 @@ const CLI = path.join(ROOT, 'src/cli.js');
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(ASSETS, { recursive: true });
 
-// Examples, for the playground's picker.
-const examples = Object.fromEntries(
+// Every example opens with a frontmatter block — `key: value` lines between /*--- and ---*/ —
+// that names it for the gallery. The playground gets the code without it.
+const FRONTMATTER = /^\/\*---\n([\s\S]*?)\n---\*\/\n/;
+
+const readExample = (file) => {
+  const source = fs.readFileSync(path.join(EXAMPLES, file), 'utf8');
+  const match = source.match(FRONTMATTER);
+  if (!match) throw new Error(`examples/${file} has no frontmatter`);
+  const meta = Object.fromEntries(
+    match[1].split('\n').map((line) => {
+      const colon = line.indexOf(':');
+      return [line.slice(0, colon).trim(), line.slice(colon + 1).trim()];
+    }),
+  );
+  for (const key of ['title', 'description']) if (!meta[key]) throw new Error(`examples/${file} has no ${key} in its frontmatter`);
+  return { meta, code: source.slice(match[0].length) };
+};
+
+const exampleFiles = Object.fromEntries(
   fs
     .readdirSync(EXAMPLES)
     .filter((file) => file.endsWith('.js'))
     .sort()
-    .map((file) => [file.replace(/\.js$/, ''), fs.readFileSync(path.join(EXAMPLES, file), 'utf8')]),
+    .map((file) => [file.replace(/\.js$/, ''), readExample(file)]),
 );
+
+// Examples, for the playground's picker.
+const examples = Object.fromEntries(Object.entries(exampleFiles).map(([name, { code }]) => [name, code]));
 
 // The library's typings, generated from its JSDoc, for the editor's completion and hovers.
 const typesDir = fs.mkdtempSync(path.join(DIST, '.types-'));
@@ -103,8 +123,12 @@ for (const name of Object.keys(examples)) {
   });
 }
 
-const cards = Object.keys(examples)
-  .map((name) => `<a href="playground.html?example=${name}"><img src="gallery/${name}.png" alt="${name}" width="640" height="480" loading="lazy" /><span>${name}</span></a>`)
+const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const cards = Object.entries(exampleFiles)
+  .map(([name, { meta }]) => {
+    const title = escapeHtml(meta.title);
+    return `<a href="playground.html?example=${name}"><img src="gallery/${name}.png" alt="${title}" width="640" height="480" loading="lazy" /><strong>${title}</strong><span>${escapeHtml(meta.description)}</span></a>`;
+  })
   .join('\n');
 fs.writeFileSync(path.join(DIST, 'index.html'), fs.readFileSync(path.join(SITE, 'index.html'), 'utf8').replace('<!-- gallery -->', cards));
 fs.writeFileSync(
