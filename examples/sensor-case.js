@@ -114,6 +114,9 @@ export default (p) => {
           .rotate([0, 90, 0])
           .translate([-wall - 1, usbCy, usbCz]),
 
+        // Fingernail notch under the lid's one: a gap to pry the lid up from, 0.6 mm of wall left inside
+        cube([wall - 0.6 + 1, 10, 1.2 + 1]).translate([-wall - 1, iW / 2 - 5, iH - 1.2]),
+
         // Snap grooves
         product(bumpXs, [0, iW]).map(([x, y]) => snapLine(bumpLen + 1).translate([x, y, iH - lipD / 2])),
 
