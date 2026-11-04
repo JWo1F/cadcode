@@ -150,9 +150,6 @@ export default (p) => {
 
       // Sensor pad
       cube([sensorS - 4, sensorS - 4, sensorPadH]).translate([sx0 + (sensL - sensorS) / 2 + 2, (iW - sensorS) / 2 + 2, 0]),
-
-      // Feet, so air reaches the floor pores
-      product([3, iL - 3], [3, iW - 3]).map(([x, y]) => cylinder({ d: 5, h: 1.5 }).translate([x, y, -floorT - 1.5])),
     );
 
   // In assembly coordinates: the lid's underside is at z = iH
@@ -205,7 +202,7 @@ export default (p) => {
   // Lid flipped top-down for printing
   const lidForPrint = () => lid().translate([0, -iW, 0]).rotate([180, 0, 0]);
 
-  console.log(`Outer size: ${iL + 2 * wall} x ${iW + 2 * wall} x ${iH + floorT + lidT + 1.5} mm (with feet)`);
+  console.log(`Outer size: ${iL + 2 * wall} x ${iW + 2 * wall} x ${iH + floorT + lidT} mm`);
 
   return {
     assembly: () => [box().color('lightgray', 0.5), lid().translate([0, 0, 8]).color('orange', 0.35), dummies()],
