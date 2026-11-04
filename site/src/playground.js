@@ -216,6 +216,64 @@ exampleSelect.addEventListener('change', () => {
 
 partSelect.addEventListener('change', evaluate);
 
+// --- Panes -------------------------------------------------------------------
+// The divider resizes the halves; the Model and Code buttons hide one of them.
+// At most one is hidden, so hiding one shows the other. Both are remembered.
+
+const LAYOUT_KEY = 'cadcode:playground:layout';
+const split = document.querySelector('.split');
+const divider = document.getElementById('divider');
+const paneButtons = { view: document.getElementById('show-view'), code: document.getElementById('show-code') };
+const stacked = matchMedia('(max-width: 720px)'); // phones put the model above the code
+
+let layout = { split: 50, hide: null };
+try {
+  layout = { ...layout, ...JSON.parse(localStorage.getItem(LAYOUT_KEY)) };
+} catch {
+  // No saved layout: the default halves.
+}
+
+function applyLayout() {
+  split.style.setProperty('--split', `${layout.split}%`);
+  if (layout.hide) split.dataset.hide = layout.hide;
+  else delete split.dataset.hide;
+  for (const [pane, button] of Object.entries(paneButtons)) button.setAttribute('aria-pressed', String(layout.hide !== pane));
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  } catch {
+    // Storage unavailable: the layout just isn't remembered.
+  }
+}
+
+for (const [pane, button] of Object.entries(paneButtons)) {
+  button.addEventListener('click', () => {
+    layout.hide = layout.hide === pane ? null : pane;
+    applyLayout();
+  });
+}
+
+divider.addEventListener('pointerdown', (event) => {
+  divider.setPointerCapture(event.pointerId);
+  split.classList.add('dragging');
+});
+divider.addEventListener('pointermove', (event) => {
+  if (!divider.hasPointerCapture(event.pointerId)) return;
+  const box = split.getBoundingClientRect();
+  const share = stacked.matches ? (event.clientY - box.top) / box.height : (event.clientX - box.left) / box.width;
+  layout.split = Math.round(Math.min(Math.max(share, 0.15), 0.85) * 1000) / 10;
+  split.style.setProperty('--split', `${layout.split}%`);
+});
+divider.addEventListener('lostpointercapture', () => {
+  split.classList.remove('dragging');
+  applyLayout();
+});
+divider.addEventListener('dblclick', () => {
+  layout.split = 50;
+  applyLayout();
+});
+
+applyLayout();
+
 // --- Toolbar -----------------------------------------------------------------
 
 /** The download name: the example the code came from, plus the part when there are several. */

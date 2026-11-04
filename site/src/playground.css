@@ -122,12 +122,66 @@ select:hover {
   background: var(--bad);
 }
 
-/* The model on the left, the code on the right. */
+/* The model on the left, the code on the right; --split is the model's share. */
 .split {
+  --split: 50%;
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: var(--split) 6px 1fr;
+}
+
+.split[data-hide] {
+  grid-template-columns: 1fr;
+}
+
+.split[data-hide] .divider,
+.split[data-hide='view'] .view,
+.split[data-hide='code'] .code {
+  display: none;
+}
+
+.split.dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* The canvas and the editor would swallow pointer events mid-drag. */
+.split.dragging > :not(.divider) {
+  pointer-events: none;
+}
+
+.divider {
+  cursor: col-resize;
+  background: var(--border);
+  touch-action: none;
+}
+
+.divider:hover,
+.split.dragging .divider {
+  background: rgba(20, 30, 40, 0.28);
+}
+
+.panes {
+  display: inline-flex;
+}
+
+.panes button {
+  border-radius: 0;
+}
+
+.panes button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.panes button:last-child {
+  border-radius: 0 6px 6px 0;
+  margin-left: -1px;
+}
+
+.panes button[aria-pressed='false'] {
+  color: var(--muted);
+  background: var(--bg);
 }
 
 .view {
@@ -147,7 +201,6 @@ select:hover {
 .code {
   min-width: 0;
   min-height: 0;
-  border-left: 1px solid var(--border);
   background: #fff;
 }
 
@@ -209,11 +262,14 @@ select:hover {
 @media (max-width: 720px) {
   .split {
     grid-template-columns: 1fr;
-    grid-template-rows: 45% 55%;
+    grid-template-rows: var(--split) 6px 1fr;
   }
-  .code {
-    border-left: 0;
-    border-top: 1px solid var(--border);
+  .split[data-hide] {
+    grid-template-rows: 1fr;
+  }
+  .split.dragging,
+  .divider {
+    cursor: row-resize;
   }
   .hint {
     display: none;

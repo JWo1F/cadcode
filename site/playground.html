@@ -21,6 +21,10 @@
       </label>
       <span id="status" class="status" data-state="loading">loading</span>
       <span class="spacer"></span>
+      <span class="panes" role="group" aria-label="Panes">
+        <button id="show-view" type="button" aria-pressed="true" title="Show or hide the model">Model</button>
+        <button id="show-code" type="button" aria-pressed="true" title="Show or hide the code">Code</button>
+      </span>
       <button id="fit" type="button" title="Fit model to view (F)">Fit</button>
       <button id="png" type="button" title="Save the current view as PNG">PNG</button>
       <button id="stl" type="button" title="Download the part as STL">STL</button>
@@ -37,6 +41,7 @@
         </section>
         <footer class="hint">drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit</footer>
       </section>
+      <div id="divider" class="divider" role="separator" aria-orientation="vertical" title="Drag to resize, double-click to reset"></div>
       <section id="editor" class="code"></section>
     </main>
 
