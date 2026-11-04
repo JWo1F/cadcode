@@ -23,9 +23,11 @@ const cadcodePlugin = {
  * gives the dev server the list of files to watch.
  */
 export function bundleOptions(entry) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-'));
+  // Real paths: on macOS the temp dir is behind a symlink, and source maps would
+  // otherwise resolve the program's path against the wrong base.
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-')));
   return {
-    entryPoints: [path.resolve(entry)],
+    entryPoints: [fs.realpathSync(entry)],
     outfile: path.join(dir, 'program.mjs'),
     bundle: true,
     format: 'esm',
@@ -67,9 +69,13 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
  * parameters that `overrides` may change.
  *
  * @param {string} bundlePath
- * @param {{ part?: string, overrides?: Record<string, unknown> }} [options]
+ * `fallbackToFirst` shows the first part instead of failing when `part` no longer
+ * exists — the dev server uses it so renaming a part doesn't blank the preview.
+ *
+ * @param {string} bundlePath
+ * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean }} [options]
  */
-export async function evaluateProgram(bundlePath, { part, overrides = {} } = {}) {
+export async function evaluateProgram(bundlePath, { part, overrides = {}, fallbackToFirst = false } = {}) {
   const mod = await import(`${pathToFileURL(bundlePath).href}?t=${Date.now()}`);
   if (mod.default === undefined) throw new Error('The program has no `export default`');
 
@@ -86,7 +92,7 @@ export async function evaluateProgram(bundlePath, { part, overrides = {} } = {})
   const partNames = Object.keys(parts);
   if (partNames.length === 0) throw new Error('The program defines no parts');
   const name = part && partNames.includes(part) ? part : partNames[0];
-  if (part && part !== name) throw new Error(`No part "${part}". Parts: ${partNames.join(', ')}`);
+  if (part && part !== name && !fallbackToFirst) throw new Error(`No part "${part}". Parts: ${partNames.join(', ')}`);
 
   const entry = parts[name];
   const model = typeof entry === 'function' ? await entry(params) : entry;

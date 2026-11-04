@@ -4,6 +4,8 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { bundleProgram, evaluateProgram, parseOverrides } from './core/program.js';
 
+process.setSourceMapsEnabled(true);
+
 const USAGE = `cadcode — code-first CAD
 
 Usage:
@@ -82,8 +84,13 @@ async function main() {
   }
 }
 
+const OWN_SOURCES = path.dirname(new URL(import.meta.url).pathname);
+
 main().catch((error) => {
   console.error(`cadcode: ${error.message}`);
+  // Point at the user's code: the first stack frame outside cadcode itself.
+  const where = error.stack?.split('\n').find((line) => line.trim().startsWith('at ') && !line.includes(OWN_SOURCES));
+  if (where) console.error(`  ${where.trim()}`);
   if (process.env.CADCODE_DEBUG) console.error(error.stack);
   process.exit(1);
 });
