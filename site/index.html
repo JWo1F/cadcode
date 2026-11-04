@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>cadcode · code-first CAD</title>
+    <title>cadcode · CAD for programmers</title>
     <meta
       name="description"
-      content="Write 3D-printable models in JavaScript, preview them live in the browser, export STL and PNG."
+      content="Model your 3D prints in JavaScript instead of learning a CAD program. Live preview, STL export, and every model lives in git."
     />
     <link rel="icon" href="favicon.ico" sizes="48x48" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -27,13 +27,14 @@
     <main>
       <section class="hero">
         <div class="pitch">
-          <h1>Code-first CAD</h1>
+          <h1>CAD for people who write code</h1>
           <p class="lead">
-            Write a model in JavaScript, see it live in the browser while you edit, and export STL for printing and PNG
-            for previews. There is no modeling UI: your editor is the CAD system.
+            You have a 3D printer and you know how to program. You shouldn't have to learn a CAD program to make a
+            bracket. With cadcode you describe the part in JavaScript, watch it update in the browser on every save, and
+            send the STL to your slicer.
           </p>
           <div class="actions">
-            <a class="button primary" href="playground.html">Open the playground</a>
+            <a class="button primary" href="playground.html">Try it in the browser</a>
             <a class="button" href="https://github.com/JWo1F/cadcode">GitHub</a>
           </div>
           <pre class="install"><code>npm install cadcode</code></pre>
@@ -45,58 +46,70 @@
 
       <section class="example">
         <div>
-          <h2>A model is a module</h2>
+          <h2>A box in a dozen lines</h2>
           <p>
-            Its default export is the model. The API keeps OpenSCAD's ideas — cube, cylinder, hull, difference,
-            <code>$fn</code> — so OpenSCAD models port line by line.
+            No sketches, constraints or toolbars. Sizes are numbers, so changing the box means changing a number, not
+            redrawing it.
           </p>
-          <pre><code>npx cadcode dev plate.js</code></pre>
+          <pre><code>npx cadcode dev box.js</code></pre>
           <p>
-            The dev viewer rebuilds the model on every save and swaps it into the page without touching the camera.
+            Keep the preview open next to your editor. Save the file and the model updates in place, at the same camera
+            angle.
           </p>
         </div>
-        <pre class="code"><code><span class="k">import</span> { cube, cylinder, difference } <span class="k">from</span> <span class="s">'cadcode'</span>;
+        <pre class="code"><code><span class="k">import</span> { cube } <span class="k">from</span> <span class="s">'cadcode'</span>;
 
-<span class="k">export default</span> difference(
-  cube([<span class="n">20</span>, <span class="n">20</span>, <span class="n">5</span>], { center: <span class="k">true</span> }),
-  cylinder({ d: <span class="n">6</span>, h: <span class="n">10</span>, center: <span class="k">true</span> }),
-);</code></pre>
+<span class="k">export const</span> params = {
+  width: <span class="n">60</span>,
+  depth: <span class="n">40</span>,
+  height: <span class="n">25</span>,
+  wall: <span class="n">2</span>,
+};
+
+<span class="k">export default</span> (p) =&gt;
+  cube([p.width, p.depth, p.height]).subtract(
+    cube([
+      p.width - <span class="n">2</span> * p.wall,
+      p.depth - <span class="n">2</span> * p.wall,
+      p.height,
+    ]).translate([p.wall, p.wall, p.wall]),
+  );</code></pre>
       </section>
 
       <section class="features">
         <article>
-          <h3>Watertight, always</h3>
+          <h3>Nothing new to learn</h3>
           <p>
-            Geometry runs on <a href="https://github.com/elalish/manifold">manifold</a>, the boolean engine recent
-            OpenSCAD uses. Every solid comes out printable.
+            Variables, loops and functions instead of menus and modes. If you can write JavaScript, you can model a part
+            tonight.
           </p>
         </article>
         <article>
-          <h3>Parameters and parts</h3>
+          <h3>Your models live in git</h3>
           <p>
-            Declare <code>params</code> and override them with <code>--set</code>. Export an object of named parts — an
-            assembly, a box, a lid — and pick one per export.
+            A model is a text file. Diff it, branch it, revert the change that broke the fit, and share it as a repo
+            instead of a binary project file.
           </p>
         </article>
         <article>
-          <h3>STL and PNG</h3>
+          <h3>Tweak, don't redraw</h3>
           <p>
-            <code>cadcode stl</code> writes binary STL for the slicer. <code>cadcode png</code> renders previews,
-            including a four-view sheet, without a browser.
+            Put the sizes in <code>params</code> and reprint a variant with <code>--set width=80</code>. Wall too thin
+            for your nozzle? Change one number.
           </p>
         </article>
         <article>
-          <h3>Just JavaScript</h3>
+          <h3>Ready for the slicer</h3>
           <p>
-            Loops, functions, helper files, npm packages and TypeScript all work, because a program is an ordinary
-            module.
+            Solids come out watertight, built on <a href="https://github.com/elalish/manifold">manifold</a>, the engine
+            recent OpenSCAD uses. <code>cadcode stl</code> writes the file, one per part.
           </p>
         </article>
       </section>
 
       <section id="examples" class="gallery">
         <h2>Examples</h2>
-        <p>Each one opens in the playground, where you can change it and download the STL.</p>
+        <p>Real things to print. Open any of them in the playground, change the code and download the STL.</p>
         <div class="grid">
           <!-- gallery -->
         </div>
