@@ -75,6 +75,8 @@ async function handle(message) {
       return dispatch(message.target === 'document' ? view.element.ownerDocument : view.element, message.event);
     case 'fit':
       return view.fitView();
+    case 'inset':
+      return view.setInset(message.inset);
     case 'set-camera':
       return view.setCamera(message.camera);
   }
@@ -88,11 +90,13 @@ async function handle(message) {
 }
 
 function createView({ canvas, colors, ...size }) {
+  // A null background leaves the canvas transparent, for the page to paint behind it.
   const { background = 0xeef0f3, gridMajor = 0xb9bec7, gridMinor = 0xd6d9df, edges = 0x2a2f36 } = colors ?? {};
   const element = new ElementProxy();
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setClearColor(background);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: background === null });
+  if (background === null) renderer.setClearColor(0x000000, 0);
+  else renderer.setClearColor(background);
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
@@ -127,9 +131,26 @@ function createView({ canvas, colors, ...size }) {
     if (width === 0 || height === 0) return;
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
+    applyProjection();
+  }
+
+  // The part of the canvas the page covers with a panel, on the right or the bottom.
+  // The view centres on what is left, so the model is never framed under the panel.
+  let inset = { right: 0, bottom: 0 };
+
+  function setInset(next) {
+    inset = { right: next.right ?? 0, bottom: next.bottom ?? 0 };
+    applyProjection();
+  }
+
+  function applyProjection() {
+    const { clientWidth: width, clientHeight: height } = element;
     camera.aspect = width / height;
+    if (inset.right || inset.bottom) camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
   }
+
   resize(size);
 
   let paused = false; // while a snapshot is being encoded
@@ -146,7 +167,11 @@ function createView({ canvas, colors, ...size }) {
   function fitView() {
     const sphere = modelSphere();
     if (sphere.isEmpty()) return;
-    const distance = (sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.15;
+    // Fit the sphere in the uncovered part of the canvas, by its narrower side.
+    const { clientWidth: width, clientHeight: height } = element;
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const visible = Math.min(Math.max(height - inset.bottom, 1), Math.max(width - inset.right, 1)) / height;
+    const distance = (sphere.radius / Math.sin(Math.atan(tanHalf * visible))) * 1.15;
     const direction = new THREE.Vector3(1, -1.3, 0.9).normalize();
     controls.target.copy(sphere.center);
     camera.position.copy(sphere.center).addScaledVector(direction, distance);
@@ -261,5 +286,5 @@ function createView({ canvas, colors, ...size }) {
     }
   }
 
-  return { element, resize, fitView, setCamera, showModel, snapshotPNG };
+  return { element, resize, setInset, fitView, setCamera, showModel, snapshotPNG };
 }

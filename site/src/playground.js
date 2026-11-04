@@ -15,12 +15,13 @@ const statusEl = document.getElementById('status');
 const errorEl = document.getElementById('error');
 const errorText = document.getElementById('error-text');
 const logsEl = document.getElementById('logs');
-const stamp = { name: document.getElementById('stamp-name'), size: document.getElementById('stamp-size'), mesh: document.getElementById('stamp-mesh') };
+const stage = document.getElementById('stage');
+const readout = { size: document.getElementById('readout-size'), mesh: document.getElementById('readout-mesh') };
 
 // The drafting-sheet colours of playground.css.
 const view = createScene(canvas, {
   workerUrl: new URL(workers['render-worker'], import.meta.url),
-  colors: { background: 0xeceee9, gridMajor: 0xa9b6c3, gridMinor: 0xd2d8da, edges: 0x1d3550 },
+  colors: { background: null, gridMajor: 0xc9ced5, gridMinor: 0xdfe2e6, edges: 0x1f2833 }, // the stage's CSS paints behind
 });
 
 let currentExample = ''; // the example the code came from, or '' for code from elsewhere
@@ -45,44 +46,47 @@ js.setCompilerOptions({
 });
 for (const [file, content] of Object.entries(typings)) js.addExtraLib(content, `file:///node_modules/cadcode/${file}`);
 
-// Graphite ink on paper, to match the sheet; strings and numbers in the model's filament.
-monaco.editor.defineTheme('drafting', {
+// Slate ink on the white panel; strings and numbers in warm filament tones.
+monaco.editor.defineTheme('studio', {
   base: 'vs',
   inherit: true,
   rules: [
-    { token: '', foreground: '1d3550' },
-    { token: 'comment', foreground: '8592a0', fontStyle: 'italic' },
-    { token: 'keyword', foreground: '1d3550', fontStyle: 'bold' },
+    { token: '', foreground: '1f2833' },
+    { token: 'comment', foreground: '98a1ac', fontStyle: 'italic' },
+    { token: 'keyword', foreground: '1f2833', fontStyle: 'bold' },
     { token: 'string', foreground: '9a6a00' },
     { token: 'number', foreground: 'b25a12' },
-    { token: 'identifier', foreground: '1d3550' },
-    { token: 'delimiter', foreground: '5b6b7c' },
+    { token: 'identifier', foreground: '1f2833' },
+    { token: 'delimiter', foreground: '77818d' },
   ],
   colors: {
-    'editor.background': '#f7f8f5',
-    'editor.foreground': '#1d3550',
-    'editorLineNumber.foreground': '#a9b3bd',
-    'editorLineNumber.activeForeground': '#1d3550',
-    'editor.lineHighlightBackground': '#eceee9',
+    'editor.background': '#ffffff',
+    'editor.foreground': '#1f2833',
+    'editorLineNumber.foreground': '#c3c9d0',
+    'editorLineNumber.activeForeground': '#77818d',
+    'editor.lineHighlightBackground': '#f5f6f8',
     'editor.lineHighlightBorder': '#00000000',
-    'editor.selectionBackground': '#f2c14e66',
-    'editor.inactiveSelectionBackground': '#f2c14e33',
-    'editorCursor.foreground': '#1d3550',
-    'editorIndentGuide.background1': '#1d355014',
-    'editorIndentGuide.activeBackground1': '#1d355040',
-    'editorGutter.background': '#f7f8f5',
+    'editor.selectionBackground': '#f2c14e55',
+    'editor.inactiveSelectionBackground': '#f2c14e2a',
+    'editorCursor.foreground': '#1f2833',
+    'editorIndentGuide.background1': '#1f283310',
+    'editorIndentGuide.activeBackground1': '#1f283330',
+    'editorGutter.background': '#ffffff',
+    'scrollbarSlider.background': '#1f283318',
+    'scrollbarSlider.hoverBackground': '#1f283328',
   },
 });
 
 const model = monaco.editor.createModel('', 'javascript', monaco.Uri.parse('file:///program.js'));
 const editor = monaco.editor.create(document.getElementById('editor'), {
   model,
-  theme: 'drafting',
+  theme: 'studio',
   automaticLayout: true,
   fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
   fontSize: 13,
   lineHeight: 21,
-  padding: { top: 12 },
+  padding: { top: 8, bottom: 16 },
+  lineNumbersMinChars: 3,
   renderLineHighlight: 'line',
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -139,6 +143,12 @@ function setStatus(state, text = state) {
   statusEl.textContent = text;
 }
 
+/** While the code runs the stage shows it; see "Loading" in playground.css. */
+function setBusy(busy) {
+  if (busy) stage.dataset.busy = '';
+  else delete stage.dataset.busy;
+}
+
 function showError(message) {
   errorText.textContent = message;
   errorEl.hidden = !message;
@@ -158,18 +168,11 @@ function showLogs(logs = []) {
 
 const formatMm = (n) => (Math.round(n * 10) / 10).toLocaleString();
 
-/** The title block's name: the example's title, and the part when there are several. */
-function showStampName() {
-  const part = shown && shown.partNames.length > 1 ? ` / ${shown.part}` : '';
-  stamp.name.textContent = (catalog[currentExample]?.title ?? 'Your model') + part;
-  stamp.name.title = stamp.name.textContent;
-}
-
-/** Fills the title block: the model's name, its overall size and its mesh. */
-function showStamp({ triangles, size }) {
-  showStampName();
-  stamp.size.textContent = size ? `${size.map(formatMm).join(' × ')} mm` : 'empty';
-  stamp.mesh.textContent = `${triangles.toLocaleString()} triangles`;
+/** Fills the readout: the model's overall size, large, and its mesh. */
+function showReadout({ triangles, size }) {
+  readout.size.replaceChildren(size ? size.map(formatMm).join(' × ') : 'Empty');
+  if (size) readout.size.append(Object.assign(document.createElement('small'), { textContent: 'mm' }));
+  readout.mesh.textContent = `${triangles.toLocaleString()} triangles`;
 }
 
 function showParts(names, current) {
@@ -221,7 +224,8 @@ let notice = ''; // shown in place of the error after the next good run, e.g. a 
 
 async function evaluate() {
   preview?.terminate();
-  setStatus('evaluating');
+  setStatus('evaluating', 'building');
+  setBusy(true);
   let worker;
   const result = await run({ code: model.getValue(), part: partSelect.value || undefined }, (w) => (preview = worker = w));
   if (preview !== worker) return; // a newer run took over
@@ -229,6 +233,7 @@ async function evaluate() {
 
   showLogs(result.logs);
   if (!result.ok) {
+    setBusy(false);
     setStatus('error');
     showError(result.stack?.includes(result.message) ? result.stack : result.message);
     markError(result.stack);
@@ -240,8 +245,10 @@ async function evaluate() {
   markError(null);
   showParts(result.partNames, result.part);
   const mesh = await view.showModel(result.groups); // the view's worker builds the meshes
-  if (shown !== result) return; // a newer run was shown meanwhile
-  showStamp(mesh);
+  if (shown !== result || preview) return; // a newer run was shown meanwhile, or is under way
+  setBusy(false);
+  delete stage.dataset.empty;
+  showReadout(mesh);
   setStatus('ready', `${result.ms} ms`);
   if (fitNext) {
     fitNext = false;
@@ -287,7 +294,6 @@ pickerList.replaceChildren(...pickerItems);
 function setCurrentExample(name) {
   currentExample = name in examples ? name : '';
   shown = null; // until the new code has run
-  showStampName();
   for (const item of pickerItems) item.setAttribute('aria-current', String(item.dataset.name === currentExample));
   document.getElementById('picker-title').textContent = catalog[currentExample]?.title ?? 'Examples';
   const thumb = document.getElementById('picker-thumb');
@@ -338,28 +344,43 @@ picker.addEventListener('toggle', (event) => {
 
 partSelect.addEventListener('change', evaluate);
 
-// --- Panes -------------------------------------------------------------------
-// The divider resizes the halves; the Model and Code buttons hide one of them.
-// At most one is hidden, so hiding one shows the other. Both are remembered.
+// --- Code panel ----------------------------------------------------------------
+// The code floats on the stage: on the right, or across the bottom on phones. Its
+// edge resizes it and the Code button hides it; both are remembered. The view is
+// told how much of the canvas the panel covers, and centres the model on the rest.
 
-const LAYOUT_KEY = 'cadcode:playground:layout';
-const split = document.querySelector('.split');
-const divider = document.getElementById('divider');
-const paneButtons = { view: document.getElementById('show-view'), code: document.getElementById('show-code') };
-const stacked = matchMedia('(max-width: 720px)'); // phones put the model above the code
+const LAYOUT_KEY = 'cadcode:playground:panel';
+const panel = document.getElementById('panel');
+const grip = document.getElementById('grip');
+const codeButton = document.getElementById('toggle-code');
+const stacked = matchMedia('(max-width: 720px)'); // phones lay the code across the bottom
 
-let layout = { split: 50, hide: null };
+const DEFAULT_LAYOUT = { width: 0.44, height: 0.48, code: true }; // shares of the window
+let layout = { ...DEFAULT_LAYOUT };
 try {
   layout = { ...layout, ...JSON.parse(localStorage.getItem(LAYOUT_KEY)) };
 } catch {
-  // No saved layout: the default halves.
+  // No saved layout: the defaults.
+}
+
+/** Tells the stylesheet and the view how much of the stage the panel covers. */
+function measurePanel() {
+  const box = panel.getBoundingClientRect();
+  const right = layout.code && !stacked.matches ? Math.round(innerWidth - box.left) : 0;
+  const bottom = layout.code && stacked.matches ? Math.round(innerHeight - box.top) : 0;
+  stage.style.setProperty('--panel-cover', `${right}px`);
+  stage.style.setProperty('--panel-cover-bottom', `${bottom}px`);
+  // On phones the readout and tools stand above the panel, across the whole width.
+  const footer = stacked.matches ? document.querySelector('.bottom-left').offsetHeight + 12 : 0;
+  view.setInset({ right, bottom: bottom + footer });
 }
 
 function applyLayout() {
-  split.style.setProperty('--split', `${layout.split}%`);
-  if (layout.hide) split.dataset.hide = layout.hide;
-  else delete split.dataset.hide;
-  for (const [pane, button] of Object.entries(paneButtons)) button.setAttribute('aria-pressed', String(layout.hide !== pane));
+  stage.style.setProperty('--panel-width', `${layout.width * 100}vw`);
+  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
+  stage.dataset.code = layout.code ? 'shown' : 'hidden';
+  codeButton.setAttribute('aria-pressed', String(layout.code));
+  measurePanel();
   try {
     localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
   } catch {
@@ -367,33 +388,35 @@ function applyLayout() {
   }
 }
 
-for (const [pane, button] of Object.entries(paneButtons)) {
-  button.addEventListener('click', () => {
-    layout.hide = layout.hide === pane ? null : pane;
-    applyLayout();
-  });
-}
-
-divider.addEventListener('pointerdown', (event) => {
-  divider.setPointerCapture(event.pointerId);
-  split.classList.add('dragging');
-});
-divider.addEventListener('pointermove', (event) => {
-  if (!divider.hasPointerCapture(event.pointerId)) return;
-  const box = split.getBoundingClientRect();
-  const share = stacked.matches ? (event.clientY - box.top) / box.height : (event.clientX - box.left) / box.width;
-  layout.split = Math.round(Math.min(Math.max(share, 0.15), 0.85) * 1000) / 10;
-  split.style.setProperty('--split', `${layout.split}%`);
-});
-divider.addEventListener('lostpointercapture', () => {
-  split.classList.remove('dragging');
+codeButton.addEventListener('click', () => {
+  layout.code = !layout.code;
   applyLayout();
-});
-divider.addEventListener('dblclick', () => {
-  layout.split = 50;
-  applyLayout();
+  if (layout.code) editor.focus();
 });
 
+grip.addEventListener('pointerdown', (event) => {
+  grip.setPointerCapture(event.pointerId);
+  stage.classList.add('dragging');
+});
+grip.addEventListener('pointermove', (event) => {
+  if (!grip.hasPointerCapture(event.pointerId)) return;
+  if (stacked.matches) layout.height = Math.min(Math.max((innerHeight - event.clientY) / innerHeight, 0.2), 0.8);
+  else layout.width = Math.min(Math.max((innerWidth - event.clientX) / innerWidth, 0.25), 0.75);
+  stage.style.setProperty('--panel-width', `${layout.width * 100}vw`);
+  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
+  measurePanel();
+});
+grip.addEventListener('lostpointercapture', () => {
+  stage.classList.remove('dragging');
+  applyLayout();
+});
+grip.addEventListener('dblclick', () => {
+  layout = { ...DEFAULT_LAYOUT, code: true };
+  applyLayout();
+});
+
+window.addEventListener('resize', measurePanel);
+stacked.addEventListener('change', measurePanel);
 applyLayout();
 
 // --- Toolbar -----------------------------------------------------------------

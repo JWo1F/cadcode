@@ -10,69 +10,65 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=B612:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="assets/playground.css" />
     <script defer src="https://analytics.ivashkin.dev/t.js" data-site="ff_3PPzDAFwcIOQidFkia"></script>
   </head>
   <body>
-    <header class="bar">
-      <a class="brand" href="./" title="cadcode home"><img src="favicon.svg" alt="" width="24" height="24" />cadcode</a>
+    <!-- The whole page is the stage; everything else floats on it. -->
+    <main id="stage" class="stage" data-empty>
+      <canvas id="view"></canvas>
+      <div class="progress" aria-hidden="true"></div>
+      <p class="empty">Building the model…</p>
 
-      <button id="picker-open" class="picker-open" type="button" popovertarget="picker" aria-haspopup="dialog">
-        <img id="picker-thumb" alt="" width="40" height="30" />
-        <span id="picker-title">Examples</span>
-        <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
-      </button>
+      <header class="corner top-left">
+        <a class="brand" href="./" title="cadcode home"><img src="favicon.svg" alt="" width="26" height="26" />cadcode</a>
+        <button id="picker-open" class="pill picker-open" type="button" popovertarget="picker" aria-haspopup="dialog">
+          <img id="picker-thumb" alt="" width="36" height="27" />
+          <span id="picker-title">Examples</span>
+          <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+        </button>
+        <label class="pill field" hidden>
+          <span>Part</span>
+          <select id="part"></select>
+        </label>
+      </header>
 
-      <label class="field" hidden>
-        <span>Part</span>
-        <select id="part"></select>
-      </label>
+      <nav class="corner top-right">
+        <a class="link" href="https://github.com/JWo1F/cadcode">GitHub</a>
+        <button id="share" class="pill primary" type="button" title="Copy a link to this code">Copy link</button>
+        <button id="toggle-code" class="pill" type="button" aria-pressed="true" aria-controls="panel" title="Show or hide the code">Code</button>
+      </nav>
 
-      <span class="spacer"></span>
+      <section id="logs" class="card logs" hidden></section>
 
-      <span class="panes" role="group" aria-label="Panes">
-        <button id="show-view" type="button" aria-pressed="true" title="Show or hide the model">Model</button>
-        <button id="show-code" type="button" aria-pressed="true" title="Show or hide the code">Code</button>
-      </span>
-      <button id="share" class="share" type="button" title="Copy a link to this code">Copy link</button>
-      <a class="github" href="https://github.com/JWo1F/cadcode">GitHub</a>
-    </header>
+      <footer class="corner bottom-left">
+        <section id="error" class="card error" hidden>
+          <pre id="error-text"></pre>
+        </section>
+        <div class="readout" aria-live="polite">
+          <p id="readout-size" class="size">&nbsp;</p>
+          <p class="meta"><span id="readout-mesh"></span><span id="status" class="status" data-state="loading">loading</span></p>
+        </div>
+        <div class="tools" role="group" aria-label="View">
+          <button id="fit" class="pill" type="button" title="Fit the model to the view (F)">Fit</button>
+          <button id="png" class="pill" type="button" title="Save the current view as PNG">PNG</button>
+          <button id="stl" class="pill" type="button" title="Download the part as STL">STL</button>
+        </div>
+        <p class="hint">Drag to rotate, shift-drag to pan, scroll to zoom</p>
+      </footer>
+
+      <aside id="panel" class="panel">
+        <div id="grip" class="grip" role="separator" aria-orientation="vertical" title="Drag to resize, double-click to reset"></div>
+        <section id="editor" class="code"></section>
+      </aside>
+    </main>
 
     <div id="picker" class="picker" popover>
       <input id="picker-filter" class="picker-filter" type="search" placeholder="Find an example" aria-label="Find an example" autocomplete="off" />
       <div id="picker-list" class="picker-list"></div>
       <p id="picker-empty" class="picker-empty" hidden>No example matches. Try a shorter word.</p>
     </div>
-
-    <main class="split">
-      <section class="view">
-        <canvas id="view"></canvas>
-        <div class="sheet" aria-hidden="true"></div>
-
-        <p class="hint">Drag to rotate, shift-drag to pan, scroll to zoom</p>
-        <section id="logs" class="logs" hidden></section>
-
-        <div class="tools" role="group" aria-label="View">
-          <button id="fit" type="button" title="Fit the model to the view (F)">Fit</button>
-          <button id="png" type="button" title="Save the current view as PNG">PNG</button>
-          <button id="stl" type="button" title="Download the part as STL">STL</button>
-        </div>
-
-        <section id="error" class="error" hidden>
-          <pre id="error-text"></pre>
-        </section>
-
-        <table class="stamp" aria-label="Model">
-          <tr><td colspan="2" id="stamp-name" class="stamp-name"></td></tr>
-          <tr><th>Size</th><td id="stamp-size">—</td></tr>
-          <tr><th>Mesh</th><td id="stamp-mesh">—</td></tr>
-          <tr><th>Run</th><td><span id="status" class="status" data-state="loading">loading</span></td></tr>
-        </table>
-      </section>
-      <div id="divider" class="divider" role="separator" aria-orientation="vertical" title="Drag to resize, double-click to reset"></div>
-      <section id="editor" class="code"></section>
-    </main>
 
     <script type="module" src="assets/playground.js"></script>
   </body>

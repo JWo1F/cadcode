@@ -3,7 +3,7 @@
 // so building a large mesh never stalls the page. This side hands the canvas over,
 // forwards input and size, and turns commands into messages:
 //
-//   to the worker:   init, resize, event, show, fit, snapshot, set-camera
+//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera
 //   from the worker: reply (to show and snapshot), camera (on every move), cursor
 
 /** The event fields OrbitControls reads. */
@@ -18,7 +18,8 @@ const copyEvent = (event) => {
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {{ workerUrl: string | URL, colors?: { background?: number, gridMajor?: number, gridMinor?: number, edges?: number }, onCamera?: (camera: { position: number[], target: number[], zoom: number }) => void }} options
- *   The colours default to the dev viewer's; onCamera hears of every camera move.
+ *   The colours default to the dev viewer's, and a null background leaves the canvas
+ *   transparent; onCamera hears of every camera move.
  */
 export function createScene(canvas, { workerUrl, colors, onCamera }) {
   const worker = new Worker(workerUrl, { type: 'module', name: 'render' });
@@ -104,6 +105,10 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
     },
     fitView() {
       worker.postMessage({ type: 'fit' });
+    },
+    /** How much of the canvas a panel covers, in CSS pixels; the view centres on the rest. */
+    setInset(inset) {
+      worker.postMessage({ type: 'inset', inset });
     },
     setCamera(camera) {
       worker.postMessage({ type: 'set-camera', camera });
