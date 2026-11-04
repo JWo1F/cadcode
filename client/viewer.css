@@ -112,6 +112,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: progress;
+  opacity: 0.55;
+}
+
 button:hover,
 select:hover {
   border-color: rgba(20, 30, 40, 0.28);

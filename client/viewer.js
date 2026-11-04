@@ -246,6 +246,29 @@ function showParts(names, current) {
   partSelect.replaceChildren(...names.map((name) => new Option(name, name, false, name === current)));
 }
 
+// --- Download ----------------------------------------------------------------
+// Fetched rather than navigated to, so a failing program shows its error here
+// instead of replacing the viewer.
+
+const downloadButton = document.getElementById('download');
+
+downloadButton.addEventListener('click', async () => {
+  downloadButton.disabled = true;
+  try {
+    const response = await fetch(`/stl?part=${encodeURIComponent(partSelect.value)}`);
+    if (!response.ok) throw new Error(await response.text());
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(await response.blob());
+    link.download = response.headers.get('Content-Disposition').match(/filename="(.+)"/)[1];
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href)); // after the browser has started the download
+  } catch (error) {
+    showError(`STL download failed: ${error.message}`);
+  } finally {
+    downloadButton.disabled = false;
+  }
+});
+
 // --- Connection --------------------------------------------------------------
 
 let socket = null;

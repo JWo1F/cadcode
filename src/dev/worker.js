@@ -1,10 +1,12 @@
-// Evaluates a program in a worker thread. Each evaluation gets a fresh worker:
+// Evaluates a program in a worker thread, for the viewer's meshes or, with
+// output 'stl', for a download. Each evaluation gets a fresh worker:
 // that frees all WASM memory between runs, resets library state such as
 // setResolution(), and lets the server kill a run that a newer save made stale.
 import { parentPort, workerData } from 'node:worker_threads';
 import { format } from 'node:util';
 import { evaluateProgram } from '../core/program.js';
 import { meshGroups } from '../core/mesh.js';
+import { toSTL } from '../export/stl.js';
 
 // Bundles carry inline source maps; this makes stack traces point at the user's files.
 process.setSourceMapsEnabled(true);
@@ -18,22 +20,27 @@ for (const level of ['log', 'info', 'warn', 'error']) {
   };
 }
 
-const { bundle, part, overrides } = workerData;
+const { bundle, part, overrides, output } = workerData;
 const started = performance.now();
 try {
-  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: true });
-  const groups = meshGroups(result.solids);
-  parentPort.postMessage(
-    {
-      ok: true,
-      partNames: result.partNames,
-      part: result.part,
-      groups,
-      logs,
-      ms: Math.round(performance.now() - started),
-    },
-    groups.flatMap((g) => [g.positions.buffer, g.indices.buffer]),
-  );
+  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: output !== 'stl' });
+  if (output === 'stl') {
+    const stl = toSTL(result.solids);
+    parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, stl }, [stl.buffer]);
+  } else {
+    const groups = meshGroups(result.solids);
+    parentPort.postMessage(
+      {
+        ok: true,
+        partNames: result.partNames,
+        part: result.part,
+        groups,
+        logs,
+        ms: Math.round(performance.now() - started),
+      },
+      groups.flatMap((g) => [g.positions.buffer, g.indices.buffer]),
+    );
+  }
 } catch (error) {
   parentPort.postMessage({ ok: false, message: error?.message ?? String(error), stack: error?.stack, logs });
 }
