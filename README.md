@@ -1,22 +1,30 @@
 # cadcode
 
-Code-first CAD. Write a model in JavaScript, see it live in the browser while you edit, and export STL for printing and PNG for previews. There is no modeling UI: your editor is the CAD system.
+CAD for people who write code. If you have a 3D printer and know JavaScript, you don't have to learn a CAD program to make a bracket: describe the part in code, watch it update in the browser on every save, and send the STL to your slicer.
 
 Try it in the browser: [the playground](https://jwo1f.github.io/cadcode/playground.html).
 
-The geometry runs on [manifold](https://github.com/elalish/manifold), the same boolean engine recent OpenSCAD uses, so solids always come out watertight. The API keeps OpenSCAD's ideas (cube, cylinder, hull, difference, `$fn`), so OpenSCAD models port line by line.
+- **Nothing new to learn.** Variables, loops and functions instead of menus and modes.
+- **Models live in git.** A model is a text file: diff it, branch it, revert the change that broke the fit.
+- **Tweak, don't redraw.** Sizes are `params`; reprint a variant with `--set width=80`.
+- **Ready for the slicer.** Geometry runs on [manifold](https://github.com/elalish/manifold), the boolean engine recent OpenSCAD uses, so solids always come out watertight.
+
+Coming from OpenSCAD? The API keeps its ideas (cube, cylinder, hull, difference, `$fn`), so models port line by line.
 
 ```js
-import { cube, cylinder, difference } from 'cadcode';
+import { cube } from 'cadcode';
 
-export default difference(
-  cube([20, 20, 5], { center: true }),
-  cylinder({ d: 6, h: 10, center: true }),
-);
+export const params = { width: 60, depth: 40, height: 25, wall: 2 };
+
+export default (p) =>
+  cube([p.width, p.depth, p.height]).subtract(
+    cube([p.width - 2 * p.wall, p.depth - 2 * p.wall, p.height]).translate([p.wall, p.wall, p.wall]),
+  );
 ```
 
 ```bash
-npx cadcode dev plate.js
+npx cadcode dev box.js
+npx cadcode stl box.js --set width=80
 ```
 
 ## Install
