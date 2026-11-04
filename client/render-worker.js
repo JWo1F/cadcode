@@ -271,15 +271,23 @@ function createView({ canvas, colors, ...size }) {
   }
 
   /**
-   * The current view as a PNG, without the grid and axes. The loop is paused while
-   * the frame is encoded, so no frame with the grid replaces it in the meantime.
+   * The current view as a PNG, without the grid and axes, cut to the part of the
+   * canvas no panel covers. The loop is paused while the frame is encoded, so no
+   * frame with the grid replaces it in the meantime.
    */
   async function snapshotPNG() {
     paused = true;
     grid.visible = axes.visible = false;
     try {
       renderer.render(scene, camera);
-      return await canvas.convertToBlob({ type: 'image/png' });
+      if (!inset.right && !inset.bottom) return await canvas.convertToBlob({ type: 'image/png' });
+      // Copied in the same task as the render, before the drawing buffer is cleared.
+      const dpr = renderer.getPixelRatio();
+      const width = Math.max(1, canvas.width - Math.round(inset.right * dpr));
+      const height = Math.max(1, canvas.height - Math.round(inset.bottom * dpr));
+      const visible = new OffscreenCanvas(width, height);
+      visible.getContext('2d').drawImage(canvas, 0, 0, width, height, 0, 0, width, height);
+      return await visible.convertToBlob({ type: 'image/png' });
     } finally {
       grid.visible = axes.visible = true;
       paused = false;
