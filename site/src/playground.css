@@ -223,6 +223,13 @@ button:disabled {
   display: flex;
 }
 
+/* Everything under the open picker steps back. */
+.picker::backdrop {
+  background: rgba(29, 53, 80, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
 .picker-filter {
   margin: 10px;
   padding: 8px 10px;
