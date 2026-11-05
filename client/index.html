@@ -4,51 +4,63 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>cadcode</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="/viewer.css" />
   </head>
   <body>
-    <canvas id="view"></canvas>
+    <!-- The whole page is the stage; everything else floats on it, in the corners. -->
+    <main id="stage" class="stage" data-empty data-busy>
+      <canvas id="view"></canvas>
+      <div class="progress" aria-hidden="true"></div>
+      <p id="empty" class="empty">Waiting for the model…</p>
 
-    <div class="top">
-      <header class="bar">
-        <span class="brand">cadcode</span>
-        <span id="file" class="file"
-          ><span class="dir"></span><span class="name"></span
-        ></span>
-        <label class="part">
-          <span>part</span>
-          <select id="part"></select>
-        </label>
-        <span id="status" class="status" data-state="connecting"
-          >connecting</span
-        >
-        <button id="fit" type="button" title="Fit model to view (F)">
-          Fit
-        </button>
-        <button type="button" data-display="wire" aria-pressed="false" title="Show only the triangle edges">
-          Wire
-        </button>
-        <button type="button" data-display="both" aria-pressed="false" title="Show the solid with its triangle edges">
-          Solid+Wire
-        </button>
-        <button id="download" type="button" title="Download the part as STL">
-          STL
-        </button>
-        <button id="png" type="button" title="Save the current view as PNG">
-          PNG
+      <header class="corner top-left">
+        <span class="brand"><img src="/favicon.svg" alt="" width="26" height="26" />cadcode</span>
+        <span id="file" class="pill file" hidden><span class="dir"></span><span class="name"></span></span>
+        <button id="part-open" class="pill field" type="button" popovertarget="part-menu" aria-haspopup="menu" hidden>
+          <span>Part</span>
+          <strong id="part-title"></strong>
+          <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
         </button>
       </header>
 
-      <section id="logs" class="logs" hidden></section>
-    </div>
+      <nav class="corner top-right" aria-label="Export">
+        <button id="png" class="pill" type="button" title="Save the current view as PNG">PNG</button>
+        <button id="download" class="pill primary" type="button" title="Download the part as STL"><span class="wide">Download </span>STL</button>
+      </nav>
 
-    <section id="error" class="error" hidden>
-      <pre id="error-text"></pre>
-    </section>
+      <section id="logs" class="card logs" aria-label="Program output" hidden></section>
 
-    <footer class="hint">
-      drag: rotate · shift+drag or right-drag: pan · wheel: zoom · F: fit
-    </footer>
+      <footer class="corner bottom-left">
+        <section id="error" class="card error" hidden>
+          <pre id="error-text"></pre>
+        </section>
+        <div class="readout" aria-live="polite">
+          <p id="readout-size" class="size">&nbsp;</p>
+          <p class="meta">
+            <span id="status" class="status" data-state="connecting">Connecting</span>
+            <span id="readout-mesh"></span>
+            <span id="readout-time"></span>
+          </p>
+        </div>
+        <p class="hint">Drag to rotate, shift-drag or right-drag to pan, scroll to zoom, F to fit</p>
+      </footer>
+
+      <div class="corner bottom-right">
+        <div class="tools" role="group" aria-label="Display">
+          <button class="pill" type="button" data-display="wire" aria-pressed="false" title="Show only the triangle edges">Wire</button>
+          <button class="pill" type="button" data-display="both" aria-pressed="false" title="Show the solid with its triangle edges">Solid+Wire</button>
+        </div>
+        <button id="fit" class="pill round" type="button" aria-label="Fit the model to the view" title="Fit the model to the view (F)">
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </div>
+    </main>
+
+    <div id="part-menu" class="menu" popover role="menu" aria-label="Parts"></div>
 
     <script type="module" src="/viewer.js"></script>
   </body>

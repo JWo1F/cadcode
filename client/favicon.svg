@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The README's first model: a cube with a hole through it, in isometric view. -->
+  <defs>
+    <clipPath id="hole">
+      <ellipse cx="32" cy="19" rx="9.5" ry="5.5" />
+    </clipPath>
+  </defs>
+  <g stroke="#1d2228" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M32 6 55 19 32 32 9 19Z" fill="#f6cf6a" />
+    <path d="M9 19 32 32V58L9 45Z" fill="#d9a321" />
+    <path d="M55 19 32 32V58L55 45Z" fill="#b07f17" />
+  </g>
+  <!-- The hole: its far wall catches light, the near side is in shadow. -->
+  <ellipse cx="32" cy="19" rx="9.5" ry="5.5" fill="#8a6412" />
+  <ellipse cx="32" cy="23" rx="9.5" ry="5.5" fill="#1d2228" clip-path="url(#hole)" />
+  <ellipse cx="32" cy="19" rx="9.5" ry="5.5" fill="none" stroke="#1d2228" stroke-width="2" />
+</svg>

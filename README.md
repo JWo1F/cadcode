@@ -71,8 +71,8 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Zoom**: mouse wheel
 - **Fit the model to the view**: F, or the Fit button
 - **Wireframe**: the Wire button shows only the triangle edges, Solid+Wire draws them over the solid. Press the lit button again to go back to the plain solid.
-- **Switch parts**: the part dropdown
-- **Download the part as STL**: the STL button. It is the same file `cadcode stl` writes.
+- **Switch parts**: the Part menu, shown when the program has more than one part
+- **Download the part as STL**: the Download STL button. It is the same file `cadcode stl` writes.
 - **Save the view as PNG**: the PNG button. It takes the camera as it is, without the grid and axes.
 
 Errors appear in the page and in the terminal, with the line in your file. The last good model stays on screen until you fix them. Whatever the program prints with `console.log` appears in the corner of the page.

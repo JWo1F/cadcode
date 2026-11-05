@@ -11,7 +11,7 @@ import { bundleOptions } from '../core/program.js';
 const CLIENT_DIR = fileURLToPath(new URL('../../client/', import.meta.url));
 const WORKER_URL = new URL('./worker.js', import.meta.url);
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 /** Serves a file from `root`, refusing paths that escape it. */
 function serveFile(res, root, relative) {

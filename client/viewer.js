@@ -1,15 +1,27 @@
 import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 
 const canvas = document.getElementById('view');
-const partSelect = document.getElementById('part');
+const stage = document.getElementById('stage');
 const statusEl = document.getElementById('status');
 const fileEl = document.getElementById('file');
+const emptyEl = document.getElementById('empty');
 const errorEl = document.getElementById('error');
 const errorText = document.getElementById('error-text');
 const logsEl = document.getElementById('logs');
+const readout = {
+  size: document.getElementById('readout-size'),
+  mesh: document.getElementById('readout-mesh'),
+  time: document.getElementById('readout-time'),
+};
 
 // The dev server bundles the render worker, three.js included, at /render-worker.js.
-const view = createScene(canvas, { workerUrl: '/render-worker.js', onCamera: cameraMoved });
+// The canvas is transparent: the stage's backdrop in viewer.css paints behind it,
+// in the playground's colours.
+const view = createScene(canvas, {
+  workerUrl: '/render-worker.js',
+  colors: { background: null, gridMajor: 0xc9ced5, gridMinor: 0xdfe2e6, edges: 0x1f2833 },
+  onCamera: cameraMoved,
+});
 
 // --- Camera persistence ------------------------------------------------------
 // The camera survives model reloads untouched; it is also stored per file so a
@@ -63,7 +75,7 @@ function fitView() {
 document.getElementById('fit').addEventListener('click', fitView);
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
 window.addEventListener('keydown', (event) => {
-  if (event.target instanceof HTMLSelectElement) return;
+  if (event.target.closest?.('#part-menu')) return;
   if (event.key === 'f' || event.key === 'F') fitView();
 });
 
@@ -88,16 +100,36 @@ let shown = null; // header of the model on screen
 
 async function showModel({ header, groups }) {
   shown = header;
-  const { triangles } = await view.showModel(groups);
+  const mesh = await view.showModel(groups);
   if (shown !== header) return; // a newer frame arrived meanwhile
-  setStatus('ready', `${header.part} · ${triangles.toLocaleString()} tris · ${header.ms} ms`);
+  delete stage.dataset.empty;
+  showReadout(mesh, header.ms);
+  setStatus('ready');
 }
 
 // --- UI state ----------------------------------------------------------------
 
-function setStatus(state, text = state) {
+const STATUS_TEXT = {
+  connecting: 'Connecting',
+  building: 'Building',
+  evaluating: 'Running',
+  ready: 'Ready',
+  error: 'Error',
+  disconnected: 'Server stopped, reconnecting',
+};
+
+/** Shows the state by the status dot; while the program rebuilds the stage shows it too (see "Busy" in viewer.css). */
+function setStatus(state) {
   statusEl.dataset.state = state;
-  statusEl.textContent = text;
+  statusEl.textContent = STATUS_TEXT[state] ?? state;
+  toggleFlag('busy', state === 'building' || state === 'evaluating' || state === 'connecting');
+  toggleFlag('offline', state === 'disconnected');
+  if (stage.dataset.empty !== undefined) emptyEl.textContent = state === 'disconnected' ? 'Waiting for the dev server…' : 'Building the model…';
+}
+
+function toggleFlag(name, on) {
+  if (on) stage.dataset[name] = '';
+  else delete stage.dataset[name];
 }
 
 function showError(message) {
@@ -117,9 +149,65 @@ function showLogs(logs = []) {
   logsEl.hidden = logs.length === 0;
 }
 
-function showParts(names, current) {
-  partSelect.replaceChildren(...names.map((name) => new Option(name, name, false, name === current)));
+const formatMm = (n) => (Math.round(n * 10) / 10).toLocaleString();
+
+/** Fills the readout: the model's overall size, large, then its mesh and how long the program took. */
+function showReadout({ triangles, size }, ms) {
+  readout.size.replaceChildren(size ? size.map(formatMm).join(' × ') : 'Empty');
+  if (size) readout.size.append(Object.assign(document.createElement('small'), { textContent: 'mm' }));
+  readout.mesh.textContent = `${triangles.toLocaleString()} triangles`;
+  readout.time.textContent = `${ms.toLocaleString()} ms`;
 }
+
+// --- Parts -------------------------------------------------------------------
+// A pill naming the part on screen; it opens a menu of the program's parts. A
+// program with one part has no pill.
+
+const partOpen = document.getElementById('part-open');
+const partMenu = document.getElementById('part-menu');
+let currentPart = '';
+
+function showParts(names, current) {
+  currentPart = current;
+  document.getElementById('part-title').textContent = current;
+  partMenu.replaceChildren(
+    ...names.map((name) => {
+      const item = Object.assign(document.createElement('button'), { type: 'button', textContent: name });
+      item.setAttribute('role', 'menuitemradio');
+      item.setAttribute('aria-checked', String(name === current));
+      item.addEventListener('click', () => choosePart(name));
+      return item;
+    }),
+  );
+  partOpen.hidden = names.length < 2;
+}
+
+function choosePart(name) {
+  partMenu.hidePopover();
+  if (name === currentPart) return;
+  currentPart = name;
+  storage.set(`cadcode:part:${fileKey}`, name);
+  requestPart(name);
+}
+
+partMenu.addEventListener('toggle', (event) => {
+  partOpen.setAttribute('aria-expanded', String(event.newState === 'open'));
+  if (event.newState !== 'open') return;
+  const box = partOpen.getBoundingClientRect();
+  partMenu.style.left = `${box.left}px`;
+  partMenu.style.top = `${box.bottom + 8}px`;
+  const items = [...partMenu.children];
+  (items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus();
+});
+
+// Arrows move through the menu; Escape closes it (the popover's own).
+partMenu.addEventListener('keydown', (event) => {
+  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
+  if (!step) return;
+  event.preventDefault();
+  const items = [...partMenu.children];
+  items[(items.indexOf(document.activeElement) + step + items.length) % items.length]?.focus();
+});
 
 // --- Download ----------------------------------------------------------------
 // Fetched rather than navigated to, so a failing program shows its error here
@@ -130,7 +218,7 @@ const downloadButton = document.getElementById('download');
 downloadButton.addEventListener('click', async () => {
   downloadButton.disabled = true;
   try {
-    const response = await fetch(`/stl?part=${encodeURIComponent(partSelect.value)}`);
+    const response = await fetch(`/stl?part=${encodeURIComponent(currentPart)}`);
     if (!response.ok) throw new Error(await response.text());
     saveBlob(await response.blob(), response.headers.get('Content-Disposition').match(/filename="(.+)"/)[1]);
   } catch (error) {
@@ -162,11 +250,6 @@ function requestPart(name) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'part', name }));
 }
 
-partSelect.addEventListener('change', () => {
-  storage.set(`cadcode:part:${fileKey}`, partSelect.value);
-  requestPart(partSelect.value);
-});
-
 function connect() {
   socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/`);
   socket.binaryType = 'arraybuffer';
@@ -191,6 +274,7 @@ function connect() {
       fileEl.querySelector('.dir').textContent = header.file.slice(0, slash);
       fileEl.querySelector('.name').textContent = header.file.slice(slash);
       fileEl.title = header.file;
+      fileEl.hidden = false;
       document.title = `${header.file} · cadcode`;
     }
     showParts(header.partNames, header.part);
