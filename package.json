@@ -1,6 +1,6 @@
 {
   "name": "cadcode",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "site": "node site/build.js"
