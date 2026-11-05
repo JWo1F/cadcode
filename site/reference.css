@@ -393,7 +393,8 @@ h2 {
     gap: 12px;
     font-size: 14px;
   }
-  .bar nav a[href*='github'] {
+  .bar nav a[href*='github'],
+  .bar nav a[href$='#skill'] {
     display: none;
   }
   .layout {

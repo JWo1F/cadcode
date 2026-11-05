@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 import { renderReference } from './reference/render.js';
+import { zipFolder } from './zip.js';
 
 const SITE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(SITE);
@@ -134,7 +135,11 @@ for (const name of Object.keys(examples)) {
 // sweep, which site.css repeats behind it so the picture has no edges.
 execFileSync('node', [CLI, 'png', path.join(EXAMPLES, 'rocket.js'), '--size', '1200x1440', '-o', path.join(DIST, 'hero.png')], { stdio: 'inherit' });
 
-const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// The agent skill, for the home page's download: skills/cadcode packed with its folder at
+// the root of the archive, the layout Claude and Codex expect.
+zipFolder(path.join(ROOT, 'skills/cadcode'), path.join(DIST, 'cadcode-skill.zip'), 'cadcode');
+
+const escapeHtml =(text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const cards = Object.entries(exampleFiles)
   .map(([name, { meta }]) => {
     const title = escapeHtml(meta.title);

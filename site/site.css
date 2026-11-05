@@ -309,7 +309,39 @@ code.command::before {
   color: var(--ink);
 }
 
-/* --- Gallery: renders large --------------------------------------------- */
+/* --- Skill: the download, then where to put it for each agent ------------------------------- */
+
+.skill {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: clamp(40px, 8vw, 128px);
+}
+
+.skill-text p {
+  margin-top: 24px;
+  max-width: 28em;
+}
+
+.skill-steps {
+  display: grid;
+  gap: 40px;
+}
+
+.skill-steps p {
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.skill-steps code.command {
+  margin-top: 16px;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+/* --- Gallery: renders large--------------------------------------------- */
 
 .gallery > p {
   margin-top: 20px;
@@ -406,7 +438,8 @@ code.command::before {
     height: min(78svh, 640px);
     margin: 0 auto;
   }
-  .example {
+  .example,
+  .skill {
     grid-template-columns: 1fr;
   }
 }
@@ -420,9 +453,10 @@ code.command::before {
     gap: 16px;
     font-size: 14px;
   }
-  /* Too narrow for all four: GitHub is in the hero, the examples are below. */
+  /* Too narrow for all five: GitHub is in the hero, the examples and the skill are below. */
   .bar nav a[href*='github'],
-  .bar nav a[href='#examples'] {
+  .bar nav a[href='#examples'],
+  .bar nav a[href='#skill'] {
     display: none;
   }
   .features {

@@ -24,6 +24,7 @@
         <a href="playground.html">Playground</a>
         <a href="#examples">Examples</a>
         <a href="reference.html">Reference</a>
+        <a href="#skill">AI skill</a>
         <a href="https://github.com/JWo1F/cadcode">GitHub</a>
       </nav>
     </header>
@@ -111,6 +112,35 @@
             recent OpenSCAD uses. <code>cadcode stl</code> writes the file, one per part.
           </p>
         </article>
+      </section>
+
+      <section id="skill" class="skill">
+        <div class="skill-text">
+          <h2>Teach your AI agent cadcode</h2>
+          <p>
+            A skill for Claude and Codex: the API, the program format, the differences from OpenSCAD, and a
+            render-and-look loop, so the agent checks the part it built before handing it to you.
+          </p>
+          <div class="actions">
+            <a class="pill primary" href="cadcode-skill.zip" download>Download the skill</a>
+          </div>
+        </div>
+        <div class="skill-steps">
+          <article>
+            <h3>Claude Code</h3>
+            <p>Unzip into your skills folder, or into <code>.claude/skills</code> of a project.</p>
+            <code class="command">unzip cadcode-skill.zip -d ~/.claude/skills</code>
+          </article>
+          <article>
+            <h3>Claude app</h3>
+            <p>Upload the zip as it is in Settings → Capabilities → Skills.</p>
+          </article>
+          <article>
+            <h3>Codex</h3>
+            <p>Unzip into your skills folder, or into <code>.codex/skills</code> of a project.</p>
+            <code class="command">unzip cadcode-skill.zip -d ~/.agents/skills</code>
+          </article>
+        </div>
       </section>
 
       <section id="examples" class="gallery">
