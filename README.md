@@ -72,6 +72,7 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Fit the model to the view**: F, or the Fit button
 - **Wireframe**: the Wire button shows only the triangle edges, Solid+Wire draws them over the solid. Press the lit button again to go back to the plain solid.
 - **Switch parts**: the Part menu, shown when the program has more than one part
+- **Change parameters**: the Parameters panel, shown when the program has `export const params`. Numbers, switches, colours, text, and JSON for arrays and objects; drag a number's name sideways to scrub it (shift for ten times the step). A changed value is marked and has its own reset. The values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. `--set` wins over a remembered value. The STL download uses them too.
 - **Download the part as STL**: the Download STL button. It is the same file `cadcode stl` writes.
 - **Save the view as PNG**: the PNG button. It takes the camera as it is, without the grid and axes.
 

@@ -1,3 +1,4 @@
+import { createParamsPanel } from './params.js';
 import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 
 const canvas = document.getElementById('view');
@@ -75,7 +76,7 @@ function fitView() {
 document.getElementById('fit').addEventListener('click', fitView);
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
 window.addEventListener('keydown', (event) => {
-  if (event.target.closest?.('#part-menu')) return;
+  if (event.target.closest?.('#part-menu, input, textarea')) return;
   if (event.key === 'f' || event.key === 'F') fitView();
 });
 
@@ -251,6 +252,7 @@ function requestPart(name) {
 }
 
 function connect() {
+  restoreSent = false;
   socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/`);
   socket.binaryType = 'arraybuffer';
 
@@ -278,6 +280,7 @@ function connect() {
       document.title = `${header.file} · cadcode`;
     }
     showParts(header.partNames, header.part);
+    showParams(header);
     showError('');
     showLogs(header.logs);
     showModel(frame);
@@ -295,5 +298,101 @@ function connect() {
     setTimeout(connect, 1000);
   });
 }
+
+// --- Parameters ----------------------------------------------------------------
+// The panel edits the program's params; the server keeps the values across edits
+// and drops the ones the program no longer declares. They are also stored per
+// file, and handed back to a server that has just started (see "restore" in
+// src/dev/server.js), so they outlive a restart too.
+
+const paramsPanel = createParamsPanel({
+  form: document.getElementById('params'),
+  resetAll: document.getElementById('params-reset'),
+  onChange(overrides) {
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'params', overrides }));
+  },
+});
+
+let restoreSent = false; // per connection: the server takes the first browser's values only once
+
+function showParams(header) {
+  if (!restoreSent) {
+    restoreSent = true;
+    socket.send(JSON.stringify({ type: 'restore', overrides: storage.get(`cadcode:params:${fileKey}`) ?? {} }));
+  }
+  // Before the server has taken the stored values its own are not worth keeping.
+  if (header.restored) storage.set(`cadcode:params:${fileKey}`, header.overrides);
+  const hasParams = Object.keys(header.params).length > 0;
+  paramsButton.hidden = !hasParams;
+  panel.hidden = !hasParams;
+  paramsPanel.show(header.params, header.overrides);
+  measurePanel();
+}
+
+// --- Panel layout ---------------------------------------------------------------
+// The panel floats on the right, or across the bottom on phones. Its edge resizes
+// it and the Parameters button hides it; both are remembered. The view is told how
+// much of the canvas the panel covers, and centres the model on the rest.
+
+const LAYOUT_KEY = 'cadcode:params-panel';
+const panel = document.getElementById('panel');
+const grip = document.getElementById('grip');
+const paramsButton = document.getElementById('toggle-params');
+const stacked = matchMedia('(max-width: 720px)');
+
+const DEFAULT_LAYOUT = { width: 340, height: 0.42, open: true }; // px; share of the window on phones
+let layout = { ...DEFAULT_LAYOUT, ...storage.get(LAYOUT_KEY) };
+
+/** Tells the stylesheet and the view how much of the stage the panel covers. */
+function measurePanel() {
+  const shown = !panel.hidden && layout.open;
+  const box = panel.getBoundingClientRect();
+  const right = shown && !stacked.matches ? Math.round(innerWidth - box.left) : 0;
+  const bottom = shown && stacked.matches ? Math.round(innerHeight - box.top) : 0;
+  stage.style.setProperty('--panel-cover', `${right}px`);
+  stage.style.setProperty('--panel-cover-bottom', `${bottom}px`);
+  // On phones the readout stands above the panel, across the whole width.
+  const footer = stacked.matches && bottom ? document.querySelector('.bottom-left').offsetHeight + 12 : 0;
+  view.setInset({ right, bottom: bottom + footer });
+}
+
+function applyLayout() {
+  stage.style.setProperty('--panel-width', `${layout.width}px`);
+  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
+  stage.dataset.panel = layout.open ? 'shown' : 'hidden';
+  paramsButton.setAttribute('aria-pressed', String(layout.open));
+  measurePanel();
+  storage.set(LAYOUT_KEY, layout);
+}
+
+paramsButton.addEventListener('click', () => {
+  layout.open = !layout.open;
+  applyLayout();
+});
+
+grip.addEventListener('pointerdown', (event) => {
+  grip.setPointerCapture(event.pointerId);
+  stage.classList.add('dragging');
+});
+grip.addEventListener('pointermove', (event) => {
+  if (!grip.hasPointerCapture(event.pointerId)) return;
+  if (stacked.matches) layout.height = Math.min(Math.max((innerHeight - event.clientY) / innerHeight, 0.2), 0.8);
+  else layout.width = Math.round(Math.min(Math.max(innerWidth - event.clientX - 20, 260), Math.max(260, innerWidth * 0.6)));
+  stage.style.setProperty('--panel-width', `${layout.width}px`);
+  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
+  measurePanel();
+});
+grip.addEventListener('lostpointercapture', () => {
+  stage.classList.remove('dragging');
+  applyLayout();
+});
+grip.addEventListener('dblclick', () => {
+  layout = { ...DEFAULT_LAYOUT };
+  applyLayout();
+});
+
+window.addEventListener('resize', measurePanel);
+stacked.addEventListener('change', measurePanel);
+applyLayout();
 
 connect();

@@ -23,7 +23,8 @@ for (const level of ['log', 'info', 'warn', 'error']) {
 const { bundle, part, overrides, output } = workerData;
 const started = performance.now();
 try {
-  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: output !== 'stl' });
+  // Overrides of parameters the program has dropped are skipped; the server prunes them.
+  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: output !== 'stl', ignoreUnknown: true });
   if (output === 'stl') {
     const stl = toSTL(result.solids);
     parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, stl }, [stl.buffer]);
@@ -34,6 +35,8 @@ try {
         ok: true,
         partNames: result.partNames,
         part: result.part,
+        // Plain data only: the browser edits these as numbers, strings, booleans and JSON.
+        declared: JSON.parse(JSON.stringify(result.declared)),
         groups,
         logs,
         ms: Math.round(performance.now() - started),

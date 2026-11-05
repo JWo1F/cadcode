@@ -28,6 +28,10 @@ test('parts, params and overrides', async () => {
   assert.equal(result.solids.length, 2);
   assert.equal(Math.round(result.solids[0].volume()), 64);
   await assert.rejects(evaluateProgram(bundle, { overrides: { sise: 1 } }), /Unknown parameter "sise"/);
+  const lenient = await evaluateProgram(bundle, { overrides: { size: 4, sise: 1 }, ignoreUnknown: true });
+  assert.equal(lenient.params.size, 4);
+  assert.equal('sise' in lenient.params, false);
+  assert.deepEqual(Object.keys(lenient.declared), Object.keys(lenient.params));
   await assert.rejects(evaluateProgram(bundle, { part: 'nope' }), /No part "nope"/);
   assert.equal((await evaluateProgram(bundle, { part: 'nope', fallbackToFirst: true })).part, 'pair');
 });

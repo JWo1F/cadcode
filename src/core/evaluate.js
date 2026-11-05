@@ -26,18 +26,23 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
  *
  * `fallbackToFirst` shows the first part instead of failing when `part` no longer
  * exists — the dev server uses it so renaming a part doesn't blank the preview.
+ * `ignoreUnknown` skips overrides of parameters the program no longer declares,
+ * instead of failing — the dev server keeps the browser's values across edits.
  *
  * @param {{ default?: unknown, params?: Record<string, unknown> }} mod
- * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean }} [options]
+ * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
+ * @returns the part's solids, the part names, the params it ran with and the declared ones (`declared`)
  */
-export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false } = {}) {
+export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false, ignoreUnknown = false } = {}) {
   if (mod.default === undefined) throw new Error('The program has no `export default`');
 
   const declared = mod.params ?? {};
-  for (const key of Object.keys(overrides)) {
-    if (!(key in declared)) throw new Error(`Unknown parameter "${key}". Declared: ${Object.keys(declared).join(', ') || 'none'}`);
+  const known = {};
+  for (const [key, value] of Object.entries(overrides)) {
+    if (key in declared) known[key] = value;
+    else if (!ignoreUnknown) throw new Error(`Unknown parameter "${key}". Declared: ${Object.keys(declared).join(', ') || 'none'}`);
   }
-  const params = { ...declared, ...overrides };
+  const params = { ...declared, ...known };
 
   const value = typeof mod.default === 'function' ? await mod.default(params) : mod.default;
   const parts = isModel(value) ? { default: value } : value;
@@ -50,5 +55,5 @@ export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirs
 
   const entry = parts[name];
   const model = typeof entry === 'function' ? await entry(params) : entry;
-  return { partNames, part: name, params, solids: flattenModel(model, name) };
+  return { partNames, part: name, params, declared, solids: flattenModel(model, name) };
 }

@@ -24,16 +24,21 @@ function serveFile(res, root, relative) {
   fs.createReadStream(file).pipe(res);
 }
 
+const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+
 /**
  * Model frames are binary: a little-endian u32 header length, a JSON header
  * padded to 4 bytes, then each group's positions (f32) and indices (u32).
  */
-function encodeModel(result, file) {
+function encodeModel(result, file, { overrides, restored }) {
   const header = {
     type: 'model',
     file,
     part: result.part,
     partNames: result.partNames,
+    params: result.declared,
+    overrides,
+    restored,
     logs: result.logs,
     ms: result.ms,
     groups: result.groups.map((g) => ({ body: g.body, color: g.color, vertices: g.positions.length / 3, indices: g.indices.length })),
@@ -64,7 +69,11 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   const displayName = relative.startsWith('..') ? path.resolve(file) : relative;
   const baseName = path.basename(file).replace(/\.[^.]+$/, '');
   // lastError is replayed to browsers that connect while the program is broken.
-  const state = { part, lastFrame: null, lastError: null, worker: null, bundle: null };
+  // overrides are the parameter values set with --set and in the browser; they
+  // outlive edits to the program, and lose a key once the program stops declaring it.
+  // The first browser to connect hands over the values it remembers for this file
+  // (restored), under the ones from --set; after that the server's values are the truth.
+  const state = { part, overrides: { ...overrides }, restored: false, lastFrame: null, lastError: null, worker: null, bundle: null };
   const sockets = new Set();
 
   const broadcast = (data) => {
@@ -81,7 +90,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
     if (!state.bundle) return;
     state.worker?.terminate();
     sendStatus('evaluating');
-    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part: state.part, overrides } });
+    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part: state.part, overrides: state.overrides } });
     state.worker = worker;
     worker.once('message', (result) => {
       if (state.worker !== worker) return;
@@ -90,7 +99,8 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       if (!result.ok) return sendError({ message: result.message, stack: result.stack, logs: result.logs });
       state.part = result.part;
       state.lastError = null;
-      state.lastFrame = encodeModel(result, displayName);
+      for (const key of Object.keys(state.overrides)) if (!(key in result.declared)) delete state.overrides[key];
+      state.lastFrame = encodeModel(result, displayName, state);
       broadcast(state.lastFrame);
       const triangles = result.groups.reduce((n, g) => n + g.indices.length / 3, 0);
       console.log(`✓ ${result.part}: ${triangles} triangles in ${result.ms} ms`);
@@ -105,7 +115,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   // A download evaluates in its own worker, so it never cancels or waits for the preview.
   function downloadSTL(res, part) {
     if (!state.bundle) return void res.writeHead(503, { 'Content-Type': 'text/plain' }).end('The program has not built yet');
-    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides, output: 'stl' } });
+    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: 'stl' } });
     const fail = (message) => res.writeHead(500, { 'Content-Type': 'text/plain' }).end(message);
     worker.once('message', (result) => {
       worker.terminate();
@@ -168,6 +178,17 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       if (message.type === 'part' && message.name !== state.part) {
         state.part = message.name;
         evaluate();
+      }
+      if (message.type === 'params' && isPlainObject(message.overrides)) {
+        state.overrides = message.overrides;
+        state.restored = true;
+        evaluate();
+      }
+      // Only the first browser restores; later ones get the server's values in the next frame.
+      if (message.type === 'restore' && isPlainObject(message.overrides) && !state.restored) {
+        state.restored = true;
+        state.overrides = { ...message.overrides, ...overrides };
+        if (Object.keys(message.overrides).length > 0) evaluate();
       }
     });
     if (state.lastFrame) ws.send(state.lastFrame);

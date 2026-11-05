@@ -2,7 +2,8 @@
    stands on a soft, seamless backdrop that fills the window, and the controls float
    on it in small groups, one per corner. Top left says what is on screen (the file,
    the part), top right takes it away (PNG, STL), bottom left measures it, bottom
-   right changes how it is drawn. One accent, filament yellow, for the primary action
+   right changes how it is drawn. The program's parameters are a white sheet laid
+   on the right, and the stage centres on what it leaves. One accent, filament yellow, for the primary action
    and the current selection; red only for faults. */
 :root {
   --stage-light: #ffffff;
@@ -13,6 +14,7 @@
   --glass: rgba(255, 255, 255, 0.72);
   --hairline: rgba(31, 40, 51, 0.08);
   --lift: 0 1px 2px rgba(31, 40, 51, 0.06), 0 8px 24px -8px rgba(31, 40, 51, 0.14);
+  --panel-lift: 0 2px 6px rgba(31, 40, 51, 0.05), 0 24px 60px -20px rgba(31, 40, 51, 0.22);
   --pop: 0 2px 6px rgba(31, 40, 51, 0.06), 0 18px 48px -12px rgba(31, 40, 51, 0.28);
   --filament: #f2c14e;
   --filament-deep: #dcaa2c;
@@ -66,11 +68,16 @@ p {
 /* --- Stage ------------------------------------------------------------------ */
 
 /* The canvas is transparent; the backdrop is a light sweep, brightest where the
-   model stands, a little above the middle. */
+   model stands: a little above the middle of what the panel leaves uncovered. */
 .stage {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse 70% 80% at 50% 42%, var(--stage-light) 0%, var(--stage-mid) 55%, var(--stage-edge) 100%);
+  background: radial-gradient(
+    ellipse 70% 80% at calc((100% - var(--panel-cover, 0px)) / 2) 42%,
+    var(--stage-light) 0%,
+    var(--stage-mid) 55%,
+    var(--stage-edge) 100%
+  );
 }
 
 #view {
@@ -93,8 +100,8 @@ p {
 .top-left {
   top: var(--gap);
   left: var(--gap);
-  /* Leaves room for the export pills; a long path gives way first. */
-  right: calc(var(--gap) + 260px);
+  /* Leaves room for the pills on the right; a long path gives way first. */
+  right: calc(var(--gap) + 400px);
   pointer-events: none;
 }
 
@@ -110,7 +117,7 @@ p {
 .bottom-left {
   left: var(--gap);
   bottom: var(--gap);
-  right: calc(var(--gap) + 240px);
+  right: calc(var(--panel-cover, 0px) + var(--gap) + 240px);
   flex-direction: column;
   align-items: flex-start;
   gap: 14px;
@@ -122,7 +129,7 @@ p {
 }
 
 .bottom-right {
-  right: var(--gap);
+  right: calc(var(--panel-cover, 0px) + var(--gap));
   bottom: var(--gap);
 }
 
@@ -316,7 +323,7 @@ button.pill:hover {
   z-index: 2;
   top: calc(var(--gap) + 56px);
   left: var(--gap);
-  max-width: min(480px, calc(100% - 2 * var(--gap)));
+  max-width: min(480px, calc(100% - var(--panel-cover, 0px) - 2 * var(--gap)));
   max-height: 35%;
   overflow: auto;
   padding: 10px 14px;
@@ -358,7 +365,7 @@ button.pill:hover {
   z-index: 3;
   top: 0;
   left: 0;
-  right: 0;
+  right: var(--panel-cover, 0px);
   height: 2px;
   overflow: hidden;
   opacity: 0;
@@ -386,7 +393,7 @@ button.pill:hover {
 .empty {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: calc((100% - var(--panel-cover, 0px)) / 2);
   translate: -50% -50%;
   color: var(--ink-soft);
   font-size: 15px;
@@ -410,6 +417,268 @@ button.pill:hover {
 .stage[data-empty]:is([data-busy], [data-offline]) .empty {
   opacity: 1;
   transition-delay: 0.15s;
+}
+
+/* --- Parameters panel ---------------------------------------------------------- */
+/* A white sheet on the right, under the pills: a list of name and value, one per
+   parameter. A changed value is marked with a filament bar and gets a reset. */
+
+.panel {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--gap) + 52px);
+  right: var(--gap);
+  bottom: var(--gap);
+  width: var(--panel-width, 340px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  box-shadow: var(--panel-lift);
+}
+
+.stage[data-panel='hidden'] .panel {
+  display: none;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 10px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.reset-all {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.reset-all:hover {
+  color: var(--ink);
+}
+
+.params {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 10px 14px;
+}
+
+.param {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 24px;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 2px 0 2px 10px;
+  border-radius: 10px;
+}
+
+.param:hover {
+  background: #f8f9fa;
+}
+
+/* The changed mark: a short filament bar at the row's left edge. */
+.param::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  translate: 0 -50%;
+  border-radius: 3px;
+  background: var(--filament-deep);
+  transition: height 0.15s ease;
+}
+
+.param[data-changed]::before {
+  height: 18px;
+}
+
+.param label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 13px/1.3 var(--mono);
+  color: var(--ink-soft);
+}
+
+.param[data-changed] label {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* A number's name is a handle: drag it sideways to change the value. */
+.param label.scrub {
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.param input[type='text'] {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  font: 13px var(--mono);
+  color: var(--ink);
+  background: var(--stage-mid);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.param input.number {
+  text-align: right;
+}
+
+.param input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--hairline);
+  box-shadow: 0 0 0 3px rgba(242, 193, 78, 0.35);
+}
+
+.param input[aria-invalid='true'] {
+  border-color: var(--fault);
+  box-shadow: 0 0 0 3px rgba(194, 65, 45, 0.15);
+}
+
+.color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.color input[type='color'] {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.color input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+
+.color input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 5px;
+}
+
+/* A switch, sitting at the right end of its column like the numbers. */
+.switch {
+  justify-self: end;
+  appearance: none;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--stage-edge);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(31, 40, 51, 0.25);
+  transition: translate 0.15s ease;
+}
+
+.switch:checked {
+  background: var(--ink);
+}
+
+.switch:checked::after {
+  translate: 14px 0;
+}
+
+.reset {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  visibility: hidden;
+}
+
+.param[data-changed] .reset {
+  visibility: visible;
+}
+
+.reset:hover {
+  color: var(--ink);
+  background: var(--stage-mid);
+}
+
+/* The panel's left edge: drag to resize. A short bar shows where to hold it. */
+.grip {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  width: 16px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.grip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  width: 4px;
+  height: 40px;
+  translate: 0 -50%;
+  border-radius: 4px;
+  background: rgba(31, 40, 51, 0.16);
+  transition: background 0.15s ease;
+}
+
+.grip:hover::after,
+.stage.dragging .grip::after {
+  background: var(--filament-deep);
+}
+
+.stage.dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.stage.dragging #view {
+  pointer-events: none;
 }
 
 /* --- Part menu ------------------------------------------------------------------ */
@@ -488,7 +757,10 @@ button.pill:hover {
   }
   #view,
   .progress,
-  .empty {
+  .empty,
+  .param::before,
+  .switch,
+  .switch::after {
     transition: none !important;
   }
   .menu:popover-open {
@@ -508,7 +780,7 @@ button.pill:hover {
     margin-right: 0;
   }
   .top-left {
-    right: calc(var(--gap) + 170px);
+    right: calc(var(--gap) + 186px);
     gap: 8px;
   }
   .top-right {
@@ -519,12 +791,66 @@ button.pill:hover {
   .hint {
     display: none;
   }
+  /* A long part name gives way before it reaches the export pills. */
+  .field {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .field strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .bottom-left {
     right: var(--gap);
-    bottom: calc(var(--gap) + 56px);
+    bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap) + 56px);
     gap: 10px;
+  }
+  .bottom-right {
+    right: var(--gap);
+    bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap));
   }
   .readout .size {
     font-size: 26px;
+  }
+  /* The parameters are a sheet across the bottom, resized from its top edge. */
+  .stage {
+    background: radial-gradient(
+      ellipse 90% 60% at 50% calc((100% - var(--panel-cover-bottom, 0px)) / 2),
+      var(--stage-light) 0%,
+      var(--stage-mid) 55%,
+      var(--stage-edge) 100%
+    );
+  }
+  .panel {
+    top: auto;
+    left: var(--gap);
+    width: auto;
+    height: var(--panel-height, 42dvh);
+  }
+  .grip {
+    top: -8px;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 16px;
+    cursor: row-resize;
+  }
+  .grip::after {
+    top: 6px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    translate: -50% 0;
+  }
+  .stage.dragging {
+    cursor: row-resize;
+  }
+  .progress {
+    right: 0;
+  }
+  .empty {
+    left: 50%;
+    top: calc((100% - var(--panel-cover-bottom, 0px)) / 2);
   }
 }
