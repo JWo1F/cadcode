@@ -1,4 +1,4 @@
-import { createScene, saveBlob } from './scene.js';
+import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 
 const canvas = document.getElementById('view');
 const partSelect = document.getElementById('part');
@@ -61,6 +61,7 @@ function fitView() {
 }
 
 document.getElementById('fit').addEventListener('click', fitView);
+bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
 window.addEventListener('keydown', (event) => {
   if (event.target instanceof HTMLSelectElement) return;
   if (event.key === 'f' || event.key === 'F') fitView();

@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor';
-import { createScene, saveBlob } from '../../client/scene.js';
+import { bindDisplayButtons, createScene, saveBlob } from '../../client/scene.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
@@ -468,6 +468,7 @@ function fileName(ext) {
 }
 
 document.getElementById('fit').addEventListener('click', () => view.fitView());
+bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
 
 document.getElementById('png').addEventListener('click', async () => {
   if (!shown) return;

@@ -117,6 +117,12 @@ button:disabled {
   opacity: 0.55;
 }
 
+button[aria-pressed='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
 button:hover,
 select:hover {
   border-color: rgba(20, 30, 40, 0.28);

@@ -3,7 +3,7 @@
 // so building a large mesh never stalls the page. This side hands the canvas over,
 // forwards input and size, and turns commands into messages:
 //
-//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera
+//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, display
 //   from the worker: reply (to show and snapshot), camera (on every move), cursor
 
 /** The event fields OrbitControls reads. */
@@ -113,11 +113,47 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
     setCamera(camera) {
       worker.postMessage({ type: 'set-camera', camera });
     },
+    /** How the model is drawn: 'solid', 'wire' (every triangle edge, no faces) or 'both'. */
+    setDisplay(mode) {
+      worker.postMessage({ type: 'display', mode });
+    },
     /** The current view as a PNG, without the grid and axes. @returns {Promise<Blob>} */
     snapshotPNG() {
       return request({ type: 'snapshot' });
     },
   };
+}
+
+/**
+ * Turns buttons with data-display="wire" or "both" into a pair of radio-like
+ * toggles for the view's display mode: pressing one switches to it, pressing the
+ * pressed one goes back to solid. The mode is remembered across reloads.
+ * @param {{ setDisplay: (mode: string) => void }} view
+ * @param {HTMLButtonElement[]} buttons
+ */
+export function bindDisplayButtons(view, buttons) {
+  const KEY = 'cadcode:display';
+  const apply = (mode) => {
+    view.setDisplay(mode);
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.display === mode));
+    try {
+      localStorage.setItem(KEY, mode);
+    } catch {
+      // Storage unavailable (private window): the mode just isn't remembered.
+    }
+  };
+  let saved = null;
+  try {
+    saved = localStorage.getItem(KEY);
+  } catch {}
+  let mode = buttons.some((button) => button.dataset.display === saved) ? saved : 'solid';
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      mode = mode === button.dataset.display ? 'solid' : button.dataset.display;
+      apply(mode);
+    });
+  }
+  apply(mode);
 }
 
 /** Starts a download of a blob under the given file name. */

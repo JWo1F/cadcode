@@ -70,6 +70,7 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Pan**: shift+drag or right-drag
 - **Zoom**: mouse wheel
 - **Fit the model to the view**: F, or the Fit button
+- **Wireframe**: the Wire button shows only the triangle edges, Solid+Wire draws them over the solid. Press the lit button again to go back to the plain solid.
 - **Switch parts**: the part dropdown
 - **Download the part as STL**: the STL button. It is the same file `cadcode stl` writes.
 - **Save the view as PNG**: the PNG button. It takes the camera as it is, without the grid and axes.

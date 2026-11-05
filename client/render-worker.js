@@ -79,6 +79,8 @@ async function handle(message) {
       return view.setInset(message.inset);
     case 'set-camera':
       return view.setCamera(message.camera);
+    case 'display':
+      return view.setDisplay(message.mode);
   }
   // The rest answer the page.
   try {
@@ -124,6 +126,11 @@ function createView({ canvas, colors, ...size }) {
 
   let model = new THREE.Group();
   scene.add(model);
+
+  // What the model is drawn as: 'solid' (faces and feature edges), 'wire' (every
+  // triangle edge, no faces) or 'both' (the solid with every triangle edge over it).
+  let display = 'solid';
+  let shapes = []; // per mesh group: { mesh, outline, wire, transparent }; wire is built on first need
 
   // The page measures the canvas, which its CSS may resize at any time.
   function resize({ width, height, left, top, dpr }) {
@@ -192,6 +199,30 @@ function createView({ canvas, colors, ...size }) {
     controls.update();
   }
 
+  function setDisplay(mode) {
+    display = mode;
+    applyDisplay();
+  }
+
+  function applyDisplay() {
+    const solid = display !== 'wire';
+    const wired = display !== 'solid';
+    for (const shape of shapes) {
+      shape.mesh.visible = shape.outline.visible = solid;
+      if (wired && !shape.wire) {
+        shape.wire = new THREE.LineSegments(
+          new THREE.WireframeGeometry(shape.mesh.geometry),
+          new THREE.LineBasicMaterial({ color: edges, transparent: true }),
+        );
+        model.add(shape.wire);
+      }
+      if (!shape.wire) continue;
+      shape.wire.visible = wired;
+      // Over faces the lines only hint at the triangles; alone they are the picture.
+      shape.wire.material.opacity = solid ? (shape.transparent ? 0.15 : 0.3) : 0.7;
+    }
+  }
+
   function disposeGroup(group) {
     group.traverse((object) => {
       object.geometry?.dispose();
@@ -218,6 +249,7 @@ function createView({ canvas, colors, ...size }) {
    */
   function showModel(groups) {
     const next = new THREE.Group();
+    const nextShapes = [];
     for (const g of groups) {
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(g.positions, 3));
@@ -248,12 +280,15 @@ function createView({ canvas, colors, ...size }) {
         new THREE.LineBasicMaterial({ color: edges, transparent: true, opacity: transparent ? 0.25 : 0.55 }),
       );
       next.add(outline);
+      nextShapes.push({ mesh, outline, wire: null, transparent });
     }
 
     scene.remove(model);
     disposeGroup(model);
     model = next;
+    shapes = nextShapes;
     scene.add(model);
+    applyDisplay();
 
     const box = new THREE.Box3().setFromObject(model);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
@@ -294,5 +329,5 @@ function createView({ canvas, colors, ...size }) {
     }
   }
 
-  return { element, resize, setInset, fitView, setCamera, showModel, snapshotPNG };
+  return { element, resize, setInset, fitView, setCamera, setDisplay, showModel, snapshotPNG };
 }
