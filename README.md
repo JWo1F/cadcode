@@ -33,7 +33,7 @@ npx cadcode stl box.js --set width=80
 npm install cadcode
 ```
 
-Requires Node 20 or newer. Typings ship with the package, so editors complete the API in JavaScript and TypeScript programs alike.
+Requires Node 22 or newer. Typings ship with the package, so editors complete the API in JavaScript and TypeScript programs alike.
 
 ## Commands
 

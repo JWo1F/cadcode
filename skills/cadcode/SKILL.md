@@ -22,7 +22,7 @@ Geometry runs on manifold (WASM), so every boolean result is a watertight solid.
 millimetres by convention, angles are degrees, and **Z is up**.
 
 ```sh
-npm install cadcode          # Node 20+
+npm install cadcode          # Node 22+
 npx cadcode dev model.js     # live preview, reloads on save, keeps the camera
 npx cadcode stl model.js --part box
 npx cadcode png model.js --part assembly --view sheet -o preview.png
