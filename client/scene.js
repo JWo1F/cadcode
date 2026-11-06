@@ -3,8 +3,10 @@
 // so building a large mesh never stalls the page. This side hands the canvas over,
 // forwards input and size, and turns commands into messages:
 //
-//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, view-axis, display
-//   from the worker: reply (to show and snapshot), camera (on every move), cursor
+//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, view-axis, display,
+//                    section, measuring, measure-clear
+//   from the worker: reply (to show and snapshot), camera (on every move), cursor,
+//                    section (the plane dragged), measure, measure-label
 
 /** The event fields OrbitControls reads. */
 const FIELDS = ['pointerId', 'pointerType', 'button', 'buttons', 'clientX', 'clientY', 'pageX', 'pageY', 'deltaX', 'deltaY', 'deltaMode', 'ctrlKey', 'metaKey', 'shiftKey', 'altKey', 'key', 'code'];
@@ -24,6 +26,8 @@ const copyEvent = (event) => {
 export function createScene(canvas, { workerUrl, colors, onCamera }) {
   const worker = new Worker(workerUrl, { type: 'module', name: 'render' });
   const pending = new Map(); // id → { resolve, reject } of a show or snapshot
+  const listeners = new Map(); // message type → handlers, for client/view-tools.js
+  const emit = (type, value) => listeners.get(type)?.forEach((handler) => handler(value));
   let nextId = 1;
 
   const request = (message, transfer = []) =>
@@ -36,7 +40,7 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
   worker.onmessage = ({ data }) => {
     if (data.type === 'camera') return onCamera?.(data.camera);
     if (data.type === 'cursor') return void (canvas.style.cursor = data.value);
-    if (data.type !== 'reply') return;
+    if (data.type !== 'reply') return emit(data.type, data.value);
     const { resolve, reject } = pending.get(data.id);
     pending.delete(data.id);
     if (data.error) reject(new Error(data.error));
@@ -97,11 +101,14 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
     /**
      * Replaces the model with mesh groups ({ color, positions, indices }); their
      * buffers are handed to the worker and are unusable here afterwards.
-     * @returns {Promise<{ triangles: number, size: [number, number, number] | null }>}
+     * @returns {Promise<{ triangles: number, size: [number, number, number] | null, bounds: { min: number[], max: number[] } | null }>}
      */
     showModel(groups) {
       const buffers = new Set(groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]));
-      return request({ type: 'show', groups }, [...buffers]);
+      return request({ type: 'show', groups }, [...buffers]).then((result) => {
+        emit('model', result);
+        return result;
+      });
     },
     fitView() {
       worker.postMessage({ type: 'fit' });
@@ -121,9 +128,29 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
     setDisplay(mode) {
       worker.postMessage({ type: 'display', mode });
     },
-    /** The current view as a PNG, without the grid and axes. @returns {Promise<Blob>} */
+    /** The current view as a PNG, without the grid, axes, section frame and measurement. @returns {Promise<Blob>} */
     snapshotPNG() {
       return request({ type: 'snapshot' });
+    },
+    /** Cuts the model across an axis: { on, axis: 'x' | 'y' | 'z', offset, flip }, any of them. */
+    setSection(section) {
+      worker.postMessage({ type: 'section', section });
+    },
+    /** In measure mode a click picks a point; two make a measurement. */
+    setMeasuring(on) {
+      worker.postMessage({ type: 'measuring', on });
+    },
+    clearMeasure() {
+      worker.postMessage({ type: 'measure-clear' });
+    },
+    /**
+     * Hears of 'model' (a shown model's result), 'section' (the plane's offset after a
+     * drag), 'measure' ({ points, distance?, delta? }) and 'measure-label' ({ x, y } in
+     * canvas pixels, or null when out of sight).
+     */
+    on(type, handler) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type).add(handler);
     },
   };
 }

@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { createInspect } from './inspect.js';
 
 const DEFAULT_COLOR = '#f2c14e';
 const EDGE_ANGLE = 25;
@@ -80,6 +81,8 @@ async function handle(message) {
     case 'resize':
       return view.resize(message);
     case 'event':
+      // The section frame and measure picks see pointer events first, and may keep them from the controls.
+      if (message.event.type.startsWith('pointer') && view.inspect.handleEvent(message.event)) return;
       return dispatch(message.target === 'document' ? view.element.ownerDocument : view.element, message.event);
     case 'fit':
       return view.fitView();
@@ -91,6 +94,12 @@ async function handle(message) {
       return view.setDisplay(message.mode);
     case 'view-axis':
       return view.viewAlong(message.direction);
+    case 'section':
+      return view.inspect.setSection(message.section);
+    case 'measuring':
+      return view.inspect.setMeasuring(message.on);
+    case 'measure-clear':
+      return view.inspect.clearMeasure();
   }
   // The rest answer the page.
   try {
@@ -106,7 +115,9 @@ function createView({ canvas, colors, ...size }) {
   const { background = 0xeef0f3, gridMajor = 0xb9bec7, gridMinor = 0xd6d9df, edges = 0x2a2f36 } = colors ?? {};
   const element = new ElementProxy();
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: background === null });
+  // The stencil buffer caps the section's cut; see client/inspect.js.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: background === null, stencil: true });
+  renderer.localClippingEnabled = true;
   if (background === null) renderer.setClearColor(0x000000, 0);
   else renderer.setClearColor(background);
 
@@ -145,6 +156,8 @@ function createView({ canvas, colors, ...size }) {
   let model = new THREE.Group();
   scene.add(model);
 
+  const inspect = createInspect({ scene, element, getCamera: () => camera, post: (message) => self.postMessage(message) });
+
   // What the model is drawn as: 'solid' (faces and feature edges), 'wire' (every
   // triangle edge, no faces) or 'both' (the solid with every triangle edge over it).
   let display = 'solid';
@@ -158,6 +171,7 @@ function createView({ canvas, colors, ...size }) {
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
     for (const material of sketchLines) material.resolution.set(width, height);
+    inspect.resize(width, height);
     applyProjection();
   }
 
@@ -276,6 +290,7 @@ function createView({ canvas, colors, ...size }) {
     if (paused) return;
     if (turn) stepTurn();
     controls.update();
+    inspect.update();
     renderer.render(scene, camera);
   });
 
@@ -324,6 +339,7 @@ function createView({ canvas, colors, ...size }) {
   function setDisplay(mode) {
     display = mode;
     applyDisplay();
+    inspect.setDisplay(mode);
   }
 
   function applyDisplay() {
@@ -336,6 +352,7 @@ function createView({ canvas, colors, ...size }) {
           new THREE.WireframeGeometry(shape.mesh.geometry),
           new THREE.LineBasicMaterial({ color: edges, transparent: true }),
         );
+        inspect.clip(shape.wire.material);
         model.add(shape.wire);
       }
       if (!shape.wire) continue;
@@ -407,7 +424,7 @@ function createView({ canvas, colors, ...size }) {
         new THREE.LineBasicMaterial({ color: edges, transparent: true, opacity: transparent ? 0.25 : 0.55 }),
       );
       next.add(outline);
-      nextShapes.push({ mesh, outline, wire: null, transparent });
+      nextShapes.push({ mesh, outline, wire: null, transparent, body: g.body, color: material.color });
     }
 
     scene.remove(model);
@@ -419,6 +436,7 @@ function createView({ canvas, colors, ...size }) {
     applyDisplay();
 
     const box = new THREE.Box3().setFromObject(model);
+    inspect.setModel(shapes, box.clone());
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     if (!sphere.isEmpty()) {
       perspective.near = Math.max(sphere.radius / 1000, 0.01);
@@ -434,6 +452,7 @@ function createView({ canvas, colors, ...size }) {
     return {
       triangles: groups.reduce((n, g) => n + g.indices.length / 3, 0),
       size: box.isEmpty() ? null : box.getSize(new THREE.Vector3()).toArray(),
+      bounds: box.isEmpty() ? null : { min: box.min.toArray(), max: box.max.toArray() },
     };
   }
 
@@ -473,13 +492,14 @@ function createView({ canvas, colors, ...size }) {
   }
 
   /**
-   * The current view as a PNG, without the grid and axes, cut to the part of the
-   * canvas no panel covers. The loop is paused while the frame is encoded, so no
+   * The current view as a PNG, without the grid, the axes, the section frame and the
+   * measurement, cut to the part of the canvas no panel covers. The loop is paused while the frame is encoded, so no
    * frame with the grid replaces it in the meantime.
    */
   async function snapshotPNG() {
     paused = true;
     grid.visible = axes.visible = false;
+    inspect.showOverlays(false);
     try {
       renderer.render(scene, camera);
       if (!inset.right && !inset.bottom) return await canvas.convertToBlob({ type: 'image/png' });
@@ -492,9 +512,10 @@ function createView({ canvas, colors, ...size }) {
       return await visible.convertToBlob({ type: 'image/png' });
     } finally {
       grid.visible = axes.visible = true;
+      inspect.showOverlays(true);
       paused = false;
     }
   }
 
-  return { element, resize, setInset, fitView, setCamera, viewAlong, setDisplay, showModel, snapshotPNG };
+  return { element, inspect, resize, setInset, fitView, setCamera, viewAlong, setDisplay, showModel, snapshotPNG };
 }
