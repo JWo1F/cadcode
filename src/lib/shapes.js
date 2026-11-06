@@ -142,6 +142,7 @@ export class Solid {
    * @param {number[] | number} angles
    * @param {number[] | RotateOptions} [axis]
    * @param {RotateOptions} [options]
+   * @returns {Solid}
    */
   rotate(angles, axis, options) {
     if (axis && !Array.isArray(axis)) return this.rotate(angles, undefined, axis);
@@ -256,6 +257,7 @@ export class Shape2 {
    * Rotates counter-clockwise, around the origin or around `{ around }`: a point, the center of a shape, or [x, y].
    * @param {number} degrees
    * @param {RotateOptions} [options]
+   * @returns {Shape2}
    */
   rotate(degrees, options) {
     if (options?.around) {
@@ -386,6 +388,7 @@ export class Point {
    * @param {number[] | number} angles
    * @param {number[] | RotateOptions} [axis]
    * @param {RotateOptions} [options]
+   * @returns {Point}
    */
   rotate(angles, axis, options) {
     if (axis && !Array.isArray(axis)) return this.rotate(angles, undefined, axis);
