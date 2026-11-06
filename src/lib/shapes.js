@@ -1,6 +1,7 @@
 import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
 import { range } from './util.js';
+import { sweepPolygons } from './sweep.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -18,6 +19,8 @@ wasm.setup();
 const { Manifold, CrossSection, Mesh } = wasm;
 /** @internal The WASM instance's classes, for text() and the importers: shapes must all come from one instance. */
 export { CrossSection, Manifold, Mesh };
+/** @internal Triangles covering polygons (counterclockwise outlines, clockwise holes), as indices into their points in order. */
+export const triangulate = (polygons) => wasm.triangulate(polygons);
 
 // ---------------------------------------------------------------------------
 // Resolution of curved primitives — the same rules as OpenSCAD's $fn/$fa/$fs.
@@ -372,6 +375,16 @@ export class Shape2 {
     const { min, max } = this.section.bounds();
     const radius = Math.max(Math.abs(min[0]), Math.abs(max[0]));
     return new Solid(this.section.revolve(segmentsFor(radius, options.fn), options.angle ?? 360));
+  }
+
+  /**
+   * Sweeps the shape along a path of 3D points into a solid, like a tube along a wire.
+   * The shape is drawn in XY and stands across the path: +Z of the drawing points along the path.
+   * @param {number[][]} path points `[x, y, z]`, such as from `helix()`
+   * @param {import('./sweep.js').SweepOptions} [options]
+   */
+  sweep(path, options = {}) {
+    return sweepPolygons(this.toPolygons(), path, options);
   }
 
   /** @returns {number} */

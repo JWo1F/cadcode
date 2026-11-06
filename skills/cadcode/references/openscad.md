@@ -43,6 +43,7 @@ installed, otherwise reason from the source.
 | `linear_extrude(h) shape2d;` | `shape2d.extrude(h)` |
 | `linear_extrude(h, center = true, twist = t, scale = s)` | `.extrude(h, { center: true, twist: t, scale: s })` |
 | `rotate_extrude(angle = 180) shape2d;` | `shape2d.revolve({ angle: 180 })` |
+| `path_sweep(shape, path)` (BOSL2) | `shape2d.sweep(path)`; BOSL2's `helix` path is `helix({ r, pitch, turns })` |
 | `offset(r = 1) shape2d;` | `shape2d.offset(1)` |
 | `text("A1", size = 10, halign = "center", valign = "center");` | `text('A1', { size: 9.55, halign: 'center', valign: 'center' })`: cadcode's `size` is the capital height, 0.955 of OpenSCAD's `size` in Liberation Sans |
 | `text(t, font = "Roboto:style=Bold");` | `import font from './Roboto-Bold.ttf';` then `text(t, { font })`: fonts are files, not system names |

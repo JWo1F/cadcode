@@ -740,6 +740,28 @@ square(20, { center: true }).offset({ delta: 3 }) // sharp`,
 circle(2).translate([10, 0]).revolve({ fn: 64 })`,
       },
       {
+        id: 'shape2-sweep',
+        name: 'sweep',
+        owner: 'Shape2',
+        signature: '.sweep(path, options)',
+        summary: 'Sweeps the shape along a path into a solid, like a tube along a wire: handles, pipes, springs. The shape stands across the path, with its drawing\'s +Z pointing along it, so a path straight up +Z gives the same solid as `.extrude`.',
+        params: [
+          { name: 'path', type: '[x, y, z][]', text: 'The points the shape travels through, such as from `helix()`. Repeated points are skipped.' },
+          { name: 'options.closed', type: 'boolean', default: 'false', text: 'The path is a loop: its end joins its start and the solid has no ends, like a ring. It cannot scale, and twists only in whole turns.' },
+          { name: 'options.twist', type: 'number', default: '0', text: 'Degrees the shape turns, counterclockwise, from the start of the path to its end, spread by distance. It turns at the path\'s points only, so a smooth twist needs a point every few degrees.' },
+          { name: 'options.scale', type: 'number | [x, y]', default: '1', text: 'Size of the shape at the end relative to the start.' },
+          { name: 'options.up', type: '[x, y, z]', text: 'Keep the shape\'s +Y toward this direction all along. Without it the shape is carried along with the least turning, which never flips but can drift around a twisty 3D path.' },
+        ],
+        returns: 'Solid',
+        notes: [
+          'At a sharp corner the shape is mitered: it is cut along the plane that halves the angle and stretched to keep the tube its full width.',
+          'A path that bends tighter than the shape is wide, or a coil whose turns touch, makes a solid that runs into itself. It is not checked; keep the radius of every bend larger than the shape.',
+        ],
+        example: `// A handle: a rounded rectangle along an arch.
+const arch = range(0, 180, 10).map((a) => [40 * Math.cos(a * Math.PI / 180), 0, 30 * Math.sin(a * Math.PI / 180)]);
+square([8, 12], { center: true }).offset(2).sweep(arch)`,
+      },
+      {
         id: 'shape2-area',
         name: 'area',
         owner: 'Shape2',
@@ -789,6 +811,22 @@ circle(2).translate([10, 0]).revolve({ fn: 64 })`,
         ],
         notes: ['With `fn` at 0, a curve of radius r gets `ceil(max(min(360 / fa, 2πr / fs), 5))` segments. A primitive\'s own `fn` wins over all of this.'],
         example: `setResolution({ fn: 48 });`,
+      },
+      {
+        id: 'helix',
+        name: 'helix',
+        signature: 'helix(options)',
+        summary: 'Points along a helix around the Z axis, starting at `[r, 0, 0]` and rising along +Z: a path for `.sweep()`, for springs and coils.',
+        params: [
+          { name: 'options.r', type: 'number', text: 'Radius of the helix; or give `options.d`, the diameter.' },
+          { name: 'options.pitch', type: 'number', text: 'How far it rises per turn.' },
+          { name: 'options.turns', type: 'number', text: 'How many turns; or give `options.height` instead.' },
+          { name: 'options.leftHand', type: 'boolean', default: 'false', text: 'Turn clockwise seen from above. A right-hand helix turns counterclockwise.' },
+          { name: 'options.fn', type: 'number', text: 'Points per turn. Without it the defaults from `setResolution` apply, as for a circle of the same radius.' },
+        ],
+        returns: '[x, y, z][]',
+        example: `// A spring.
+circle(1).sweep(helix({ r: 10, pitch: 5, turns: 6, fn: 48 }))`,
       },
       {
         id: 'range',

@@ -195,6 +195,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | Same as for solids. |
 | `.extrude(h, { center, twist, scale, divisions })` | Extrudes along +Z, like `linear_extrude`. |
 | `.revolve({ angle, fn })` | Revolves the shape around the Y axis into a solid around Z, like `rotate_extrude`. |
+| `.sweep(path, { closed, twist, scale, up })` | Sweeps the shape along a path of `[x, y, z]` points, for handles, pipes and springs. The shape stands across the path, its drawing's +Z along it, and is carried along without twisting; `up: [0, 0, 1]` instead keeps its +Y toward that direction. `closed: true` joins the path's end to its start. `twist` (degrees, counterclockwise) and `scale` work as in `extrude`. Corners are mitered. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
 
 ### Functions
@@ -222,6 +223,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | Function | Notes |
 | --- | --- |
 | `point([x, y, z])` | A place without geometry, such as a pivot for `rotate(..., { around })`. It has `.translate`, `.rotate`, `.scale`, `.mirror`, `.transform`, so it can move with its part, and `.x`, `.y`, `.z`, `.toArray()`. It cannot go into booleans or an export. |
+| `helix({ r \| d, pitch, turns \| height, leftHand, fn })` | Points along a helix around Z from `[r, 0, 0]`, rising `pitch` per turn: a path for `.sweep()`. `fn` is points per turn. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
 | `setResolution({ fn, fa, fs })` | Default segment count for curves, with the same rules as OpenSCAD's `$fn`, `$fa` and `$fs`. Any primitive also takes its own `fn`. |

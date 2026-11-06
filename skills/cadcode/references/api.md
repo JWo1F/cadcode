@@ -84,6 +84,7 @@ booleans or a part's export.
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | As for solids, with `Shape2`s. |
 | `.extrude(h, { center, twist, scale, divisions })` | `linear_extrude`. `scale` is a number or `[x, y]`. |
 | `.revolve({ angle = 360, fn })` | `rotate_extrude`: the shape's X becomes the radius, Y becomes Z. |
+| `.sweep(path, { closed = false, twist = 0, scale = 1, up })` | Along `path`, `[x, y, z]` points. The drawing's +Z follows the path, carried without twist (rotation-minimizing); `up: v` keeps its +Y toward `v` instead. Starts as `extrude` would on a path along +Z. `closed` loops back to the first point (no scale; twist only in whole turns). Corners mitered. A path tighter than the profile self-intersects: no check. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
 
 ## Functions
@@ -110,6 +111,7 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 
 | Function | Notes |
 | --- | --- |
+| `helix({ r \| d, pitch, turns \| height, leftHand = false, fn })` | `[x, y, z]` points from `[r, 0, 0]`, counterclockwise from above (right-hand), rising `pitch` per turn; `fn` points per turn. For `.sweep()`. |
 | `range(start, end, step = 1)` | Inclusive of `end`. |
 | `product(...lists)` | Cartesian product: `product([1, 2], ['a'])` → `[[1, 'a'], [2, 'a']]`. |
 | `setResolution({ fn, fa, fs })` | Defaults for curves, OpenSCAD rules. `fn > 0` wins; else `ceil(max(min(360/fa, 2πr/fs), 5))`. |

@@ -24,6 +24,7 @@ export {
   offset,
   linearExtrude,
 } from './shapes.js';
+export { helix } from './sweep.js';
 export { text } from './text.js';
 export { importSTL } from './import/stl.js';
 export { import3MF } from './import/3mf.js';
