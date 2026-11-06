@@ -58,8 +58,7 @@ const catalog = Object.fromEntries(Object.entries(exampleFiles).map(([name, { me
 const typesDir = fs.mkdtempSync(path.join(DIST, '.types-'));
 execFileSync(
   'npx',
-  ['tsc', path.join(ROOT, 'src/lib/index.js'), '--allowJs', '--declaration', '--emitDeclarationOnly', '--skipLibCheck',
-    '--target', 'es2022', '--module', 'nodenext', '--moduleResolution', 'nodenext', '--outDir', typesDir],
+  ['tsc', '-p', path.join(ROOT, 'tsconfig.json'), '--outDir', typesDir],
   { stdio: 'inherit', cwd: ROOT },
 );
 const typings = Object.fromEntries(fs.readdirSync(typesDir).map((file) => [file, fs.readFileSync(path.join(typesDir, file), 'utf8')]));

@@ -1,0 +1,16 @@
+{
+  // Emits the library's typings from its JSDoc: `npm run types` for the package,
+  // and site/build.js for the playground's editor.
+  "include": ["src/lib/index.js"],
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rootDir": "src/lib",
+    "outDir": "types"
+  }
+}

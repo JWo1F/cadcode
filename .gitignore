@@ -5,3 +5,4 @@ out/
 *.png
 site/dist/
 !site/apple-touch-icon.png
+types/

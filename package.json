@@ -3,6 +3,8 @@
   "version": "0.7.0",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
+    "types": "tsc -p tsconfig.json",
+    "prepack": "npm run types",
     "site": "node site/build.js"
   },
   "keywords": [
@@ -25,11 +27,16 @@
     "cadcode": "src/cli.js"
   },
   "exports": {
-    ".": "./src/lib/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/lib/index.js"
+    }
   },
+  "types": "./types/index.d.ts",
   "files": [
     "src",
-    "client"
+    "client",
+    "types"
   ],
   "engines": {
     "node": ">=20"
@@ -38,5 +45,12 @@
     "monaco-editor": "0.57.0",
     "typescript": "6.0.3"
   },
-  "homepage": "https://jwo1f.github.io/cadcode/"
+  "homepage": "https://jwo1f.github.io/cadcode/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JWo1F/cadcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JWo1F/cadcode/issues"
+  }
 }

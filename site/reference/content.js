@@ -23,7 +23,7 @@ export const sections = [
     id: 'program',
     title: 'Writing a program',
     intro:
-      'A program is an ES module. It can import its own helper files and npm packages, and TypeScript files work too. Everything below is imported from `cadcode`.',
+      'A program is an ES module. It can import its own helper files and npm packages, and TypeScript files work too. Everything below is imported from `cadcode`, and the package ships its typings, so an editor completes it.',
     entries: [
       {
         id: 'export-default',
