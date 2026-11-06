@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -170,3 +170,60 @@ test('parseColor reads names, hex and arrays', () => {
   assert.deepEqual(parseColor('Orange', 0.3), [1, 165 / 255, 0, 0.3]);
   assert.throws(() => parseColor('notacolor'), /Unknown color/);
 });
+
+test('text: size is the height of a capital H, and letters keep their holes', () => {
+  const h = text('H', 7).bounds();
+  near(h.min[1], 0);
+  near(h.max[1], 7);
+  const o = text('O', { size: 10 });
+  assert.equal(o.toPolygons().length, 2); // the outline and the hole
+  const filled = o.toPolygons()[0];
+  assert.ok(o.area() < polygonArea(filled) * 0.6);
+  assert.equal(text('8').toPolygons().length, 3);
+});
+
+test('text: alignment, spacing and lines', () => {
+  // Alignment goes by the letters' advance widths, as in OpenSCAD, so side bearings make it slightly uneven.
+  const centered = text('Ab', { halign: 'center' }).bounds();
+  near(centered.min[0], -centered.max[0], 1);
+  assert.ok(text('Ab', { halign: 'right' }).bounds().max[0] <= 0);
+  near(text('Ab', { valign: 'top' }).bounds().max[1], 0);
+  near(text('gb', { valign: 'bottom' }).bounds().min[1], 0);
+  const c = text('H', { valign: 'center' }).bounds();
+  near(c.min[1], -c.max[1]);
+  assert.ok(text('HH', { spacing: 2 }).bounds().max[0] > text('HH').bounds().max[0] * 1.4);
+  const two = text('H\nH', { size: 10 }).bounds();
+  assert.ok(two.min[1] < -10, 'the second line is below the first');
+  assert.ok(text('H\nH', { size: 10, lineHeight: 2 }).bounds().min[1] < two.min[1] - 10);
+  assert.ok(text('').isEmpty());
+  assert.throws(() => text('x', { halign: 'middle' }), /halign must be/);
+});
+
+test('text: curves follow fn and fa', () => {
+  const points = (shape) => shape.toPolygons().reduce((n, p) => n + p.length, 0);
+  const coarse = points(text('O', { fn: 8 }));
+  const fine = points(text('O', { fn: 64 }));
+  assert.ok(fine > coarse * 4);
+  setResolution({ fa: 3 });
+  try {
+    assert.ok(points(text('O')) > points(text('O', { fn: 30 })));
+  } finally {
+    setResolution({ fa: 12 });
+  }
+});
+
+test('text: extruded and engraved', () => {
+  const plate = cube([40, 15, 3]).subtract(text('42', { size: 8, halign: 'center', valign: 'center' }).extrude(2).translate([20, 7.5, 2]));
+  assert.ok(plate.volume() < 40 * 15 * 3);
+  assert.ok(plate.volume() > 40 * 15 * 2);
+  assert.throws(() => text('x', { font: 'Roboto.ttf' }), /must be a font file's bytes/);
+});
+
+function polygonArea(points) {
+  let a = 0;
+  points.forEach(([x, y], i) => {
+    const [nx, ny] = points[(i + 1) % points.length];
+    a += x * ny - nx * y;
+  });
+  return Math.abs(a) / 2;
+}

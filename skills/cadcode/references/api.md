@@ -28,6 +28,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | `square(size = 1, { center = false })` | `size`: number or `[x, y]`. |
 | `circle(r)` / `circle({ r, d, fn })` | Centered. |
 | `polygon(points, paths?)` | Even-odd fill: paths inside other paths are holes. |
+| `text(string, { size = 10, font, halign = 'left', valign = 'baseline', spacing = 1, lineHeight = 1, fn })` | A number for options is `{ size }`. `size`: height of the capital H. `font`: TTF/OTF/WOFF bytes (`import font from './x.ttf'`), default Liberation Sans. `halign`: left/center/right by advance width; `valign`: baseline (first line's) or top/center/bottom of the ink. `\n` breaks lines. Curves: `fn` per full turn, else one segment per `fa` degrees (`fs` unused). Throws on a font without an H. |
 
 ## `point`
 

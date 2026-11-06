@@ -44,6 +44,9 @@ installed, otherwise reason from the source.
 | `linear_extrude(h, center = true, twist = t, scale = s)` | `.extrude(h, { center: true, twist: t, scale: s })` |
 | `rotate_extrude(angle = 180) shape2d;` | `shape2d.revolve({ angle: 180 })` |
 | `offset(r = 1) shape2d;` | `shape2d.offset(1)` |
+| `text("A1", size = 10, halign = "center", valign = "center");` | `text('A1', { size: 9.55, halign: 'center', valign: 'center' })`: cadcode's `size` is the capital height, 0.955 of OpenSCAD's `size` in Liberation Sans |
+| `text(t, font = "Roboto:style=Bold");` | `import font from './Roboto-Bold.ttf';` then `text(t, { font })`: fonts are files, not system names |
+| `text(t, spacing = 1.2, direction = "rtl")` | `spacing` works the same; `direction`, `language` and `script` are not supported |
 | `offset(delta = 1) shape2d;` | `shape2d.offset({ delta: 1 })` |
 | `offset(delta = 1, chamfer = true)` | `shape2d.offset({ delta: 1, chamfer: true })` |
 | `color("orange", 0.35) lid();` | `lid().color('orange', 0.35)` |

@@ -151,6 +151,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `square(size, { center })` | `size` is a number or `[x, y]`. |
 | `circle(r)` or `circle({ r \| d, fn })` | |
 | `polygon(points, paths?)` | Paths inside other paths become holes. |
+| `text(string, { size, font, halign, valign, spacing, lineHeight, fn })` | Text for labels and engraving; letters keep their holes, `\n` breaks lines. `size` is the height of a capital letter (default 10). `halign` is `left`, `center` or `right`; `valign` is `baseline`, `top`, `center` or `bottom`. The font is Liberation Sans unless `font` gives a font file's bytes: `import font from './Roboto.ttf'` (TTF, OTF or WOFF). Curves follow `fn` and `fa`, not `fs`. |
 
 ### Solid methods
 
@@ -225,6 +226,8 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `for (i = [0 : n - 1])` | `range(0, n - 1).map((i) => ...)` |
 | `linear_extrude(h) offset(r = 1) square(s, center = true);` | `square(s, { center: true }).offset(1).extrude(h)` |
 | `color("orange", 0.35) lid();` | `lid().color('orange', 0.35)` |
+| `text("A1", size = 10, halign = "center");` | `text('A1', { size: 9.55, halign: 'center' })`: `size` is the height of a capital, which in OpenSCAD's Liberation Sans is 0.955 of its `size` |
+| `text("A1", font = "Roboto");` | `import font from './Roboto.ttf';` then `text('A1', { font })` |
 | `module box() { ... }` | `const box = () => ...` |
 | `part = "box";` with `-D 'part="box"'` | Named parts and `--part box` |
 | `wall = 2;` with `-D wall=2.4` | `export const params = { wall: 2 }` and `--set wall=2.4` |

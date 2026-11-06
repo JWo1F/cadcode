@@ -193,6 +193,30 @@ polygon(
   [[0, 1, 2, 3], [4, 5, 6, 7]],
 )`,
       },
+      {
+        id: 'text',
+        name: 'text',
+        signature: 'text(string, options)',
+        summary:
+          'Text as a 2D shape, for labels, numbers and engraving: extrude it, or subtract the extrusion from a part. Letters keep their holes. Lines break at `\\n`.',
+        params: [
+          { name: 'string', type: 'string', text: 'The text.' },
+          { name: 'options.size', type: 'number', default: '10', text: 'The height of a capital letter (the font\'s H). A number in place of `options` means `{ size }`. OpenSCAD\'s capitals in Liberation Sans are 0.955 of its `size`, so `size = 10` there is `size: 9.55` here.' },
+          { name: 'options.font', type: 'Uint8Array | ArrayBuffer', default: 'Liberation Sans', text: 'A TTF, OTF or WOFF file\'s bytes: `import font from \'./Roboto.ttf\'` next to the program gives them. In the playground, `await (await fetch(url)).arrayBuffer()`.' },
+          { name: 'options.halign', type: "'left' | 'center' | 'right'", default: "'left'", text: 'Which end of each line sits at x = 0, going by the letters\' advance widths.' },
+          { name: 'options.valign', type: "'baseline' | 'top' | 'center' | 'bottom'", default: "'baseline'", text: 'What sits at y = 0: the first line\'s baseline, or the top, middle or bottom of the letters.' },
+          { name: 'options.spacing', type: 'number', default: '1', text: 'Factor on the distance between letters.' },
+          { name: 'options.lineHeight', type: 'number', default: '1', text: 'Factor on the font\'s distance between lines.' },
+          { name: 'options.fn', type: 'number', text: 'Segments for a full turn of a curve, as for circles. Without it, `setResolution`\'s `fn`, or one segment per `fa` degrees; `fs` is not used, since letters are small.' },
+        ],
+        returns: 'Shape2',
+        example: `// A nameplate with engraved, centered text.
+cube([60, 20, 3]).subtract(
+  text('cadcode', { size: 8, halign: 'center', valign: 'center' })
+    .extrude(2)
+    .translate([30, 10, 2]),
+)`,
+      },
     ],
   },
   {

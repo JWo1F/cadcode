@@ -8,6 +8,8 @@ import { meshGroups } from '../src/core/mesh.js';
 import { toSTL } from '../src/export/stl.js';
 import { toPNG } from '../src/export/png.js';
 
+const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
+
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-test-'));
 const program = path.join(dir, 'model.js');
 fs.writeFileSync(
@@ -23,8 +25,21 @@ export default (p) => ({
 });`,
 );
 const bundle = await bundleProgram(program);
+
+// A program importing a font file gets its bytes; the default font stands in for one here.
+const { default: fontBase64 } = await import('../src/lib/fonts/liberation-sans.js');
+fs.writeFileSync(path.join(dir, 'Font.ttf'), Buffer.from(fontBase64, 'base64'));
+fs.writeFileSync(
+  path.join(dir, 'label.js'),
+  `import { text } from 'cadcode';
+import font from './Font.ttf';
+export default text('HI', { size: 5, font }).extrude(1);`,
+);
+const labelBundle = await bundleProgram(path.join(dir, 'label.js'));
+
 after(() => {
   removeBundle(bundle);
+  removeBundle(labelBundle);
   fs.rmSync(dir, { recursive: true });
 });
 
@@ -78,6 +93,11 @@ test('PNG is a valid image of the requested size', async () => {
   assert.deepEqual([...png.subarray(1, 4)], [0x50, 0x4e, 0x47]);
   assert.equal(png.readUInt32BE(16), 64);
   assert.equal(png.readUInt32BE(20), 48);
+});
+
+test('a program imports a font file as bytes for text()', async () => {
+  const { solids } = await evaluateProgram(labelBundle);
+  near(solids[0].bounds().max[1], 5);
 });
 
 test('overrides parse JSON values and fall back to strings', () => {

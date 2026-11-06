@@ -3,7 +3,7 @@ name: cadcode
 description: >
   How to model 3D-printable parts as code with cadcode, the JavaScript CAD library and CLI
   (`cadcode dev`, `cadcode stl`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
-  `square`, `circle`, `polygon`), booleans (`union`, `difference`, `intersection`, `hull`,
+  `square`, `circle`, `polygon`, `text`), booleans (`union`, `difference`, `intersection`, `hull`,
   `minkowski`), rounded and chamfered edges,
   2D `offset`/`extrude`/`revolve`, colors, `params` and named parts. Use this skill whenever a
   project's package.json has `cadcode`, whenever code imports from 'cadcode', and whenever the
@@ -126,6 +126,13 @@ solids with `.extrude(h, { center, twist, scale })` or `.revolve({ angle })`. A 
 only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold outline), left out of STL (a part with no solids fails to export). `.extrude` grows along +Z, so a profile meant for a side wall is extruded and
 then rotated into place (`.extrude(depth).rotate([0, 90, 0])` points it along +X after rotation).
 Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.
+
+**Text.** `text('A1', { size: 5, halign: 'center', valign: 'center' })` is a `Shape2`; extrude it for raised
+letters, or subtract the extrusion for engraving (sink it: extrude a bit deeper than the cut and
+translate it so it pokes out of the face). `size` is the **height of a capital letter**; OpenSCAD's
+capitals in Liberation Sans are 0.955 of its `size`, so `size = 10` there is `size: 9.55` here. Default font Liberation Sans, with Cyrillic; another font
+is a file next to the program: `import font from './Roboto.ttf'` then `text(s, { font })`. For
+printing, keep letters at least ~5 mm tall and strokes over two nozzle widths, or use a bold font.
 
 **Rounded and chamfered edges.** `cube(size, { round: r })` rounds every edge and
 `cube(size, { chamfer: c })` cuts every edge at 45°; `cylinder({ d, h, round })` / `{ chamfer }`

@@ -61,7 +61,13 @@ execFileSync(
   ['tsc', '-p', path.join(ROOT, 'tsconfig.json'), '--outDir', typesDir],
   { stdio: 'inherit', cwd: ROOT },
 );
-const typings = Object.fromEntries(fs.readdirSync(typesDir).map((file) => [file, fs.readFileSync(path.join(typesDir, file), 'utf8')]));
+// Recursive: text()'s default font has its own module, in fonts/.
+const typings = Object.fromEntries(
+  fs
+    .readdirSync(typesDir, { recursive: true })
+    .filter((file) => file.endsWith('.d.ts'))
+    .map((file) => [file, fs.readFileSync(path.join(typesDir, file), 'utf8')]),
+);
 fs.rmSync(typesDir, { recursive: true });
 
 const virtualModules = (modules) => ({

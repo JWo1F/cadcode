@@ -16,11 +16,14 @@ import { range } from './util.js';
 const wasm = await Module();
 wasm.setup();
 const { Manifold, CrossSection, Mesh } = wasm;
+/** @internal The WASM instance's CrossSection, for text(): shapes must all come from one instance. */
+export { CrossSection };
 
 // ---------------------------------------------------------------------------
 // Resolution of curved primitives — the same rules as OpenSCAD's $fn/$fa/$fs.
 
-const resolution = { fn: 0, fa: 12, fs: 2 };
+/** @internal Read by text() for its curves. */
+export const resolution = { fn: 0, fa: 12, fs: 2 };
 
 /**
  * Sets the default number of segments for circles, cylinders and spheres, like OpenSCAD's `$fn`, `$fa` and `$fs`.

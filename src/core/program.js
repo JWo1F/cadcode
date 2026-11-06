@@ -32,9 +32,13 @@ export function bundleOptions(entry) {
     bundle: true,
     format: 'esm',
     platform: 'node',
+    // The bundle runs in this very Node: esbuild then only uses what it has (e.g. no Uint8Array.fromBase64 before Node 25).
+    target: `node${process.versions.node}`,
     sourcemap: 'inline',
     metafile: true,
     logLevel: 'silent',
+    // `import font from './Roboto.ttf'` gives the file's bytes, for text({ font }).
+    loader: { '.ttf': 'binary', '.otf': 'binary', '.woff': 'binary' },
     plugins: [cadcodePlugin],
   };
 }

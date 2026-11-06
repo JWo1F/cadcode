@@ -24,5 +24,6 @@ export {
   offset,
   linearExtrude,
 } from './shapes.js';
+export { text } from './text.js';
 export { parseColor } from './colors.js';
 export { range, product } from './util.js';
