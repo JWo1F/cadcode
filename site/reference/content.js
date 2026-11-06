@@ -765,7 +765,7 @@ const lid = lidShape.rotate([-110, 0, 0], { around: hinge })`,
         id: 'cli-dev',
         name: 'cadcode dev',
         signature: 'cadcode dev <file> [--part] [--set] [--port] [--host] [--open]',
-        summary: 'A live preview in the browser. It watches the program and every file it imports, and on each save swaps the new model in without moving the camera. A program with `params` gets a Parameters panel to change them in the page; the values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped.',
+        summary: 'A live preview in the browser. It watches the program and every file it imports, and on each save swaps the new model in without moving the camera. A program with `params` gets a Parameters panel to change them in the page; the values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. The view can cut the model open across X, Y or Z (S, then drag the plane or its slider) and measure between two clicked points (M); the playground has both too.',
         params: [
           { name: '--port', type: 'number', default: '5173', text: 'The port to serve on.' },
           { name: '--host', type: 'address', default: '127.0.0.1', text: 'The address to bind. `0.0.0.0` makes it reachable from other devices.' },

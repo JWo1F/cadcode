@@ -175,7 +175,9 @@ parts to check holes and walls. Look for: holes that go through (vs. blind or mi
 the right place relative to each other, nothing floating, the print part flat on Z = 0.
 
 Numbers beat eyeballing for fit and size: log bounds and volumes from the program or a scratch
-script.
+script. When the user checks a fit by hand, point them at the `cadcode dev` viewer's Section (S:
+cut across X, Y or Z and drag the plane) and Measure (M: click two points). `cadcode png` has no
+section, so to see inside a part yourself, cut it in a scratch program (`.intersect` with a box).
 
 ```js
 console.log(box().bounds()); // { min: [x, y, z], max: [x, y, z] }
