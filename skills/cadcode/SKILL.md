@@ -119,8 +119,8 @@ difference(
 **includes** `b`.
 
 **2D needs extruding.** `square`, `circle`, `polygon` and `.offset()` make `Shape2`s; turn them into
-solids with `.extrude(h, { center, twist, scale })` or `.revolve({ angle })`. A part containing a
-2D shape is an error. `.extrude` grows along +Z, so a profile meant for a side wall is extruded and
+solids with `.extrude(h, { center, twist, scale })` or `.revolve({ angle })`. A 2D shape left in a part is
+only a preview: drawn as a thin teal slab on Z=0, left out of STL (a part with no solids fails to export). `.extrude` grows along +Z, so a profile meant for a side wall is extruded and
 then rotated into place (`.extrude(depth).rotate([0, 90, 0])` points it along +X after rotation).
 Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.
 

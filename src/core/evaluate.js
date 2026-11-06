@@ -4,14 +4,15 @@ import { Solid, Shape2 } from '../lib/index.js';
 
 function flattenModel(model, partName) {
   const solids = [];
+  const shapes = [];
   const walk = (item) => {
     if (Array.isArray(item)) item.forEach(walk);
     else if (item instanceof Solid) solids.push(item);
-    else if (item instanceof Shape2) throw new Error(`Part "${partName}" contains a 2D shape; extrude it to make a solid`);
-    else if (item) throw new Error(`Part "${partName}" contains ${typeof item} ${String(item)}, not a solid`);
+    else if (item instanceof Shape2) shapes.push(item);
+    else if (item) throw new Error(`Part "${partName}" contains ${typeof item} ${String(item)}, not a solid or a 2D shape`);
   };
   walk(model);
-  return solids;
+  return { solids, shapes };
 }
 
 const isModel = (value) => value instanceof Solid || value instanceof Shape2 || Array.isArray(value);
@@ -31,7 +32,7 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
  *
  * @param {{ default?: unknown, params?: Record<string, unknown> }} mod
  * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
- * @returns the part's solids, the part names, the params it ran with and the declared ones (`declared`)
+ * @returns the part's solids and 2D shapes, the part names, the params it ran with and the declared ones (`declared`)
  */
 export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false, ignoreUnknown = false } = {}) {
   if (mod.default === undefined) throw new Error('The program has no `export default`');
@@ -55,5 +56,5 @@ export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirs
 
   const entry = parts[name];
   const model = typeof entry === 'function' ? await entry(params) : entry;
-  return { partNames, part: name, params, declared, solids: flattenModel(model, name) };
+  return { partNames, part: name, params, declared, ...flattenModel(model, name) };
 }

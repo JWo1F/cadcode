@@ -78,7 +78,7 @@ async function main() {
       const { toPNG } = await import('./export/png.js');
       const [width, height] = values.size.split('x').map(Number);
       if (!width || !height) throw new Error(`--size must look like 800x600, got "${values.size}"`);
-      fs.writeFileSync(out, toPNG(result.solids, { width, height, view: values.view }));
+      fs.writeFileSync(out, toPNG(result, { width, height, view: values.view }));
     }
     console.log(`${part} → ${out} (${Math.round(performance.now() - started)} ms)`);
   }

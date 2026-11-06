@@ -117,7 +117,7 @@ export default (p) => {
 };
 ```
 
-The first part is the default one. The STL of a part merges all its solids into one body. In the viewer and in PNGs each solid keeps its own color and transparency, which is what assembly views are for.
+The first part is the default one. The STL of a part merges all its solids into one body. A part may also hold 2D shapes, to check a profile before extruding it: the viewer and PNGs draw them as a thin teal slab on Z=0, and STL leaves them out (a part with only 2D shapes fails to export). In the viewer and in PNGs each solid keeps its own color and transparency, which is what assembly views are for.
 
 A program can import its own helper files and npm packages like any module. TypeScript files work too.
 

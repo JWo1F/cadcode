@@ -29,7 +29,7 @@ try {
     const stl = toSTL(result.solids);
     parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, stl }, [stl.buffer]);
   } else {
-    const groups = meshGroups(result.solids);
+    const groups = meshGroups(result.solids, result.shapes);
     parentPort.postMessage(
       {
         ok: true,

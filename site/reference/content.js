@@ -31,12 +31,12 @@ export const sections = [
         signature: 'export default model | parts | (params) => model | parts',
         summary: 'What the program builds. The CLI, the dev viewer and the playground all read it the same way.',
         params: [
-          { name: 'model', type: 'Solid | Solid[]', text: 'A solid, or an array of solids. Arrays may nest. The program then has one part, named `default`.' },
+          { name: 'model', type: 'Solid | Shape2 | arrays of them', text: 'A solid or a 2D shape, or an array of them. Arrays may nest. The program then has one part, named `default`.' },
           { name: 'parts', type: '{ [name]: model | (params) => model }', text: 'Named parts. The first one is the default. A function value is only called for the part being shown or exported, so expensive parts cost nothing until you pick them.' },
           { name: 'params', type: 'object', text: 'When the default export is a function, it is called with `params` merged with any `--set` overrides.' },
         ],
         notes: [
-          'A 2D shape in a part is an error: extrude or revolve it first.',
+          'A 2D shape in a part is drawn in the viewer and in PNGs as a thin teal slab on Z=0, to check a profile before extruding it. STL leaves it out, and a part with no solids at all fails to export.',
           'The STL of a part merges all its solids into one body. In the viewer and in PNGs each solid keeps its own color and transparency.',
           'Functions may be `async`.',
         ],
