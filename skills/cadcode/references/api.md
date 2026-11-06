@@ -29,6 +29,12 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | `circle(r)` / `circle({ r, d, fn })` | Centered. |
 | `polygon(points, paths?)` | Even-odd fill: paths inside other paths are holes. |
 
+## `point`
+
+`point([x, y, z])` marks a place without geometry (never in an STL), e.g. a pivot. It has
+`.translate`, `.rotate` (same arguments as `Solid.rotate`), `.scale`, `.mirror`, `.transform`,
+each returning a new point, and `.x`, `.y`, `.z`, `.toArray()`.
+
 ## `Solid` methods
 
 | Method | Notes |
@@ -37,6 +43,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | `.rotate([x, y, z])` | Degrees; X then Y then Z. |
 | `.rotate(a)` | Around Z. |
 | `.rotate(a, [x, y, z])` | Around an arbitrary axis through the origin. |
+| `.rotate(..., { around })` | Last argument: turn around a `point`, a shape's bounding-box center, or `[x, y, z]` instead of the origin. |
 | `.scale(s)` / `.scale([x, y, z])` | Missing components are 1. |
 | `.mirror([nx, ny, nz])` | Across the plane through the origin with that normal. |
 | `.transform(m)` | Column-major 4×4 as 16 numbers. |
@@ -56,6 +63,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | Method | Notes |
 | --- | --- |
 | `.translate([x, y])`, `.rotate(a)`, `.scale(s \| [x, y])`, `.mirror([nx, ny])` | |
+| `.rotate(a, { around })` | Around a `point`, a shape's bounding-box center, or `[x, y]`. |
 | `.offset(r)` / `.offset({ r, fn })` | Round corners; negative shrinks. |
 | `.offset({ delta, chamfer = false })` | Sharp corners, or cut with `chamfer: true`. |
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | As for solids, with `Shape2`s. |
@@ -75,6 +83,7 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | `hull(...shapes)` | |
 | `translate(v, ...shapes)` | `union(...shapes).translate(v)` |
 | `rotate(a, ...shapes)` | `union(...shapes).rotate(a)` |
+| `rotate(a, { around }, ...shapes)` | `union(...shapes).rotate(a, { around })` |
 | `scale(v, ...shapes)` | `union(...shapes).scale(v)` |
 | `mirror(n, ...shapes)` | `union(...shapes).mirror(n)` |
 | `color(c, alpha?, ...shapes)` | `union(...shapes).color(c, alpha)` |

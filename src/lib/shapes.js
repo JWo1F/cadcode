@@ -83,6 +83,41 @@ function axisRotation(degrees, axis) {
   ];
 }
 
+/** Rotation by `[x, y, z]` degrees, around X, then Y, then Z, as a column-major 4x4 matrix. */
+function eulerRotation(angles) {
+  const [ax, ay, az] = toVec3(angles);
+  return multiply(axisRotation(az, [0, 0, 1]), multiply(axisRotation(ay, [0, 1, 0]), axisRotation(ax, [1, 0, 0])));
+}
+
+/** The product `a * b` of two column-major 4x4 matrices: `b` applies first. */
+function multiply(a, b) {
+  const out = new Array(16).fill(0);
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      for (let k = 0; k < 4; k++) out[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
+    }
+  }
+  return out;
+}
+
+/**
+ * The pivot a rotation turns around: a point's position, the center of a shape's
+ * bounding box, or plain coordinates.
+ * @param {Point | Solid | Shape2 | number[]} target
+ * @returns {Vec3}
+ */
+function pivotOf(target) {
+  if (target instanceof Point) return [target.x, target.y, target.z];
+  if (target instanceof Solid || target instanceof Shape2) {
+    const { min, max } = target.bounds();
+    return toVec3(min.map((lo, i) => (lo + max[i]) / 2));
+  }
+  if (Array.isArray(target)) return toVec3(target);
+  throw new Error('rotate(): `around` must be a point, a shape or [x, y, z]');
+}
+
+/** @typedef {{ around?: Point | Solid | Shape2 | number[] }} RotateOptions */
+
 /** A 3D solid. Every method returns a new solid; solids are never modified in place. */
 export class Solid {
   /** @internal */
@@ -98,10 +133,17 @@ export class Solid {
   /**
    * Rotates in degrees. `rotate([x, y, z])` turns around X, then Y, then Z, like OpenSCAD.
    * `rotate(a)` turns around Z; `rotate(a, axis)` turns around an arbitrary axis.
+   * A last `{ around }` argument moves the pivot from the origin to a point, the center of a shape, or [x, y, z].
    * @param {number[] | number} angles
-   * @param {number[]} [axis]
+   * @param {number[] | RotateOptions} [axis]
+   * @param {RotateOptions} [options]
    */
-  rotate(angles, axis) {
+  rotate(angles, axis, options) {
+    if (axis && !Array.isArray(axis)) return this.rotate(angles, undefined, axis);
+    if (options?.around) {
+      const c = pivotOf(options.around);
+      return this.translate(c.map((v) => -v)).rotate(angles, axis).translate(c);
+    }
     if (axis) return new Solid(this.manifold.transform(axisRotation(angles, axis)));
     return new Solid(this.manifold.rotate(typeof angles === 'number' ? [0, 0, angles] : toVec3(angles)));
   }
@@ -205,8 +247,16 @@ export class Shape2 {
     return new Shape2(this.section.translate([v[0] ?? 0, v[1] ?? 0]));
   }
 
-  /** @param {number} degrees */
-  rotate(degrees) {
+  /**
+   * Rotates counter-clockwise, around the origin or around `{ around }`: a point, the center of a shape, or [x, y].
+   * @param {number} degrees
+   * @param {RotateOptions} [options]
+   */
+  rotate(degrees, options) {
+    if (options?.around) {
+      const [x, y] = pivotOf(options.around);
+      return this.translate([-x, -y]).rotate(degrees).translate([x, y]);
+    }
     return new Shape2(this.section.rotate(degrees));
   }
 
@@ -293,6 +343,75 @@ export class Shape2 {
   toPolygons() {
     return this.section.toPolygons().map((poly) => poly.map((p) => [p[0], p[1]]));
   }
+}
+
+/**
+ * A point in space. It has no geometry and never reaches an STL; it marks a place,
+ * such as a pivot for `rotate(..., { around })`, and moves with the same transforms as solids.
+ */
+export class Point {
+  /** @internal @param {Vec3} position */
+  constructor(position) {
+    [this.x, this.y, this.z] = position;
+  }
+
+  /** @returns {Vec3} */
+  toArray() {
+    return [this.x, this.y, this.z];
+  }
+
+  /** Applies a column-major 4x4 matrix. @param {number[]} m */
+  transform(m) {
+    const { x, y, z } = this;
+    return new Point([
+      m[0] * x + m[4] * y + m[8] * z + m[12],
+      m[1] * x + m[5] * y + m[9] * z + m[13],
+      m[2] * x + m[6] * y + m[10] * z + m[14],
+    ]);
+  }
+
+  /** @param {number[]} v */
+  translate(v) {
+    const [dx, dy, dz] = toVec3(v);
+    return new Point([this.x + dx, this.y + dy, this.z + dz]);
+  }
+
+  /**
+   * The same arguments as {@link Solid#rotate}.
+   * @param {number[] | number} angles
+   * @param {number[] | RotateOptions} [axis]
+   * @param {RotateOptions} [options]
+   */
+  rotate(angles, axis, options) {
+    if (axis && !Array.isArray(axis)) return this.rotate(angles, undefined, axis);
+    if (options?.around) {
+      const c = pivotOf(options.around);
+      return this.translate(c.map((v) => -v)).rotate(angles, axis).translate(c);
+    }
+    if (axis) return this.transform(axisRotation(angles, axis));
+    return this.transform(eulerRotation(typeof angles === 'number' ? [0, 0, angles] : angles));
+  }
+
+  /** @param {number[] | number} v */
+  scale(v) {
+    const [sx, sy, sz] = typeof v === 'number' ? [v, v, v] : [v[0] ?? 1, v[1] ?? 1, v[2] ?? 1];
+    return new Point([this.x * sx, this.y * sy, this.z * sz]);
+  }
+
+  /** Mirrors across the plane through the origin with the given normal. @param {number[]} normal */
+  mirror(normal) {
+    const n = toVec3(normal);
+    const k = (2 * (this.x * n[0] + this.y * n[1] + this.z * n[2])) / (n[0] ** 2 + n[1] ** 2 + n[2] ** 2);
+    return new Point([this.x - k * n[0], this.y - k * n[1], this.z - k * n[2]]);
+  }
+}
+
+/**
+ * A point at `[x, y, z]`. Missing components are 0.
+ * @param {number[]} [position]
+ */
+export function point(position = [0, 0, 0]) {
+  return new Point(toVec3(position));
 }
 
 // ---------------------------------------------------------------------------
@@ -453,9 +572,16 @@ export function translate(v, ...items) {
   return union(...items).translate(v);
 }
 
-/** Same arguments as {@link Solid#rotate}; 2D shapes take a single angle. @param {number[] | number} angles @param {...Items<Solid | Shape2>} items */
-export function rotate(angles, ...items) {
-  return union(...items).rotate(angles);
+/**
+ * `rotate(angles, ...shapes)` or `rotate(angles, { around }, ...shapes)`. 2D shapes take a single angle.
+ * @param {number[] | number} angles
+ * @param {...(RotateOptions | Items<Solid | Shape2>)} rest
+ */
+export function rotate(angles, ...rest) {
+  const first = rest[0];
+  const isOptions = first && typeof first === 'object' && !Array.isArray(first) && !(first instanceof Solid) && !(first instanceof Shape2);
+  const options = isOptions ? rest.shift() : undefined;
+  return union(...rest).rotate(angles, options);
 }
 
 /** @param {number[] | number} v @param {...Items<Solid | Shape2>} items */

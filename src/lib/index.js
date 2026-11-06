@@ -1,6 +1,8 @@
 export {
   Solid,
   Shape2,
+  Point,
+  point,
   setResolution,
   cube,
   cylinder,

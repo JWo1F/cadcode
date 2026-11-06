@@ -245,14 +245,16 @@ hull(product([3, 37], [3, 17]).map(([x, y]) => cylinder({ r: 3, h: 10 }).transla
       {
         id: 'rotate',
         name: 'rotate',
-        signature: 'rotate(angles, ...shapes)',
-        summary: 'Rotates shapes. The same as `union(...shapes).rotate(angles)`.',
+        signature: 'rotate(angles, options, ...shapes)',
+        summary: 'Rotates shapes. The same as `union(...shapes).rotate(angles, options)`.',
         params: [
           { name: 'angles', type: '[x, y, z] | number', text: 'Degrees. Solids take `[x, y, z]`, applied around X, then Y, then Z, or one number around Z. 2D shapes take one number only.' },
+          { name: 'options.around', type: 'Point | Solid | Shape2 | [x, y, z]', text: 'Optional; recognized when the second argument is a plain object. Turns around this instead of the origin: a `point`, the center of a shape\'s bounding box, or plain coordinates.' },
           shapes,
         ],
         returns: 'Solid | Shape2',
         notes: ['To turn around an arbitrary axis, use the method: `shape.rotate(a, axis)`.'],
+        example: `rotate(90, { around: point([10, 0, 0]) }, arm, hand)`,
       },
       {
         id: 'scale',
@@ -326,15 +328,18 @@ hull(product([3, 37], [3, 17]).map(([x, y]) => cylinder({ r: 3, h: 10 }).transla
         id: 'solid-rotate',
         name: 'rotate',
         owner: 'Solid',
-        signature: '.rotate(angles, axis)',
-        summary: 'Rotates the solid around the origin, in degrees.',
+        signature: '.rotate(angles, axis, options)',
+        summary: 'Rotates the solid, in degrees, around the origin or around `options.around`.',
         params: [
           { name: 'angles', type: '[x, y, z] | number', text: '`[x, y, z]` turns around X, then Y, then Z, like OpenSCAD. One number turns around Z, or around `axis` when it is given.' },
-          { name: 'axis', type: '[x, y, z]', text: 'Optional. An axis through the origin to turn around; it need not be unit length.' },
+          { name: 'axis', type: '[x, y, z]', text: 'Optional. An axis through the pivot to turn around; it need not be unit length.' },
+          { name: 'options.around', type: 'Point | Solid | Shape2 | [x, y, z]', text: 'Optional; may come right after `angles` when there is no `axis`. Turns around this instead of the origin: a `point`, the center of a shape\'s bounding box, or plain coordinates.' },
         ],
         returns: 'Solid',
         example: `peg.rotate([0, 90, 0])
-peg.rotate(45, [1, 1, 0])`,
+peg.rotate(45, [1, 1, 0])
+lid.rotate([-110, 0, 0], { around: hinge })
+peg.rotate(30, [1, 0, 0], { around: base })`,
       },
       {
         id: 'solid-scale',
@@ -484,9 +489,12 @@ const height = max[2] - min[2];`,
         id: 'shape2-rotate',
         name: 'rotate',
         owner: 'Shape2',
-        signature: '.rotate(degrees)',
-        summary: 'Rotates the shape around the origin, counter-clockwise.',
-        params: [{ name: 'degrees', type: 'number', text: 'The angle.' }],
+        signature: '.rotate(degrees, options)',
+        summary: 'Rotates the shape counter-clockwise, around the origin or around `options.around`.',
+        params: [
+          { name: 'degrees', type: 'number', text: 'The angle.' },
+          { name: 'options.around', type: 'Point | Solid | Shape2 | [x, y]', text: 'Optional. Turns around this instead of the origin: a `point` (its Z is ignored), the center of a shape\'s bounding box, or plain coordinates.' },
+        ],
         returns: 'Shape2',
       },
       {
@@ -676,6 +684,26 @@ product(xs, ys).map(([x, y]) => peg.translate([x, y, 0]))`,
         returns: '[r, g, b, a]',
         example: `parseColor('#f80')        // [1, 0.53, 0, 1]
 parseColor('steelblue', 0.5)`,
+      },
+      {
+        id: 'point',
+        name: 'point',
+        signature: 'point(position)',
+        summary: 'A point in space: no geometry, never in an STL. It marks a place, such as a pivot for `rotate(..., { around })`, and moves with the same transforms as a solid, so a pivot can travel with its part.',
+        params: [{ name: 'position', type: '[x, y, z]', text: 'Where it is. Missing components are 0.' }],
+        returns: 'Point',
+        notes: [
+          'Methods, each returning a new point: `.translate(v)`, `.rotate(angles, axis, options)` (the same arguments as `Solid.rotate`), `.scale(v)`, `.mirror(normal)`, `.transform(m)`.',
+          'Read it with `.x`, `.y`, `.z` or `.toArray()`.',
+        ],
+        example: `const hinge = point([0, 40, 30])
+const lid = lidShape.rotate([-110, 0, 0], { around: hinge })`,
+      },
+      {
+        id: 'Point',
+        name: 'Point',
+        signature: 'Point',
+        summary: 'The class of points, exported for `instanceof` checks. Make points with `point`, not with `new`.',
       },
       {
         id: 'Solid',

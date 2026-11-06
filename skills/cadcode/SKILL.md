@@ -89,7 +89,9 @@ first, then moves. OpenSCAD's `translate(t) rotate(r) child()` is applied innerm
 becomes `child().rotate(r).translate(t)` — reverse the order when porting.
 
 **`rotate([x, y, z])` turns around X, then Y, then Z,** exactly as OpenSCAD. `rotate(a)` is around Z;
-`rotate(a, [ax, ay, az])` is around any axis. A cylinder lies along X after `.rotate([0, 90, 0])`,
+`rotate(a, [ax, ay, az])` is around any axis. A last `{ around }` argument turns around a
+`point([x, y, z])`, another shape's bounding-box center, or `[x, y, z]` instead of the origin:
+`lid.rotate([-110, 0, 0], { around: hinge })`. A cylinder lies along X after `.rotate([0, 90, 0])`,
 along Y after `.rotate([-90, 0, 0])` (or `[90, 0, 0]`, pointing −Y).
 
 **Primitives sit on the origin like OpenSCAD's:** `cube` has a corner at the origin unless
