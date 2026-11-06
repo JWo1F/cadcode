@@ -25,6 +25,7 @@ export {
   linearExtrude,
 } from './shapes.js';
 export { helix, loft } from './sweep.js';
+export { thread } from './thread.js';
 export { text } from './text.js';
 export { importSTL } from './import/stl.js';
 export { import3MF } from './import/3mf.js';

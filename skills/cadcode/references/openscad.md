@@ -44,6 +44,8 @@ installed, otherwise reason from the source.
 | `linear_extrude(h, center = true, twist = t, scale = s)` | `.extrude(h, { center: true, twist: t, scale: s })` |
 | `rotate_extrude(angle = 180) shape2d;` | `shape2d.revolve({ angle: 180 })` |
 | `path_sweep(shape, path)` (BOSL2) | `shape2d.sweep(path)`; BOSL2's `helix` path is `helix({ r, pitch, turns })` |
+| `metric_thread(diameter = 8, pitch = 1.25, length = 10);` (threads.scad) or BOSL2 `threaded_rod(d, l, pitch)` | `thread({ d: 8, pitch: 1.25, length: 10 })`: along +Z from 0, not centered |
+| `metric_thread(8, 1.25, 10, internal = true);` or BOSL2 `threaded_nut` | `nut.subtract(thread({ d: 8, pitch: 1.25, length: 10, internal: true }))`: the cutter already has 0.2 mm `clearance` |
 | `offset(r = 1) shape2d;` | `shape2d.offset(1)` |
 | `text("A1", size = 10, halign = "center", valign = "center");` | `text('A1', { size: 9.55, halign: 'center', valign: 'center' })`: cadcode's `size` is the capital height, 0.955 of OpenSCAD's `size` in Liberation Sans |
 | `text(t, font = "Roboto:style=Bold");` | `import font from './Roboto-Bold.ttf';` then `text(t, { font })`: fonts are files, not system names |

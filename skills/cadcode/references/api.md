@@ -113,6 +113,7 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | Function | Notes |
 | --- | --- |
 | `loft(sections, { z })` | `Shape2` sections flat at increasing heights `z[i]`, straight faces between neighbours (several sections for a curve). One outline per section, no holes: subtract them after. Point counts are evened by adding points along edges (corners kept); each section starts where it best lines up with the one below. |
+| `thread({ d, pitch, length, profile = 'iso', internal = false, clearance = 0.2, starts = 1, leftHand = false, taper = 0, fn })` | Threaded rod along +Z, 0..`length`, `d` = major diameter. Profiles `'iso'` (60°, basic ISO metric), `'trapezoid'` (30°, p/2 deep), `'square'`. `internal: true` = cutter for the matching hole: tooth grown by `clearance` on every face, z from -1 to `length + 1`; subtract it. A rod and a cutter of the same `d`/`pitch` line up at the same z. `taper` (≤ length/3): chamfer from root to crest at each end, countersink on the cutter. `starts`: multi-start, lead = starts × pitch. `fn`: segments per turn. Coarse ISO pitches: M3 0.5, M4 0.7, M5 0.8, M6 1, M8 1.25, M10 1.5, M12 1.75. |
 
 ## Helpers
 

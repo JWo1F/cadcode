@@ -223,6 +223,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | Function | Notes |
 | --- | --- |
 | `loft(sections, { z })` | A solid through 2D sections laid flat at heights `z`, joined by straight faces: a square base into a round neck. Each section is one outline without holes (cut holes afterwards). Sections with different point counts are evened out, keeping their corners. |
+| `thread({ d, pitch, length, profile, internal, clearance, starts, leftHand, taper, fn })` | A screw thread along +Z from 0 to `length`, `d` across the crests. `profile` is `'iso'` (60°, the default), `'trapezoid'` (30°, sturdier for lids) or `'square'`. `internal: true` gives the cutter for a threaded hole instead: `clearance` (default 0.2) bigger on every face of the tooth and 1 longer at each end, to subtract from a nut or a cap. `taper` chamfers both ends over that length so the thread starts cleanly (a countersink on a hole). `starts` winds several threads side by side, for a quick-turn lid. |
 
 ### Helpers
 
@@ -268,6 +269,7 @@ export default importSTL(bracket)
 | `for (x = xs, y = ys) translate([x, y]) c();` | `product(xs, ys).map(([x, y]) => c().translate([x, y]))` |
 | `for (i = [0 : n - 1])` | `range(0, n - 1).map((i) => ...)` |
 | `linear_extrude(h) offset(r = 1) square(s, center = true);` | `square(s, { center: true }).offset(1).extrude(h)` |
+| `metric_thread(8, 1.25, 10);` (threads.scad) | `thread({ d: 8, pitch: 1.25, length: 10 })`, and `internal: true` for the hole |
 | `color("orange", 0.35) lid();` | `lid().color('orange', 0.35)` |
 | `text("A1", size = 10, halign = "center");` | `text('A1', { size: 9.55, halign: 'center' })`: `size` is the height of a capital, which in OpenSCAD's Liberation Sans is 0.955 of its `size` |
 | `text("A1", font = "Roboto");` | `import font from './Roboto.ttf';` then `text('A1', { font })` |

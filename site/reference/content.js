@@ -798,7 +798,7 @@ square([8, 12], { center: true }).offset(2).sweep(arch)`,
   {
     id: 'profiles',
     title: 'Lofts and threads',
-    intro: 'More ways to turn 2D into a solid, beside `.extrude`, `.revolve` and `.sweep`.',
+    intro: 'A solid between sections, and screw threads, beside `.extrude`, `.revolve` and `.sweep`.',
     entries: [
       {
         id: 'loft',
@@ -815,6 +815,35 @@ square([8, 12], { center: true }).offset(2).sweep(arch)`,
           'Faces between two sections are straight. For a curved side, add sections in between.',
         ],
         example: `loft([square(30, { center: true }), circle({ r: 10, fn: 48 }), circle({ r: 14, fn: 48 })], { z: [0, 25, 40] })`,
+      },
+      {
+        id: 'thread',
+        name: 'thread',
+        signature: 'thread(options)',
+        summary: 'A screw thread along +Z from 0 to `length`: a threaded rod, or with `internal: true` the solid to subtract for the matching threaded hole.',
+        params: [
+          { name: 'options.d', type: 'number', text: 'Major diameter, across the crests of the rod. For a hole, the rod it is for.' },
+          { name: 'options.pitch', type: 'number', text: 'From one crest to the next along the axis. Coarse metric: M3 0.5, M4 0.7, M5 0.8, M6 1, M8 1.25, M10 1.5, M12 1.75.' },
+          { name: 'options.length', type: 'number', text: 'How long.' },
+          { name: 'options.profile', type: "'iso' | 'trapezoid' | 'square'", default: "'iso'", text: '`iso` is the 60° metric thread. `trapezoid` has 30° flanks and is half a pitch deep, sturdier when printed: bottle caps and jar lids. `square` has straight flanks.' },
+          { name: 'options.internal', type: 'boolean', default: 'false', text: 'Make the cutter for a threaded hole. It reaches 1 past each end so it cuts cleanly through the faces of the nut.' },
+          { name: 'options.clearance', type: 'number', default: '0.2', text: 'For `internal`: how much bigger the hole is than the rod, on every face of the tooth. Raise it if prints bind.' },
+          { name: 'options.starts', type: 'number', default: '1', text: 'Threads wound side by side. Each turn then advances `starts × pitch`, for a lid that closes in a fraction of a turn.' },
+          { name: 'options.leftHand', type: 'boolean', default: 'false', text: 'Wind the other way.' },
+          { name: 'options.taper', type: 'number', default: '0', text: 'Chamfer both ends of a rod over this length, from the root up to the crests, so the thread starts cleanly; on a hole, a countersink. At most a third of `length`.' },
+          { name: 'options.fn', type: 'number', text: 'Segments per turn. Without it the defaults from `setResolution` apply, as for a circle of diameter `d`.' },
+        ],
+        returns: 'Solid',
+        notes: [
+          'A rod and a hole cutter with the same `d`, `pitch` and `starts` line up when placed at the same height, so a bolt can be shown screwed into its nut.',
+          'Fine threads under about M6 rarely print well on an FDM printer. Above that, print the rod standing up.',
+        ],
+        example: `// An M10 bolt and its nut.
+const bolt = thread({ d: 10, pitch: 1.5, length: 20, taper: 1, fn: 48 });
+const nut = cylinder({ d: 17, h: 8, fn: 6 })
+  .subtract(thread({ d: 10, pitch: 1.5, length: 8, internal: true, taper: 1, fn: 48 }))
+  .translate([20, 0, 0]);
+export default [bolt, nut];`,
       },
     ],
   },
