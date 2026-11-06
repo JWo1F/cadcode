@@ -1,10 +1,11 @@
-// Evaluates the playground's code, for the view's meshes or, with output 'stl',
+// Evaluates the playground's code, for the view's meshes or, with output 'stl' or '3mf',
 // for a download. Like the dev server, every evaluation gets a fresh worker:
 // that frees the WASM memory and resets library state such as setResolution().
 import * as cadcode from '../../src/lib/index.js';
 import { evaluateModule } from '../../src/core/evaluate.js';
 import { meshGroups } from '../../src/core/mesh.js';
 import { toSTL } from '../../src/export/stl.js';
+import { to3MF } from '../../src/export/3mf.js';
 
 // The code is loaded from a blob URL, where a bare `'cadcode'` cannot resolve.
 // It is pointed at a module re-exporting this worker's copy of the library:
@@ -30,10 +31,10 @@ self.onmessage = async ({ data: { code, part, output } }) => {
   const source = code.replace(/(\bfrom\s*|\bimport\s*\(\s*)(['"])cadcode\2/g, `$1"${SHIM_URL}"`);
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   try {
-    const result = await evaluateModule(await import(url), { part, fallbackToFirst: output !== 'stl' });
-    if (output === 'stl') {
-      const stl = toSTL(result.solids);
-      self.postMessage({ ok: true, partNames: result.partNames, part: result.part, stl }, [stl.buffer]);
+    const result = await evaluateModule(await import(url), { part, fallbackToFirst: !output });
+    if (output) {
+      const file = output === '3mf' ? to3MF(result.solids, { name: result.part }) : toSTL(result.solids);
+      self.postMessage({ ok: true, partNames: result.partNames, part: result.part, file }, [file.buffer]);
     } else {
       const groups = meshGroups(result.solids, result.shapes);
       self.postMessage(

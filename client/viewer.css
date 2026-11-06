@@ -848,7 +848,7 @@ button.pill:hover {
     margin-right: 0;
   }
   .top-left {
-    right: calc(var(--gap) + 186px);
+    right: calc(var(--gap) + 146px);
     gap: 8px;
   }
   .top-right {

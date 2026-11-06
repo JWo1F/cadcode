@@ -55,8 +55,10 @@
           <p class="meta"><span id="readout-mesh"></span><span id="status" class="status" data-state="loading">loading</span></p>
         </div>
         <div class="tools" role="group" aria-label="Export">
-          <button id="png" class="pill" type="button" title="Save the current view as PNG">PNG</button>
-          <button id="stl" class="pill" type="button" title="Download the part as STL">STL</button>
+          <div class="split" role="group" aria-label="Download">
+            <button id="download" class="pill" type="button"><span>Download</span><span data-format-label>STL</span></button>
+            <button id="download-open" class="pill" type="button" popovertarget="download-menu" aria-haspopup="menu" aria-label="Download format"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg></button>
+          </div>
         </div>
         <p class="hint">Drag to rotate, shift-drag to pan, scroll to zoom</p>
       </footer>
@@ -115,6 +117,7 @@
     </div>
 
     <div id="part-menu" class="menu" popover role="menu" aria-label="Part"></div>
+    <div id="download-menu" class="menu" popover role="menu" aria-label="Download format"></div>
 
     <script type="module" src="assets/playground.js"></script>
   </body>

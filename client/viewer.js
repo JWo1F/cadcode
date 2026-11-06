@@ -2,6 +2,7 @@ import { createParamsPanel } from './params.js';
 import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 import { createAxisGizmo } from './gizmo.js';
 import { bindViewTools } from './view-tools.js';
+import { bindDownloadMenu } from './download-menu.js';
 
 const canvas = document.getElementById('view');
 const stage = document.getElementById('stage');
@@ -81,7 +82,7 @@ function fitView() {
 
 document.getElementById('fit').addEventListener('click', fitView);
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
-const isTyping = (event) => !!event.target.closest?.('#part-menu, input, textarea');
+const isTyping = (event) => !!event.target.closest?.('#part-menu, #download-menu, input, textarea');
 // The section is remembered per file, like the camera.
 bindViewTools(view, { stage, storageKey: () => fileKey && `cadcode:section:${fileKey}`, ignoreKey: isTyping });
 window.addEventListener('keydown', (event) => {
@@ -225,24 +226,19 @@ partMenu.addEventListener('keydown', (event) => {
 // Fetched rather than navigated to, so a failing program shows its error here
 // instead of replacing the viewer.
 
-const downloadButton = document.getElementById('download');
-
-downloadButton.addEventListener('click', async () => {
-  downloadButton.disabled = true;
+async function downloadPart(format) {
   try {
-    const response = await fetch(`/stl?part=${encodeURIComponent(currentPart)}`);
+    const response = await fetch(`/${format}?part=${encodeURIComponent(currentPart)}`);
     if (!response.ok) throw new Error(await response.text());
     saveBlob(await response.blob(), response.headers.get('Content-Disposition').match(/filename="(.+)"/)[1]);
   } catch (error) {
-    showError(`STL download failed: ${error.message}`);
-  } finally {
-    downloadButton.disabled = false;
+    showError(`${format.toUpperCase()} download failed: ${error.message}`);
   }
-});
+}
 
 // The picture is the view on screen, so it needs no server round trip.
 // Named like the STL: the program's name, plus the part when there are several.
-document.getElementById('png').addEventListener('click', async () => {
+async function savePNG() {
   if (!shown) return;
   const base = shown.file.slice(shown.file.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '');
   const name = shown.partNames.length > 1 ? `${base}-${shown.part}.png` : `${base}.png`;
@@ -251,7 +247,9 @@ document.getElementById('png').addEventListener('click', async () => {
   } catch (error) {
     showError(`PNG export failed: ${error.message}`);
   }
-});
+}
+
+bindDownloadMenu({ stl: () => downloadPart('stl'), '3mf': () => downloadPart('3mf'), png: savePNG });
 
 // --- Connection --------------------------------------------------------------
 

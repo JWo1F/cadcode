@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="/viewer.css" />
     <link rel="stylesheet" href="/view-tools.css" />
+    <link rel="stylesheet" href="/download-menu.css" />
   </head>
   <body>
     <!-- The whole page is the stage; everything else floats on it, in the corners. -->
@@ -29,8 +30,10 @@
       </header>
 
       <nav class="corner top-right" aria-label="Export">
-        <button id="png" class="pill" type="button" title="Save the current view as PNG">PNG</button>
-        <button id="download" class="pill primary" type="button" title="Download the part as STL"><span class="wide">Download </span>STL</button>
+        <div class="split" role="group" aria-label="Download">
+          <button id="download" class="pill primary" type="button"><span class="wide">Download</span><span data-format-label>STL</span></button>
+          <button id="download-open" class="pill primary" type="button" popovertarget="download-menu" aria-haspopup="menu" aria-label="Download format"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" /></svg></button>
+        </div>
         <button id="toggle-params" class="pill" type="button" aria-pressed="true" aria-controls="panel" title="Show or hide the parameters" hidden>
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 6h8M15 6h2M3 14h2M9 14h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><circle cx="13" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.6" /><circle cx="7" cy="14" r="2" fill="none" stroke="currentColor" stroke-width="1.6" /></svg>
           <span class="wide">Parameters</span>
@@ -109,6 +112,7 @@
     </main>
 
     <div id="part-menu" class="menu" popover role="menu" aria-label="Parts"></div>
+    <div id="download-menu" class="menu" popover role="menu" aria-label="Download format"></div>
 
     <script type="module" src="/viewer.js"></script>
   </body>

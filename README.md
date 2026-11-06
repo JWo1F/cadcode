@@ -76,9 +76,10 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Cut the model open**: S, or the Section button. The model is cut across Z (X and Y keys, or the buttons in the card, switch the axis) and the cut faces are filled in a darker shade of their solid. Move the plane with the slider, or drag the plane's frame in the view; the flip button keeps the other side. The section is remembered per file, and the PNG shows it.
 - **Measure**: M, or the Measure button, then click two points on the model. A point near a corner lands on it, and a point on a cut face counts too. The label gives the distance and how far apart the points are along each axis. A third click starts over, Esc clears. A rebuilt model drops the measurement.
 - **Switch parts**: the Part menu, shown when the program has more than one part
-- **Change parameters**: the Parameters panel, shown when the program has `export const params`. Numbers, switches, colours, text, and JSON for arrays and objects; drag a number's name sideways to scrub it (shift for ten times the step). A changed value is marked and has its own reset. The values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. `--set` wins over a remembered value. The STL download uses them too.
-- **Download the part as STL**: the Download STL button. It is the same file `cadcode stl` writes.
-- **Save the view as PNG**: the PNG button. It takes the camera as it is, with the section if there is one, without the grid, the axes, the section's frame and the measurement.
+- **Change parameters**: the Parameters panel, shown when the program has `export const params`. Numbers, switches, colours, text, and JSON for arrays and objects; drag a number's name sideways to scrub it (shift for ten times the step). A changed value is marked and has its own reset. The values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. `--set` wins over a remembered value. Downloads use them too.
+- **Download**: the Download button saves in the format picked last, and its arrow opens the list of formats; picking one saves in it and makes it the button's. The choice is remembered.
+  - **STL** and **3MF**: the part, the same files `cadcode stl` and `cadcode 3mf` write.
+  - **PNG**: the view as it is, with the section if there is one, without the grid, the axes, the section's frame and the measurement.
 
 Errors appear in the page and in the terminal, with the line in your file. The last good model stays on screen until you fix them. Whatever the program prints with `console.log` appears in the corner of the page.
 

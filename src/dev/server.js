@@ -24,6 +24,8 @@ function serveFile(res, root, relative) {
   fs.createReadStream(file).pipe(res);
 }
 
+const DOWNLOAD_TYPES = { stl: 'model/stl', '3mf': 'model/3mf' };
+
 const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
@@ -131,18 +133,18 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   }
 
   // A download evaluates in its own worker, so it never cancels or waits for the preview.
-  function downloadSTL(res, part) {
+  function download(res, format, part) {
     if (!state.bundle) return void res.writeHead(503, { 'Content-Type': 'text/plain' }).end('The program has not built yet');
-    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: 'stl' } });
+    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: format } });
     const fail = (message) => {
       if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' }).end(message);
     };
     worker.once('message', (result) => {
       worker.terminate();
       if (!result.ok) return fail(result.message);
-      const name = result.partNames.length > 1 ? `${baseName}-${result.part}.stl` : `${baseName}.stl`;
-      res.writeHead(200, { 'Content-Type': 'model/stl', 'Content-Disposition': `attachment; filename="${name}"` });
-      res.end(Buffer.from(result.stl.buffer, result.stl.byteOffset, result.stl.byteLength));
+      const name = result.partNames.length > 1 ? `${baseName}-${result.part}.${format}` : `${baseName}.${format}`;
+      res.writeHead(200, { 'Content-Type': DOWNLOAD_TYPES[format], 'Content-Disposition': `attachment; filename="${name}"` });
+      res.end(Buffer.from(result.file.buffer, result.file.byteOffset, result.file.byteLength));
       console.log(`↓ ${name}`);
     });
     worker.once('error', (error) => fail(error.message));
@@ -180,7 +182,8 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
     if (url.pathname === '/') return serveFile(res, CLIENT_DIR, 'index.html');
-    if (url.pathname === '/stl') return downloadSTL(res, url.searchParams.get('part') ?? state.part);
+    const format = url.pathname.slice(1);
+    if (format in DOWNLOAD_TYPES) return download(res, format, url.searchParams.get('part') ?? state.part);
     if (url.pathname === '/render-worker.js') return void res.writeHead(200, { 'Content-Type': 'text/javascript', 'Cache-Control': 'no-cache' }).end(renderWorker);
     serveFile(res, CLIENT_DIR, url.pathname.slice(1));
   });

@@ -1,0 +1,34 @@
+/* The download split button, shared by the dev viewer and the playground; see
+   client/download-menu.js. Two pills joined into one: the format, and the arrow that
+   opens the menu of formats. */
+
+.split {
+  flex-shrink: 0;
+  display: inline-flex;
+  border-radius: 999px;
+  box-shadow: var(--lift);
+}
+
+.split > .pill {
+  box-shadow: none;
+}
+
+.split > .pill:first-child {
+  border-radius: 999px 0 0 999px;
+  padding-right: 12px;
+}
+
+.split > .pill:last-child {
+  border-radius: 0 999px 999px 0;
+  border-left-width: 0;
+  padding: 0 11px 0 9px;
+  /* The seam between the halves. */
+  background-image: linear-gradient(var(--hairline), var(--hairline));
+  background-size: 1px 60%;
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+
+.split > .pill.primary:last-child {
+  background-image: linear-gradient(var(--filament-deep), var(--filament-deep));
+}

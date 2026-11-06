@@ -1,5 +1,5 @@
 // Evaluates a program in a worker thread, for the viewer's meshes or, with
-// output 'stl', for a download. Each evaluation gets a fresh worker:
+// output 'stl' or '3mf', for a download. Each evaluation gets a fresh worker:
 // that frees all WASM memory between runs, resets library state such as
 // setResolution(), and lets the server kill a run that a newer save made stale.
 import { parentPort, workerData } from 'node:worker_threads';
@@ -7,6 +7,7 @@ import { format } from 'node:util';
 import { evaluateProgram } from '../core/program.js';
 import { meshGroups } from '../core/mesh.js';
 import { toSTL } from '../export/stl.js';
+import { to3MF } from '../export/3mf.js';
 
 // Bundles carry inline source maps; this makes stack traces point at the user's files.
 process.setSourceMapsEnabled(true);
@@ -24,10 +25,10 @@ const { bundle, part, overrides, output } = workerData;
 const started = performance.now();
 try {
   // Overrides of parameters the program has dropped are skipped; the server prunes them.
-  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: output !== 'stl', ignoreUnknown: true });
-  if (output === 'stl') {
-    const stl = toSTL(result.solids);
-    parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, stl }, [stl.buffer]);
+  const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: !output, ignoreUnknown: true });
+  if (output) {
+    const file = output === '3mf' ? to3MF(result.solids, { name: result.part }) : toSTL(result.solids);
+    parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, file }, [file.buffer]);
   } else {
     const groups = meshGroups(result.solids, result.shapes);
     parentPort.postMessage(

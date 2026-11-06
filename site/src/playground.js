@@ -2,11 +2,13 @@ import * as monaco from 'monaco-editor';
 import { bindDisplayButtons, createScene, saveBlob } from '../../client/scene.js';
 import { createAxisGizmo } from '../../client/gizmo.js';
 import { bindViewTools } from '../../client/view-tools.js';
+import { bindDownloadMenu } from '../../client/download-menu.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
 import workers from 'virtual:workers'; // file names, which carry their content's hash
 import '../../client/view-tools.css';
+import '../../client/download-menu.css';
 import './playground.css';
 
 const DEFAULT_EXAMPLE = 'knob';
@@ -480,24 +482,23 @@ bindViewTools(view, {
   ignoreKey: (event) => editor.hasTextFocus() || event.target instanceof HTMLInputElement,
 });
 
-document.getElementById('png').addEventListener('click', async () => {
+async function exportPart(format) {
+  if (!shown) return;
+  const result = await run({ code: model.getValue(), part: shown.part, output: format });
+  if (!result.ok) return showError(`${format.toUpperCase()} export failed: ${result.message}`);
+  saveBlob(new Blob([result.file], { type: `model/${format}` }), fileName(format));
+}
+
+async function savePNG() {
   if (!shown) return;
   try {
     saveBlob(await view.snapshotPNG(), fileName('png'));
   } catch (error) {
     showError(`PNG export failed: ${error.message}`);
   }
-});
+}
 
-const stlButton = document.getElementById('stl');
-stlButton.addEventListener('click', async () => {
-  if (!shown) return;
-  stlButton.disabled = true;
-  const result = await run({ code: model.getValue(), part: shown.part, output: 'stl' });
-  stlButton.disabled = false;
-  if (!result.ok) return showError(`STL export failed: ${result.message}`);
-  saveBlob(new Blob([result.stl], { type: 'model/stl' }), fileName('stl'));
-});
+bindDownloadMenu({ stl: () => exportPart('stl'), '3mf': () => exportPart('3mf'), png: savePNG });
 
 const shareButton = document.getElementById('share');
 shareButton.addEventListener('click', async () => {
