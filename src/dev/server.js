@@ -63,6 +63,8 @@ function encodeModel(result, file, { overrides, restored }) {
   return Buffer.concat([length, json, ...buffers]);
 }
 
+const stoppedEarly = (code) => `The program stopped (exit code ${code}) before it returned a model`;
+
 function openBrowser(url) {
   const command = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'cmd' : 'xdg-open';
   const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
@@ -119,13 +121,22 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       state.worker = null;
       sendError({ message: error.message, stack: error.stack });
     });
+    // A worker that ends without a result or an error: the program called process.exit(),
+    // or WASM aborted. A worker that answered, failed or was replaced is no longer state.worker.
+    worker.once('exit', (code) => {
+      if (state.worker !== worker) return;
+      state.worker = null;
+      sendError({ message: stoppedEarly(code) });
+    });
   }
 
   // A download evaluates in its own worker, so it never cancels or waits for the preview.
   function downloadSTL(res, part) {
     if (!state.bundle) return void res.writeHead(503, { 'Content-Type': 'text/plain' }).end('The program has not built yet');
     const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: 'stl' } });
-    const fail = (message) => res.writeHead(500, { 'Content-Type': 'text/plain' }).end(message);
+    const fail = (message) => {
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' }).end(message);
+    };
     worker.once('message', (result) => {
       worker.terminate();
       if (!result.ok) return fail(result.message);
@@ -135,6 +146,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       console.log(`↓ ${name}`);
     });
     worker.once('error', (error) => fail(error.message));
+    worker.once('exit', (code) => fail(stoppedEarly(code)));
   }
 
   // The viewer's scene runs in a worker, where an import map cannot resolve 'three';
