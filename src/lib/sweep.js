@@ -277,7 +277,8 @@ function withPoints(outline, count) {
   const shares = edges.map((e) => (extra * e) / perimeter);
   const added = shares.map(Math.floor);
   const order = shares.map((share, i) => [share - added[i], i]).sort((a, b) => b[0] - a[0]);
-  for (let k = 0; k < extra - added.reduce((a, b) => a + b, 0); k++) added[order[k][1]]++;
+  const left = extra - added.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < left; k++) added[order[k][1]]++;
   /** @type {Vec2[]} */
   const out = [];
   outline.forEach((p, i) => {

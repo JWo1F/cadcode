@@ -83,6 +83,13 @@ test('loft: sections with different point counts keep their corners', () => {
   assert.ok(toSTL([vase]).length > 0);
 });
 
+test('loft: a few points short on many edges', () => {
+  // 64 edges sharing 4 extra points: each edge's share rounds down to none.
+  const rounded = square(40, { center: true }).offset({ r: 10, fn: 64 });
+  const solid = loft([rounded, circle({ r: 26, fn: 64 })], { z: [0, 10] });
+  assert.ok(solid.volume() > 0);
+});
+
 test('loft: bad input is refused', () => {
   assert.throws(() => loft([square(1)], { z: [0] }), /at least two/);
   assert.throws(() => loft([square(1), square(1)], { z: [0] }), /one height per section/);
