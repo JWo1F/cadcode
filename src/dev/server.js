@@ -28,7 +28,8 @@ const isPlainObject = (value) => typeof value === 'object' && value !== null && 
 
 /**
  * Model frames are binary: a little-endian u32 header length, a JSON header
- * padded to 4 bytes, then each group's positions (f32) and indices (u32).
+ * padded to 4 bytes, then each group's positions (f32), indices (u32) and, for a
+ * sketch, its outline (f32).
  */
 function encodeModel(result, file, { overrides, restored }) {
   const header = {
@@ -41,7 +42,14 @@ function encodeModel(result, file, { overrides, restored }) {
     restored,
     logs: result.logs,
     ms: result.ms,
-    groups: result.groups.map((g) => ({ body: g.body, color: g.color, vertices: g.positions.length / 3, indices: g.indices.length })),
+    groups: result.groups.map((g) => ({
+      body: g.body,
+      color: g.color,
+      sketch: g.sketch,
+      vertices: g.positions.length / 3,
+      indices: g.indices.length,
+      lines: g.lines?.length ?? 0,
+    })),
   };
   let json = Buffer.from(JSON.stringify(header));
   json = Buffer.concat([json, Buffer.alloc((4 - (json.length % 4)) % 4, 0x20)]);
@@ -50,6 +58,7 @@ function encodeModel(result, file, { overrides, restored }) {
   const buffers = result.groups.flatMap((g) => [
     Buffer.from(g.positions.buffer, g.positions.byteOffset, g.positions.byteLength),
     Buffer.from(g.indices.buffer, g.indices.byteOffset, g.indices.byteLength),
+    ...(g.lines ? [Buffer.from(g.lines.buffer, g.lines.byteOffset, g.lines.byteLength)] : []),
   ]);
   return Buffer.concat([length, json, ...buffers]);
 }

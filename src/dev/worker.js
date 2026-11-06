@@ -41,7 +41,7 @@ try {
         logs,
         ms: Math.round(performance.now() - started),
       },
-      groups.flatMap((g) => [g.positions.buffer, g.indices.buffer]),
+      groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
     );
   }
 } catch (error) {

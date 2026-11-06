@@ -50,15 +50,16 @@ test('STL has a triangle count matching its size', async () => {
   assert.equal(stl.length, 84 + 12 * 50);
 });
 
-test('2D shapes are drawn as flat slabs but left out of STL', async () => {
+test('2D shapes are drawn as flat sketches but left out of STL', async () => {
   const mixed = await evaluateProgram(bundle, { part: 'mixed' });
   assert.equal(mixed.solids.length, 1);
   assert.equal(mixed.shapes.length, 1);
   const groups = meshGroups(mixed.solids, mixed.shapes);
   assert.equal(groups.length, 2);
-  const slab = groups[1];
-  const zs = slab.positions.filter((_, i) => i % 3 === 2);
-  assert.ok(Math.max(...zs) > 0 && Math.max(...zs) < 1);
+  const sketch = groups[1];
+  assert.equal(sketch.sketch, true);
+  assert.ok(sketch.positions.every((v, i) => i % 3 !== 2 || v === 0));
+  assert.equal(sketch.lines.length, 4 * 6); // a square's four edges
   assert.equal(new DataView(toSTL(mixed.solids).buffer).getUint32(80, true), 12);
 
   const flat = await evaluateProgram(bundle, { part: 'flat' });

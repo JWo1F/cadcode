@@ -100,7 +100,7 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
      * @returns {Promise<{ triangles: number, size: [number, number, number] | null }>}
      */
     showModel(groups) {
-      const buffers = new Set(groups.flatMap((g) => [g.positions.buffer, g.indices.buffer]));
+      const buffers = new Set(groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]));
       return request({ type: 'show', groups }, [...buffers]);
     },
     fitView() {

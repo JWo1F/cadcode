@@ -82,7 +82,7 @@ window.addEventListener('keydown', (event) => {
 
 // --- Model -------------------------------------------------------------------
 
-/** Decodes a binary model frame: u32 header length, JSON header, then f32 positions and u32 indices per group. */
+/** Decodes a binary model frame: u32 header length, JSON header, then f32 positions, u32 indices and f32 sketch outline per group. */
 function decodeModel(buffer) {
   const headerLength = new DataView(buffer).getUint32(0, true);
   const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, headerLength)));
@@ -92,7 +92,9 @@ function decodeModel(buffer) {
     offset += positions.byteLength;
     const indices = new Uint32Array(buffer, offset, g.indices);
     offset += indices.byteLength;
-    return { ...g, positions, indices };
+    const lines = new Float32Array(buffer, offset, g.lines);
+    offset += lines.byteLength;
+    return { ...g, positions, indices, lines: g.sketch ? lines : undefined };
   });
   return { header, groups };
 }

@@ -38,7 +38,7 @@ self.onmessage = async ({ data: { code, part, output } }) => {
       const groups = meshGroups(result.solids, result.shapes);
       self.postMessage(
         { ok: true, partNames: result.partNames, part: result.part, groups, logs, ms: Math.round(performance.now() - started) },
-        groups.flatMap((g) => [g.positions.buffer, g.indices.buffer]),
+        groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
       );
     }
   } catch (error) {

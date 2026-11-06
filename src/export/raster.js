@@ -1,5 +1,6 @@
 // A small software renderer for preview images: orthographic camera, flat
-// shading, outline edges, and back-to-front blending for transparent parts.
+// shading, outline edges, back-to-front blending for transparent parts, and 2D
+// shapes drawn as sketches.
 // No GPU or browser needed, so `cadcode png` runs anywhere Node runs.
 
 import { parseColor } from '../lib/colors.js';
@@ -24,6 +25,7 @@ export const SHEET = ['iso', 'front', 'right', 'top'];
 const SUPERSAMPLE = 2;
 const EDGE_NORMAL_COS = Math.cos((25 * Math.PI) / 180);
 const EDGE_SHADE = 0.35;
+const SKETCH_LINE_WIDTH = 2.5; // output pixels
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -106,6 +108,7 @@ function renderView(groups, width, height, viewName) {
   const opaque = [];
   const transparent = [];
   for (const group of groups) {
+    if (group.sketch) continue;
     const rgba = group.color ?? DEFAULT_COLOR;
     const { positions, indices } = group;
     for (let t = 0; t < indices.length; t += 3) {
@@ -163,6 +166,32 @@ function renderView(groups, width, height, viewName) {
     });
   }
 
+  // Sketches last: an unlit see-through fill, then a bold outline, both hidden only
+  // behind opaque faces. A tolerance keeps them visible where a solid stands on Z=0.
+  const sketches = groups.filter((g) => g.sketch);
+  const visible = (i, z) => z <= depth[i] + depthJump;
+  for (const { positions, indices, color: rgba } of sketches) {
+    const covered = new Uint8Array(W * H); // overlapping fill triangles must not blend twice
+    for (let t = 0; t < indices.length; t += 3) {
+      const screen = [indices[t], indices[t + 1], indices[t + 2]].map((v) => project([positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2]]));
+      rasterize(screen, W, H, (i, z) => {
+        if (covered[i] || !visible(i, z)) return;
+        covered[i] = 1;
+        for (let k = 0; k < 3; k++) color[i * 3 + k] = color[i * 3 + k] * (1 - rgba[3]) + rgba[k] * rgba[3];
+      });
+    }
+  }
+  const radius = (SKETCH_LINE_WIDTH * SUPERSAMPLE) / 2;
+  for (const { lines, color: rgba } of sketches) {
+    for (let s = 0; s < lines.length; s += 6) {
+      const a = project([lines[s], lines[s + 1], lines[s + 2]]);
+      const b = project([lines[s + 3], lines[s + 4], lines[s + 5]]);
+      strokeSegment(a, b, radius, W, H, (i, z) => {
+        if (visible(i, z)) color.set(rgba.slice(0, 3), i * 3);
+      });
+    }
+  }
+
   // Downsample the supersampled buffer.
   const pixels = new Uint8Array(width * height * 4);
   const area = SUPERSAMPLE * SUPERSAMPLE;
@@ -183,6 +212,26 @@ function renderView(groups, width, height, viewName) {
     }
   }
   return { width, height, pixels };
+}
+
+/** Calls `plot(pixelIndex, depth)` for every pixel center within `radius` of the screen-space segment. */
+function strokeSegment(a, b, radius, W, H, plot) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const lengthSq = dx * dx + dy * dy || 1e-12;
+  const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0]) - radius));
+  const x1 = Math.min(W - 1, Math.ceil(Math.max(a[0], b[0]) + radius));
+  const y0 = Math.max(0, Math.floor(Math.min(a[1], b[1]) - radius));
+  const y1 = Math.min(H - 1, Math.ceil(Math.max(a[1], b[1]) + radius));
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const px = x + 0.5 - a[0];
+      const py = y + 0.5 - a[1];
+      const t = Math.max(0, Math.min(1, (px * dx + py * dy) / lengthSq));
+      if ((px - t * dx) ** 2 + (py - t * dy) ** 2 > radius * radius) continue;
+      plot(y * W + x, a[2] + t * (b[2] - a[2]));
+    }
+  }
 }
 
 /** Calls `plot(pixelIndex, depth)` for every pixel center inside the screen-space triangle. */

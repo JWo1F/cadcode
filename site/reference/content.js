@@ -36,7 +36,7 @@ export const sections = [
           { name: 'params', type: 'object', text: 'When the default export is a function, it is called with `params` merged with any `--set` overrides.' },
         ],
         notes: [
-          'A 2D shape in a part is drawn in the viewer and in PNGs as a thin teal slab on Z=0, to check a profile before extruding it. STL leaves it out, and a part with no solids at all fails to export.',
+          'A 2D shape in a part is drawn in the viewer and in PNGs as a sketch on Z=0 (a see-through blue fill with a bold outline), to check a profile before extruding it. STL leaves it out, and a part with no solids at all fails to export.',
           'The STL of a part merges all its solids into one body. In the viewer and in PNGs each solid keeps its own color and transparency.',
           'Functions may be `async`.',
         ],

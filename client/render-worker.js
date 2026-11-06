@@ -4,9 +4,13 @@
 // canvas, forwards input and size, and sends commands; see it for the messages.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 const DEFAULT_COLOR = '#f2c14e';
 const EDGE_ANGLE = 25;
+const SKETCH_LINE_WIDTH = 2.5; // CSS pixels; plain WebGL lines are always one pixel wide
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1); // CAD convention: Z is up
 
@@ -131,6 +135,7 @@ function createView({ canvas, colors, ...size }) {
   // triangle edge, no faces) or 'both' (the solid with every triangle edge over it).
   let display = 'solid';
   let shapes = []; // per mesh group: { mesh, outline, wire, transparent }; wire is built on first need
+  let sketchLines = []; // the outlines' materials, which need the canvas size in pixels
 
   // The page measures the canvas, which its CSS may resize at any time.
   function resize({ width, height, left, top, dpr }) {
@@ -138,6 +143,7 @@ function createView({ canvas, colors, ...size }) {
     if (width === 0 || height === 0) return;
     renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
+    for (const material of sketchLines) material.resolution.set(width, height);
     applyProjection();
   }
 
@@ -250,7 +256,12 @@ function createView({ canvas, colors, ...size }) {
   function showModel(groups) {
     const next = new THREE.Group();
     const nextShapes = [];
+    const nextSketchLines = [];
     for (const g of groups) {
+      if (g.sketch) {
+        nextSketchLines.push(addSketch(next, g));
+        continue;
+      }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(g.positions, 3));
       geometry.setIndex(new THREE.BufferAttribute(g.indices, 1));
@@ -287,6 +298,7 @@ function createView({ canvas, colors, ...size }) {
     disposeGroup(model);
     model = next;
     shapes = nextShapes;
+    sketchLines = nextSketchLines;
     scene.add(model);
     applyDisplay();
 
@@ -303,6 +315,41 @@ function createView({ canvas, colors, ...size }) {
       triangles: groups.reduce((n, g) => n + g.indices.length / 3, 0),
       size: box.isEmpty() ? null : box.getSize(new THREE.Vector3()).toArray(),
     };
+  }
+
+  /**
+   * Draws a 2D shape like a CAD sketch: a see-through, unlit fill on Z=0 and a bold
+   * outline over it. It looks the same in every display mode, having no triangles
+   * worth showing. Returns the outline's material.
+   */
+  function addSketch(group, g) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(g.positions, 3));
+    geometry.setIndex(new THREE.BufferAttribute(g.indices, 1));
+    const [r, gr, b, a] = g.color;
+    const fill = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(r, gr, b),
+        transparent: true,
+        opacity: a,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        // In front of the grid, which lies on Z=0 too.
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
+      }),
+    );
+    fill.renderOrder = 2;
+    group.add(fill);
+
+    const material = new LineMaterial({ color: new THREE.Color(r, gr, b), linewidth: SKETCH_LINE_WIDTH });
+    material.resolution.set(element.clientWidth, element.clientHeight);
+    const outline = new LineSegments2(new LineSegmentsGeometry().setPositions(g.lines), material);
+    outline.renderOrder = 3;
+    group.add(outline);
+    return material;
   }
 
   /**
