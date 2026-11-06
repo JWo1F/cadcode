@@ -296,6 +296,11 @@ p {
 }
 
 .hint {
+  /* Stops short of the view controls at the bottom-right, and gives way to them. */
+  max-width: calc(100% - 330px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12.5px;
   color: var(--ink-soft);
   pointer-events: none !important;
@@ -729,6 +734,16 @@ p {
 }
 
 /* Phones: the code is a sheet across the bottom; the readout and tools sit above it. */
+/* The stage beside the editor is narrow: the section card hangs under the header,
+   beside the axes gizmo, rather than over the readout (see client/view-tools.css). */
+.inspect {
+  top: calc(var(--gap) + 52px);
+  bottom: auto;
+  left: var(--gap);
+  right: auto;
+  max-width: calc(100% - var(--panel-cover, 0px) - 2 * var(--gap) - 92px);
+}
+
 @media (max-width: 720px) {
   .stage {
     --gap: 12px;
@@ -780,10 +795,15 @@ p {
     right: var(--gap);
     bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap));
   }
+  /* The readout and the export pills stand above the view controls, which fill the row. */
   .bottom-left {
     right: var(--gap);
-    bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap));
+    bottom: calc(var(--panel-cover-bottom, 0px) + var(--gap) + 52px);
     gap: 10px;
+  }
+  .inspect {
+    right: calc(var(--gap) + 92px);
+    max-width: none;
   }
   .readout .size {
     font-size: 26px;

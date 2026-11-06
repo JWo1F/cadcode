@@ -1,0 +1,359 @@
+/* The section card and the measurement's label, shared by the dev viewer and the
+   playground; see client/view-tools.js. It uses the tokens both pages define, and the
+   axis colours of the gizmo. */
+
+.inspect {
+  --axis-x: #e5484d;
+  --axis-y: #5fa82a;
+  --axis-z: #3b82f6;
+  --axis: var(--axis-z); /* the axis being cut across */
+  position: absolute;
+  z-index: 2;
+  /* Above the view controls, at the bottom-right of the uncovered stage. */
+  right: calc(var(--panel-cover, 0px) + var(--gap));
+  bottom: calc(var(--gap) + 52px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  max-width: calc(100% - var(--panel-cover, 0px) - 2 * var(--gap));
+}
+
+.inspect[data-axis='x'] {
+  --axis: var(--axis-x);
+}
+.inspect[data-axis='y'] {
+  --axis: var(--axis-y);
+}
+
+.inspect[hidden],
+.inspect [hidden] {
+  display: none;
+}
+
+.inspect-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.axis-switch button,
+.inspect .flip {
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.axis-switch button:focus-visible,
+.inspect .flip:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* --- Axis: three balls like the gizmo's; the one cut across is filled ------------- */
+
+.axis-switch {
+  display: flex;
+  gap: 2px;
+}
+
+.axis-switch button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--chip);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.axis-switch [data-axis='x'] {
+  --chip: var(--axis-x);
+}
+.axis-switch [data-axis='y'] {
+  --chip: var(--axis-y);
+}
+.axis-switch [data-axis='z'] {
+  --chip: var(--axis-z);
+}
+
+.axis-switch button:hover {
+  background: color-mix(in srgb, var(--chip) 14%, transparent);
+}
+
+.axis-switch [aria-checked='true'],
+.axis-switch [aria-checked='true']:hover {
+  background: var(--chip);
+  color: #fff;
+}
+
+/* --- The ruler: the model's extent along the axis, in ticks. The thumb is the plane
+   seen edge on; the filled stretch is the side of the model that is kept. --------- */
+
+.ruler {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.ruler-end {
+  padding-bottom: 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.ruler-track {
+  --t: 0.5; /* where the thumb is, 0 to 1; set by view-tools.js */
+  --thumb: 4px;
+  --kept: color-mix(in srgb, var(--axis) 70%, white);
+  --cut: rgba(31, 40, 51, 0.12);
+  position: relative;
+  width: 200px;
+  height: 46px;
+}
+
+/* Ten ticks under the track, the middle one longer. */
+.ruler-track::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--thumb) / 2);
+  right: calc(var(--thumb) / 2);
+  bottom: 6px;
+  height: 6px;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.5px), rgba(31, 40, 51, 0.38) calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px)) 0 0 / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, rgba(31, 40, 51, 0.22) 0 1px, transparent 1px 10%) 0 2px / calc(100% + 1px) 4px no-repeat;
+  pointer-events: none;
+}
+
+.ruler-track input {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.ruler-track input:focus {
+  outline: none;
+}
+
+/* The kept stretch: below the plane from the start, above it from the end when flipped. */
+.ruler-track input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--kept) calc(var(--t) * 100%), var(--cut) calc(var(--t) * 100%));
+}
+.ruler[data-keep='above'] .ruler-track input::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, var(--cut) calc(var(--t) * 100%), var(--kept) calc(var(--t) * 100%));
+}
+.ruler-track input::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--kept) calc(var(--t) * 100%), var(--cut) calc(var(--t) * 100%));
+}
+.ruler[data-keep='above'] .ruler-track input::-moz-range-track {
+  background: linear-gradient(90deg, var(--cut) calc(var(--t) * 100%), var(--kept) calc(var(--t) * 100%));
+}
+
+.ruler-track input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb);
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 2px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #fff;
+}
+.ruler-track input::-moz-range-thumb {
+  width: var(--thumb);
+  height: 22px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.ruler-track input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--axis);
+}
+.ruler-track input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--axis);
+}
+
+/* The plane's coordinate, riding over the thumb. */
+.ruler-track output {
+  position: absolute;
+  top: 0;
+  left: calc(var(--thumb) / 2 + var(--t) * (100% - var(--thumb)));
+  translate: -50% 0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* --- Flip: which side of the plane is kept ------------------------------------------ */
+
+.inspect .flip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--ink-soft);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.inspect .flip:hover {
+  background: rgba(31, 40, 51, 0.07);
+  color: var(--ink);
+}
+
+.inspect .flip svg {
+  transition: rotate 0.2s ease;
+}
+
+.inspect .flip[aria-pressed='true'] svg {
+  rotate: 180deg;
+}
+
+.inspect-measure {
+  margin: 0;
+  padding: 2px 8px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.inspect-section:not([hidden]) + .inspect-measure {
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* --- The measurement's label, over the middle of the measured line. view-tools.js
+   moves it with `translate`; the transform puts it above that point. ---------------- */
+
+.measure-label {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 10px 6px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 9px;
+  box-shadow: var(--lift);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px));
+}
+
+/* The notch pointing down at the line. */
+.measure-label::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--ink);
+  translate: -50% 0;
+  rotate: 45deg;
+}
+
+.measure-label[hidden] {
+  display: none;
+}
+
+.measure-label strong {
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.measure-label small {
+  margin-left: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.6;
+}
+
+.measure-label .deltas {
+  display: flex;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.measure-label .deltas b {
+  font-weight: 600;
+}
+
+/* Lighter than the gizmo's, to read on the ink. */
+.delta-x b {
+  color: #ff8a8d;
+}
+.delta-y b {
+  color: #a4d977;
+}
+.delta-z b {
+  color: #8fb8ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axis-switch button,
+  .inspect .flip,
+  .inspect .flip svg {
+    transition: none;
+  }
+}
+
+/* On phones the card hangs under the header, beside the axes gizmo (84px wide). */
+@media (max-width: 720px) {
+  .inspect {
+    left: var(--gap);
+    right: calc(var(--gap) + 84px + 8px);
+    top: calc(var(--gap) + 52px);
+    bottom: auto;
+    max-width: none;
+  }
+  .ruler {
+    flex: 1;
+    min-width: 0;
+  }
+  .ruler-end {
+    display: none;
+  }
+  .ruler-track {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+}

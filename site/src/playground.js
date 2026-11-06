@@ -1,10 +1,12 @@
 import * as monaco from 'monaco-editor';
 import { bindDisplayButtons, createScene, saveBlob } from '../../client/scene.js';
 import { createAxisGizmo } from '../../client/gizmo.js';
+import { bindViewTools } from '../../client/view-tools.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
 import workers from 'virtual:workers'; // file names, which carry their content's hash
+import '../../client/view-tools.css';
 import './playground.css';
 
 const DEFAULT_EXAMPLE = 'knob';
@@ -472,6 +474,11 @@ function fileName(ext) {
 
 document.getElementById('fit').addEventListener('click', () => view.fitView());
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
+bindViewTools(view, {
+  stage,
+  storageKey: () => 'cadcode:playground:section',
+  ignoreKey: (event) => editor.hasTextFocus() || event.target instanceof HTMLInputElement,
+});
 
 document.getElementById('png').addEventListener('click', async () => {
   if (!shown) return;

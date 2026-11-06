@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="stylesheet" href="/viewer.css" />
+    <link rel="stylesheet" href="/view-tools.css" />
   </head>
   <body>
     <!-- The whole page is the stage; everything else floats on it, in the corners. -->
@@ -56,6 +57,14 @@
       </footer>
 
       <div class="corner bottom-right">
+        <div class="tools" role="group" aria-label="Inspect">
+          <button id="section-toggle" class="pill round" type="button" aria-pressed="false" aria-label="Section" title="Cut the model with a plane (S)">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 7l6-3 6 3v6l-6 3-6-3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /><path d="M2 11.5l8 3.5 8-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2" /></svg>
+          </button>
+          <button id="measure-toggle" class="pill round" type="button" aria-pressed="false" aria-label="Measure" title="Measure between two points (M)">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M2.5 13.5l11-11 4 4-11 11z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /><path d="M6 10l1.5 1.5M8.5 7.5l2 2M11 5l1.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+          </button>
+        </div>
         <div class="tools" role="group" aria-label="Display">
           <button class="pill" type="button" data-display="wire" aria-pressed="false" title="Show only the triangle edges">Wire</button>
           <button class="pill" type="button" data-display="both" aria-pressed="false" title="Show the solid with its triangle edges">Solid+Wire</button>
@@ -64,6 +73,29 @@
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </button>
       </div>
+
+      <!-- The section plane and the measurement; see client/view-tools.js. -->
+      <section id="inspect" class="card inspect" aria-label="Section and measurement" hidden>
+        <div class="inspect-section" hidden>
+          <div class="axis-switch" role="radiogroup" aria-label="Cut across">
+            <button type="button" role="radio" data-axis="x" aria-checked="false" title="Cut across X (X)">X</button>
+            <button type="button" role="radio" data-axis="y" aria-checked="false" title="Cut across Y (Y)">Y</button>
+            <button type="button" role="radio" data-axis="z" aria-checked="true" title="Cut across Z (Z)">Z</button>
+          </div>
+          <div class="ruler" data-keep="below">
+            <span class="ruler-end" data-end="min"></span>
+            <div class="ruler-track">
+              <input id="section-offset" type="range" aria-label="Where the plane cuts" />
+              <output id="section-value" for="section-offset"></output>
+            </div>
+            <span class="ruler-end" data-end="max"></span>
+          </div>
+          <button id="section-flip" class="flip" type="button" aria-pressed="false" aria-label="Keep the other side" title="Keep the other side of the plane">
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><rect x="3" y="5.5" width="6" height="9" rx="1.2" fill="currentColor" opacity="0.55" /><rect x="11.5" y="6.25" width="5.5" height="7.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="1.6 1.6" /><path d="M10 2.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          </button>
+        </div>
+        <p class="inspect-measure" hidden></p>
+      </section>
 
       <!-- The program's `params`, editable here; see client/params.js. -->
       <aside id="panel" class="panel" aria-labelledby="panel-title" hidden>

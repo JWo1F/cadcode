@@ -117,7 +117,7 @@ p {
 .bottom-left {
   left: var(--gap);
   bottom: var(--gap);
-  right: calc(var(--panel-cover, 0px) + var(--gap) + 240px);
+  right: calc(var(--panel-cover, 0px) + var(--gap) + 330px);
   flex-direction: column;
   align-items: flex-start;
   gap: 14px;

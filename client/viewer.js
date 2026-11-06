@@ -1,6 +1,7 @@
 import { createParamsPanel } from './params.js';
 import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 import { createAxisGizmo } from './gizmo.js';
+import { bindViewTools } from './view-tools.js';
 
 const canvas = document.getElementById('view');
 const stage = document.getElementById('stage');
@@ -80,8 +81,11 @@ function fitView() {
 
 document.getElementById('fit').addEventListener('click', fitView);
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
+const isTyping = (event) => !!event.target.closest?.('#part-menu, input, textarea');
+// The section is remembered per file, like the camera.
+bindViewTools(view, { stage, storageKey: () => fileKey && `cadcode:section:${fileKey}`, ignoreKey: isTyping });
 window.addEventListener('keydown', (event) => {
-  if (event.target.closest?.('#part-menu, input, textarea')) return;
+  if (isTyping(event)) return;
   if (event.key === 'f' || event.key === 'F') fitView();
 });
 
