@@ -660,6 +660,74 @@ p {
   }
 }
 
+/* --- Axes gizmo ------------------------------------------------------------------
+   Under the top-right pills, at the corner of the part of the stage no panel covers.
+   Blender's axis colours; the backdrop shows while the pointer is over it. */
+
+.gizmo {
+  position: absolute;
+  z-index: 2;
+  top: calc(var(--gap) + 52px);
+  right: calc(var(--panel-cover, 0px) + var(--gap));
+  line-height: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gizmo-backdrop {
+  fill: var(--ink);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.gizmo:hover .gizmo-backdrop {
+  opacity: 0.07;
+}
+
+.gizmo-arm {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.gizmo-ball {
+  cursor: pointer;
+  outline: none;
+}
+
+.gizmo-ball text {
+  font: 600 10px/1 var(--ui);
+  fill: #fff;
+  pointer-events: none;
+}
+
+.gizmo-ball.negative circle {
+  fill-opacity: 0.35;
+  stroke-width: 1.5;
+}
+
+.gizmo-ball:hover circle,
+.gizmo-ball:focus-visible circle {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.axis-X {
+  --axis: #e5484d;
+}
+.axis-Y {
+  --axis: #5fa82a;
+}
+.axis-Z {
+  --axis: #3b82f6;
+}
+.gizmo-arm,
+.gizmo-ball circle {
+  stroke: var(--axis);
+}
+.gizmo-ball circle {
+  fill: var(--axis);
+}
+
 /* Phones: the code is a sheet across the bottom; the readout and tools sit above it. */
 @media (max-width: 720px) {
   .stage {

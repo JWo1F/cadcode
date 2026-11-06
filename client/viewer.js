@@ -1,5 +1,6 @@
 import { createParamsPanel } from './params.js';
 import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
+import { createAxisGizmo } from './gizmo.js';
 
 const canvas = document.getElementById('view');
 const stage = document.getElementById('stage');
@@ -21,8 +22,12 @@ const readout = {
 const view = createScene(canvas, {
   workerUrl: '/render-worker.js',
   colors: { background: null, gridMajor: 0xc9ced5, gridMinor: 0xdfe2e6, edges: 0x1f2833 },
-  onCamera: cameraMoved,
+  onCamera: (moved) => {
+    cameraMoved(moved);
+    updateGizmo(moved);
+  },
 });
+const updateGizmo = createAxisGizmo(document.getElementById('gizmo'), view);
 
 // --- Camera persistence ------------------------------------------------------
 // The camera survives model reloads untouched; it is also stored per file so a

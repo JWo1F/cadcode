@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
 import { bindDisplayButtons, createScene, saveBlob } from '../../client/scene.js';
+import { createAxisGizmo } from '../../client/gizmo.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
@@ -21,7 +22,9 @@ const readout = { size: document.getElementById('readout-size'), mesh: document.
 const view = createScene(canvas, {
   workerUrl: new URL(workers['render-worker'], import.meta.url),
   colors: { background: null, gridMajor: 0xc9ced5, gridMinor: 0xdfe2e6, edges: 0x1f2833 }, // the stage's CSS paints behind
+  onCamera: (camera) => updateGizmo(camera),
 });
+const updateGizmo = createAxisGizmo(document.getElementById('gizmo'), view);
 
 let currentExample = ''; // the example the code came from, or '' for code from elsewhere
 let currentPart = ''; // the part asked for, or '' for the program's default
