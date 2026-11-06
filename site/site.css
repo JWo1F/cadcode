@@ -20,7 +20,6 @@
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --measure: 1240px;
   --side: clamp(20px, 5vw, 64px);
-  --bar: 72px;
   font: 17px/1.6 var(--ui);
   color: var(--ink);
 }
@@ -87,49 +86,6 @@ h3 {
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.015em;
-}
-
-/* --- Bar ---------------------------------------------------------------------------- */
-/* Over the top of the photograph, which is white there, so it needs no line of its own. */
-
-.bar {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: var(--bar);
-  padding: 0 var(--side);
-  background: rgba(255, 255, 255, 0.72);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 19px;
-  letter-spacing: -0.015em;
-  text-decoration: none;
-}
-
-.bar nav {
-  display: flex;
-  gap: 32px;
-  font-size: 15px;
-}
-
-.bar nav a {
-  color: var(--ink-soft);
-  text-decoration: none;
-}
-
-.bar nav a:hover {
-  color: var(--ink);
 }
 
 /* --- Pills, as in the playground ------------------------------------------------------- */
@@ -447,17 +403,6 @@ code.command::before {
 @media (max-width: 560px) {
   :root {
     font-size: 16px;
-    --bar: 64px;
-  }
-  .bar nav {
-    gap: 16px;
-    font-size: 14px;
-  }
-  /* Too narrow for all five: GitHub is in the hero, the examples and the skill are below. */
-  .bar nav a[href*='github'],
-  .bar nav a[href='#examples'],
-  .bar nav a[href='#skill'] {
-    display: none;
   }
   .features {
     grid-template-columns: 1fr;

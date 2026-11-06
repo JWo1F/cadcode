@@ -163,5 +163,5 @@ fs.writeFileSync(
   path.join(DIST, 'reference.html'),
   fs.readFileSync(path.join(SITE, 'reference.html'), 'utf8').replace('<!-- index -->', reference.index).replace('<!-- reference -->', reference.body),
 );
-for (const file of ['site.css', 'reference.css', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
+for (const file of ['header.css', 'site.css', 'reference.css', 'favicon.svg', 'favicon.ico', 'apple-touch-icon.png']) fs.copyFileSync(path.join(SITE, file), path.join(DIST, file));
 console.log(`site → ${path.relative(ROOT, DIST)}`);

@@ -1,0 +1,84 @@
+/* The bar on the home page and the Reference, drawn as the playground draws its top
+   corners: the brand on the left, quiet links and a filament pill on the right, 20px
+   from the edges. These pages scroll, so the bar stays on top as a sheet of glass. */
+:root {
+  --bar-gap: 20px;
+  --bar: calc(36px + 2 * var(--bar-gap));
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: var(--bar);
+  padding: 0 var(--bar-gap);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  font: 14px/1.45 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  color: #1f2833;
+}
+
+.bar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.bar nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar .link {
+  padding: 0 8px;
+  color: #77818d;
+  text-decoration: none;
+}
+
+.bar .link:hover,
+.bar .link[aria-current] {
+  color: #1f2833;
+}
+
+.bar .pill {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  background: #f2c14e;
+  border: 1px solid #dcaa2c;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(31, 40, 51, 0.06), 0 8px 24px -8px rgba(31, 40, 51, 0.14);
+  font-size: 14px;
+  font-weight: 500;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.bar .pill:hover {
+  background: #dcaa2c;
+}
+
+/* Narrow screens, as in the playground: closer to the edges, and only the Reference
+   stays among the links; the rest is on the pages themselves. */
+@media (max-width: 720px) {
+  :root {
+    --bar-gap: 12px;
+  }
+  .bar nav .link:not([href$='reference.html']) {
+    display: none;
+  }
+}
