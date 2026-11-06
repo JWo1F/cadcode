@@ -82,7 +82,7 @@ export default (p) => {
   // Snap grooves on the long walls, in both compartments
   const bumpXs = [mainL / 2, sx0 + sensL / 2];
 
-  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   // Grid of holes in the XY plane over an a x b rectangle
   const poreGrid = (a, b) => {

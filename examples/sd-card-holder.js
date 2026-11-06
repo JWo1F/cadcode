@@ -8,7 +8,7 @@ description: A desk block with slots for SD and microSD cards, tilted so labels 
 //
 //   cadcode dev examples/sd-card-holder.js
 //   cadcode stl examples/sd-card-holder.js --part holder --set sd=8 --set micro=12
-import { circle, cube, hull, polygon, product, range, setResolution, square } from 'cadcode';
+import { circle, cube, polygon, product, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -54,16 +54,8 @@ export default (p) => {
   const microX0 = sdW - p.rim; // the two blocks share the wall between them
   const microXs = [microX0 + p.rim + (MICRO.w + p.slack) / 2, microX0 + 2 * p.rim + (3 * (MICRO.w + p.slack)) / 2];
 
-  // Rounded block with a chamfered top edge: a hull of the footprint and a smaller copy on top.
-  const rect = (w, d, r) => square([w - 2 * r, d - 2 * r]).translate([r, r]).offset(r);
-  const block = (x, w, h) =>
-    hull(
-      rect(w, length, p.corner).extrude(h - p.chamfer),
-      rect(w - 2 * p.chamfer, length - 2 * p.chamfer, p.corner - p.chamfer)
-        .translate([p.chamfer, p.chamfer])
-        .extrude(0.01)
-        .translate([0, 0, h - 0.01]),
-    ).translate([x, 0, 0]);
+  // Rounded block with a chamfered top edge.
+  const block = (x, w, h) => cube([w, length, h], { round: { z: p.corner }, chamfer: { top: p.chamfer } }).translate([x, 0, 0]);
 
   // Anything standing on its slot's floor at z = -depth, leaned back and moved to the slot's top.
   const lean = (s, x, y, top) => s.rotate([-p.lean, 0, 0]).translate([x, y, top]);

@@ -43,7 +43,7 @@ export default (p) => {
   const hingeL = p.length - 2 * p.margin;
   const segL = hingeL / p.knuckles;
 
-  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   // Knuckle i occupies [x0, x1] along X, shortened by half the gap on sides facing a neighbour.
   const span = (i) => {

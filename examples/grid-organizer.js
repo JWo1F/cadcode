@@ -23,12 +23,12 @@ export default (p) => {
   const L = p.cols * p.cell + (p.cols + 1) * p.wall;
   const W = p.rows * p.cell + (p.rows + 1) * p.wall;
 
-  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   const pocket = () => {
     const r = p.pocketCorner;
     const depth = p.height - p.floor + 1;
-    const straight = cube([p.cell, p.cell, depth - p.scoop], { round: r, edges: 'z' }).translate([-p.cell / 2, -p.cell / 2, p.scoop]);
+    const straight = cube([p.cell, p.cell, depth - p.scoop], { round: { z: r } }).translate([-p.cell / 2, -p.cell / 2, p.scoop]);
     // The lower part is a hull of the full outline and two spheres in the front corners,
     // which round the front floor edge into a scoop.
     const scoop = hull(

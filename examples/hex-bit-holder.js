@@ -57,7 +57,7 @@ export default (p) => {
       .extrude(W)
       .rotate([90, 0, 0])
       .rotate(90)
-      .intersect(cube([W, D, rowTop(p.rows) + 5], { round: p.r, edges: 'z' }));
+      .intersect(cube([W, D, rowTop(p.rows) + 5], { round: { z: p.r } }));
 
   // Hex pocket with a small lead-in at the mouth; the hexagon's flats face the front.
   const socket = (i, c) => {

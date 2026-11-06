@@ -73,7 +73,7 @@ export default (p) => {
       .extrude(p.width)
       .rotate([90, 0, 0])
       .translate([0, p.width, 0])
-      .intersect(cube([L, p.width, H + 2], { round: p.r, edges: 'z' }));
+      .intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
 
   // Screw from the top: through hole plus a 90° countersink ending flush with the base's top.
   const sink = (p.headD - p.screwD) / 2;

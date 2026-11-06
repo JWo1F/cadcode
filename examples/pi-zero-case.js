@@ -56,7 +56,7 @@ export default (p) => {
   const bx = (x) => p.gap + x;
   const by = (y) => p.gap + y;
 
-  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   // A rounded window through a wall facing -Y, with an optional recess for the plug's overmould.
   const sideWindow = (x, z, w, h, recess) => {
