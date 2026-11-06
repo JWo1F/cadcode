@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -131,4 +131,42 @@ test('range is inclusive and product is cartesian', () => {
   assert.deepEqual(range(0, 3), [0, 1, 2, 3]);
   assert.deepEqual(range(0, 1, 0.5), [0, 0.5, 1]);
   assert.deepEqual(product([1, 2], ['a']), [[1, 'a'], [2, 'a']]);
+});
+
+test('extrude twists and scales', () => {
+  // A 4 × 1 bar turned a quarter turn: the top lies along Y. Straight facets between
+  // the layers bulge a little, so the volume is only close to the bar's.
+  const twisted = square([4, 1], { center: true }).extrude(3, { twist: 90, divisions: 32 });
+  near(twisted.volume(), 12, 0.5);
+  const top = twisted.slice(2.999).bounds();
+  near(top.max[1], 2, 0.01);
+  near(top.max[0], 0.5, 0.01);
+  const tapered = square(2, { center: true }).extrude(3, { scale: 0.5 });
+  near(tapered.volume(), 7, 1e-6); // a frustum: h/3 · (4 + 1 + √4)
+  near(tapered.bounds().max[0], 1);
+  const stretched = square(2, { center: true }).extrude(1, { scale: [2, 1] }).bounds();
+  near(stretched.max[0], 2);
+  near(stretched.max[1], 1);
+});
+
+test('revolve turns a profile around Z', () => {
+  const ring = square([1, 2]).translate([2, 0]);
+  near(ring.revolve({ fn: 512 }).volume(), 10 * Math.PI, 0.01); // π · (3² − 2²) · 2
+  near(ring.revolve({ angle: 180, fn: 512 }).volume(), 5 * Math.PI, 0.01);
+});
+
+test('2D booleans', () => {
+  near(square(4).subtract(square(2)).area(), 12);
+  near(square(2).union(square(2).translate([1, 0])).area(), 6);
+  near(square(2).intersect(square(2).translate([1, 1])).area(), 1);
+  near(difference(square(4), [square(1), false, square(1).translate([2, 2])]).area(), 14);
+});
+
+test('parseColor reads names, hex and arrays', () => {
+  assert.deepEqual(parseColor('red'), [1, 0, 0, 1]);
+  assert.deepEqual(parseColor('#0f0'), [0, 1, 0, 1]);
+  assert.deepEqual(parseColor('#0000ff80').map((c) => Math.round(c * 255)), [0, 0, 255, 128]);
+  assert.deepEqual(parseColor([0.5, 0.5, 0.5]), [0.5, 0.5, 0.5, 1]);
+  assert.deepEqual(parseColor('Orange', 0.3), [1, 165 / 255, 0, 0.3]);
+  assert.throws(() => parseColor('notacolor'), /Unknown color/);
 });
