@@ -209,6 +209,7 @@ function createView({ canvas, colors, ...size }) {
   }
 
   function toOrthographic() {
+    if (camera === orthographic) return void (axisView = viewDirection());
     orthoHalfHeight = camera.position.distanceTo(controls.target) * tanHalfFov() / camera.zoom;
     orthographic.zoom = 1;
     useCamera(orthographic);
@@ -232,10 +233,12 @@ function createView({ canvas, colors, ...size }) {
   // its distance and swings around the target; input waits until it is done.
   let turn = null;
 
-  /** Turns the camera to look at the target from [x, y, z], then makes the view orthographic. */
+  /**
+   * Turns the camera to look at the target from [x, y, z], then makes the view
+   * orthographic. From one axis view to another it stays orthographic, at its zoom.
+   */
   function viewAlong(direction) {
     stopTurn();
-    toPerspective();
     const to = new THREE.Vector3().fromArray(direction).normalize();
     if (Math.abs(to.z) > 0.999) to.set(0, -POLE_LEAN, Math.sign(to.z)).normalize();
     // Without damping, an update spends what is left of the last drag's momentum.
@@ -254,9 +257,10 @@ function createView({ canvas, colors, ...size }) {
     camera.position.copy(controls.target).add(turn.offset.clone().applyQuaternion(rotation));
     if (t < 1) return;
     stopTurn();
-    controls.update();
+    // The new axis first: the update would otherwise see the view off the old one.
     toOrthographic();
-    reportCamera(); // the camera has not moved, so the controls do not tell
+    controls.update();
+    reportCamera(); // the camera may not have moved, so the controls may not tell
   }
 
   function stopTurn() {
