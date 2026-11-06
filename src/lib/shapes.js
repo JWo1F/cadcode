@@ -51,15 +51,16 @@ const colorById = new Map();
 
 /**
  * @internal Reserves one manifold original ID per color, for meshes built with their
- * colors in triangle runs (the 3MF importer). Returns the IDs, in the order of `colors`.
- * @param {RGBA[]} colors
+ * colors in triangle runs (the 3MF importer). Returns the IDs, in the order of `colors`;
+ * a null color gets an ID with no color, for the uncolored triangles.
+ * @param {(RGBA | null)[]} colors
  * @returns {number[]}
  */
 export function reserveColorIds(colors) {
   if (colors.length === 0) return [];
   const first = Manifold.reserveIDs(colors.length);
   return colors.map((color, i) => {
-    colorById.set(first + i, color);
+    if (color) colorById.set(first + i, color);
     return first + i;
   });
 }

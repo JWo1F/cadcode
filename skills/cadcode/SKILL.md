@@ -5,7 +5,7 @@ description: >
   (`cadcode dev`, `cadcode stl`, `cadcode 3mf`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
   `square`, `circle`, `polygon`, `text`), booleans (`union`, `difference`, `intersection`, `hull`,
   `minkowski`), rounded and chamfered edges,
-  2D `offset`/`extrude`/`revolve`, importing STL files (`importSTL`), colors, `params` and named parts. Use this skill whenever a
+  2D `offset`/`extrude`/`revolve`, importing STL and 3MF files (`importSTL`, `import3MF`), colors, `params` and named parts. Use this skill whenever a
   project's package.json has `cadcode`, whenever code imports from 'cadcode', and whenever the
   user wants to design, model, modify or export a physical part in code — an enclosure, case,
   bracket, mount, box with lid, adapter, spacer, knob — or wants an STL or a rendered preview of
@@ -137,7 +137,7 @@ printing, keep letters at least ~5 mm tall and strokes over two nozzle widths, o
 
 **Importing files.** A file next to the program is imported for its contents, then turned into
 shapes: `import part from './part.stl'` then `importSTL(part)` is a `Solid` to cut, combine and
-move like any other. The dev server reloads when the file changes. The mesh must be closed and
+move like any other; `import3MF(model)` gives an array of solids, one per object, with their colors. The dev server reloads when the file changes. The mesh must be closed and
 face outward; otherwise it throws and says what is wrong, and the fix is to repair the file (a
 slicer or mesh editor), not to work around it in code. Check an imported part's `bounds()` before
 placing it: files keep whatever origin and orientation they were drawn in.

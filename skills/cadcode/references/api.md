@@ -38,6 +38,7 @@ watches it); the playground has no files, so pass the contents from `fetch` ther
 | Function | Notes |
 | --- | --- |
 | `importSTL(bytes)` | `Solid` from binary or ASCII STL (`Uint8Array` or `ArrayBuffer`). Throws, without repairing, on an open mesh (counts the open edges), an inside-out one, or a file that is not STL. |
+| `import3MF(bytes)` | `Solid[]`, one per build item (non-`model` types skipped), in mm, placed by the build/component transforms (components in other model files via `p:path` too). Per-triangle colors from `basematerials` and `colorgroup`; slicer painting/filament settings are not read. Same closed-mesh errors as STL, naming the object. |
 
 ## `point`
 

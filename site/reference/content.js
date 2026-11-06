@@ -238,6 +238,23 @@ cube([60, 20, 3]).subtract(
 // A downloaded bracket with one more hole.
 importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]))`,
       },
+      {
+        id: 'import3MF',
+        name: 'import3MF',
+        signature: 'import3MF(bytes)',
+        summary: 'The solids of a 3MF file, one per object on its build plate, in millimeters and placed where the file puts them. Their colors come along, per triangle.',
+        params: [{ name: 'bytes', type: 'Uint8Array | ArrayBuffer', text: 'The file\'s contents: `import model from \'./model.3mf\'` gives them.' }],
+        returns: 'Solid[]',
+        notes: [
+          'Colors are read from the core spec\'s base materials and the materials extension\'s color groups. Slicers\' own painting and filament settings are not read.',
+          'Components, also those in other model files of the package, and every transform are applied. Objects of the `support` and `other` types are skipped.',
+          'Each object must be a closed solid, as for `importSTL`; the error names the object that is not.',
+        ],
+        example: `import model from './assembly.3mf';
+
+// Everything on the plate, lifted onto a base.
+[cube([80, 80, 2]), import3MF(model).map((s) => s.translate([0, 0, 2]))]`,
+      },
     ],
   },
   {

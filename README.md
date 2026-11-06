@@ -231,6 +231,7 @@ export default importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([
 | Function | Notes |
 | --- | --- |
 | `importSTL(bytes)` | A solid from a binary or ASCII STL. The mesh must be closed: one with holes, loose triangles or inward-facing triangles fails with a message saying so, instead of being repaired. |
+| `import3MF(bytes)` | An array of solids, one per object on the 3MF's build plate, in millimeters and where the file places them. Colors from the core spec's base materials and the materials extension's color groups come along per triangle; slicer-specific painting and filament settings do not. Each object must be a closed mesh, as for STL. |
 
 ## Porting from OpenSCAD
 
@@ -247,6 +248,7 @@ export default importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([
 | `text("A1", size = 10, halign = "center");` | `text('A1', { size: 9.55, halign: 'center' })`: `size` is the height of a capital, which in OpenSCAD's Liberation Sans is 0.955 of its `size` |
 | `text("A1", font = "Roboto");` | `import font from './Roboto.ttf';` then `text('A1', { font })` |
 | `import("part.stl");` | `import part from './part.stl';` then `importSTL(part)` |
+| `import("part.3mf");` | `import part from './part.3mf';` then `import3MF(part)`, an array of solids |
 | `module box() { ... }` | `const box = () => ...` |
 | `part = "box";` with `-D 'part="box"'` | Named parts and `--part box` |
 | `wall = 2;` with `-D wall=2.4` | `export const params = { wall: 2 }` and `--set wall=2.4` |

@@ -26,5 +26,6 @@ export {
 } from './shapes.js';
 export { text } from './text.js';
 export { importSTL } from './import/stl.js';
+export { import3MF } from './import/3mf.js';
 export { parseColor } from './colors.js';
 export { range, product } from './util.js';
