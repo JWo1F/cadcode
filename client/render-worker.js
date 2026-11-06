@@ -11,6 +11,10 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 const DEFAULT_COLOR = '#f2c14e';
 const EDGE_ANGLE = 25;
 const SKETCH_LINE_WIDTH = 2.5; // CSS pixels; plain WebGL lines are always one pixel wide
+const TURN_MS = 300; // how long the camera takes to turn to an axis view
+// Looking straight along Z, the orbit has no azimuth to hold on to, so an axis view
+// along Z leans this far towards -Y: X then points right, as in a drawing's plan.
+const POLE_LEAN = 1e-4;
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1); // CAD convention: Z is up
 
@@ -85,6 +89,8 @@ async function handle(message) {
       return view.setCamera(message.camera);
     case 'display':
       return view.setDisplay(message.mode);
+    case 'view-axis':
+      return view.viewAlong(message.direction);
   }
   // The rest answer the page.
   try {
@@ -105,10 +111,13 @@ function createView({ canvas, colors, ...size }) {
   else renderer.setClearColor(background);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
-  camera.up.set(0, 0, 1);
-  camera.position.set(120, -160, 110);
-  scene.add(camera);
+  // Perspective, except in an axis view, which is orthographic as in Blender: the
+  // view drops back to perspective as soon as it is turned off the axis.
+  const perspective = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
+  perspective.position.set(120, -160, 110);
+  const orthographic = new THREE.OrthographicCamera(-1, 1, 1, -1, -10000, 10000);
+  scene.add(perspective, orthographic);
+  let camera = perspective; // the one in use
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f99, 1.6));
   const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -120,8 +129,13 @@ function createView({ canvas, colors, ...size }) {
   controls.dampingFactor = 0.15;
   controls.screenSpacePanning = true; // shift+drag and right-drag pan in the view plane
 
-  // The page keeps the camera across reloads; it hears of every move.
-  controls.addEventListener('change', () => self.postMessage({ type: 'camera', camera: getCamera() }));
+  // The page keeps the camera across reloads and draws the axes gizmo from it; it
+  // hears of every move.
+  controls.addEventListener('change', () => {
+    if (axisView && !turn && viewDirection().angleTo(axisView) > 1e-6) toPerspective();
+    reportCamera();
+  });
+  const reportCamera = () => self.postMessage({ type: 'camera', camera: getCamera() });
 
   const grid = new THREE.Group();
   scene.add(grid);
@@ -156,12 +170,99 @@ function createView({ canvas, colors, ...size }) {
     applyProjection();
   }
 
+  // Half the height the orthographic camera sees at zoom 1: what the perspective one
+  // saw at the target when the view switched, so the model keeps its size.
+  let orthoHalfHeight = 1;
+
   function applyProjection() {
     const { clientWidth: width, clientHeight: height } = element;
-    camera.aspect = width / height;
-    if (inset.right || inset.bottom) camera.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
-    else camera.clearViewOffset();
-    camera.updateProjectionMatrix();
+    const aspect = width / height;
+    perspective.aspect = aspect;
+    Object.assign(orthographic, { top: orthoHalfHeight, bottom: -orthoHalfHeight, left: -orthoHalfHeight * aspect, right: orthoHalfHeight * aspect });
+    for (const each of [perspective, orthographic]) {
+      if (inset.right || inset.bottom) each.setViewOffset(width, height, inset.right / 2, inset.bottom / 2, width, height);
+      else each.clearViewOffset();
+      each.updateProjectionMatrix();
+    }
+  }
+
+  const tanHalfFov = () => Math.tan(THREE.MathUtils.degToRad(perspective.fov / 2));
+
+  /** The unit direction from the target to the camera. */
+  function viewDirection() {
+    return camera.position.clone().sub(controls.target).normalize();
+  }
+
+  // --- Axis views ----------------------------------------------------------------
+  // In an axis view the camera is orthographic, and axisView is the direction from
+  // the target to it; null in perspective.
+
+  let axisView = null;
+
+  function useCamera(next) {
+    if (next === camera) return;
+    next.position.copy(camera.position);
+    next.quaternion.copy(camera.quaternion);
+    next.add(keyLight);
+    camera = next;
+    controls.object = next;
+  }
+
+  function toOrthographic() {
+    orthoHalfHeight = camera.position.distanceTo(controls.target) * tanHalfFov() / camera.zoom;
+    orthographic.zoom = 1;
+    useCamera(orthographic);
+    applyProjection();
+    axisView = viewDirection();
+  }
+
+  // Back at the distance where perspective shows the target as large as it was.
+  function toPerspective() {
+    axisView = null;
+    if (camera === perspective) return;
+    const distance = (orthoHalfHeight / orthographic.zoom) / tanHalfFov();
+    const direction = viewDirection();
+    useCamera(perspective);
+    perspective.position.copy(controls.target).addScaledVector(direction, distance);
+    perspective.zoom = 1;
+    perspective.updateProjectionMatrix();
+  }
+
+  // The turn to an axis view under way: { offset, rotation, start }. The camera keeps
+  // its distance and swings around the target; input waits until it is done.
+  let turn = null;
+
+  /** Turns the camera to look at the target from [x, y, z], then makes the view orthographic. */
+  function viewAlong(direction) {
+    stopTurn();
+    toPerspective();
+    const to = new THREE.Vector3().fromArray(direction).normalize();
+    if (Math.abs(to.z) > 0.999) to.set(0, -POLE_LEAN, Math.sign(to.z)).normalize();
+    // Without damping, an update spends what is left of the last drag's momentum.
+    controls.enableDamping = false;
+    controls.update();
+    const offset = camera.position.clone().sub(controls.target);
+    const rotation = new THREE.Quaternion().setFromUnitVectors(offset.clone().normalize(), to);
+    controls.enabled = false;
+    turn = { offset, rotation, start: performance.now() };
+  }
+
+  function stepTurn() {
+    const t = Math.min((performance.now() - turn.start) / TURN_MS, 1);
+    const eased = 1 - (1 - t) ** 3;
+    const rotation = new THREE.Quaternion().slerp(turn.rotation, eased);
+    camera.position.copy(controls.target).add(turn.offset.clone().applyQuaternion(rotation));
+    if (t < 1) return;
+    stopTurn();
+    controls.update();
+    toOrthographic();
+    reportCamera(); // the camera has not moved, so the controls do not tell
+  }
+
+  function stopTurn() {
+    turn = null;
+    controls.enabled = true;
+    controls.enableDamping = true;
   }
 
   resize(size);
@@ -169,6 +270,7 @@ function createView({ canvas, colors, ...size }) {
   let paused = false; // while a snapshot is being encoded
   renderer.setAnimationLoop(() => {
     if (paused) return;
+    if (turn) stepTurn();
     controls.update();
     renderer.render(scene, camera);
   });
@@ -180,9 +282,11 @@ function createView({ canvas, colors, ...size }) {
   function fitView() {
     const sphere = modelSphere();
     if (sphere.isEmpty()) return;
+    stopTurn();
+    toPerspective();
     // Fit the sphere in the uncovered part of the canvas, by its narrower side.
     const { clientWidth: width, clientHeight: height } = element;
-    const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const tanHalf = tanHalfFov();
     const visible = Math.min(Math.max(height - inset.bottom, 1), Math.max(width - inset.right, 1)) / height;
     const distance = (sphere.radius / Math.sin(Math.atan(tanHalf * visible))) * 1.15;
     const direction = new THREE.Vector3(1, -1.3, 0.9).normalize();
@@ -193,16 +297,24 @@ function createView({ canvas, colors, ...size }) {
     controls.update();
   }
 
+  /** ortho: whether the view is an orthographic axis view; zoom is then the orthographic camera's. */
   function getCamera() {
-    return { position: camera.position.toArray(), target: controls.target.toArray(), zoom: camera.zoom };
+    return { position: camera.position.toArray(), target: controls.target.toArray(), zoom: camera.zoom, ortho: camera === orthographic };
   }
 
-  function setCamera({ position, target, zoom }) {
+  function setCamera({ position, target, zoom = 1, ortho = false }) {
+    stopTurn();
+    toPerspective();
     camera.position.fromArray(position);
     controls.target.fromArray(target);
-    camera.zoom = zoom ?? 1;
+    camera.zoom = ortho ? 1 : zoom;
     camera.updateProjectionMatrix();
     controls.update();
+    if (!ortho) return;
+    toOrthographic();
+    orthographic.zoom = zoom;
+    orthographic.updateProjectionMatrix();
+    reportCamera();
   }
 
   function setDisplay(mode) {
@@ -305,9 +417,13 @@ function createView({ canvas, colors, ...size }) {
     const box = new THREE.Box3().setFromObject(model);
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     if (!sphere.isEmpty()) {
-      camera.near = Math.max(sphere.radius / 1000, 0.01);
-      camera.far = sphere.radius * 200 + camera.position.distanceTo(sphere.center);
-      camera.updateProjectionMatrix();
+      perspective.near = Math.max(sphere.radius / 1000, 0.01);
+      perspective.far = sphere.radius * 200 + camera.position.distanceTo(sphere.center);
+      // The orthographic camera does not move when it zooms, so it sees as far behind as ahead.
+      orthographic.near = -perspective.far;
+      orthographic.far = perspective.far;
+      perspective.updateProjectionMatrix();
+      orthographic.updateProjectionMatrix();
       buildGrid(sphere);
     }
 
@@ -376,5 +492,5 @@ function createView({ canvas, colors, ...size }) {
     }
   }
 
-  return { element, resize, setInset, fitView, setCamera, setDisplay, showModel, snapshotPNG };
+  return { element, resize, setInset, fitView, setCamera, viewAlong, setDisplay, showModel, snapshotPNG };
 }

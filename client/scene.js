@@ -3,7 +3,7 @@
 // so building a large mesh never stalls the page. This side hands the canvas over,
 // forwards input and size, and turns commands into messages:
 //
-//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, display
+//   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, view-axis, display
 //   from the worker: reply (to show and snapshot), camera (on every move), cursor
 
 /** The event fields OrbitControls reads. */
@@ -17,7 +17,7 @@ const copyEvent = (event) => {
 
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {{ workerUrl: string | URL, colors?: { background?: number, gridMajor?: number, gridMinor?: number, edges?: number }, onCamera?: (camera: { position: number[], target: number[], zoom: number }) => void }} options
+ * @param {{ workerUrl: string | URL, colors?: { background?: number, gridMajor?: number, gridMinor?: number, edges?: number }, onCamera?: (camera: { position: number[], target: number[], zoom: number, ortho: boolean }) => void }} options
  *   The colours default to the dev viewer's, and a null background leaves the canvas
  *   transparent; onCamera hears of every camera move.
  */
@@ -112,6 +112,10 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
     },
     setCamera(camera) {
       worker.postMessage({ type: 'set-camera', camera });
+    },
+    /** Turns the camera to look at the target from [x, y, z], into an orthographic axis view. */
+    viewAlong(direction) {
+      worker.postMessage({ type: 'view-axis', direction });
     },
     /** How the model is drawn: 'solid', 'wire' (every triangle edge, no faces) or 'both'. */
     setDisplay(mode) {
