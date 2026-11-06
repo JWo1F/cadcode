@@ -1,6 +1,6 @@
 {
   "name": "cadcode",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "types": "tsc -p tsconfig.json",
