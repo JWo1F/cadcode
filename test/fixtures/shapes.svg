@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Shapes for the SVG importer's tests: 60 × 40 mm, one user unit per millimeter. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="60mm" height="40mm" viewBox="0 0 60 40">
+  <defs><rect id="unused" width="100" height="100"/></defs>
+  <g inkscape:label="hidden layer" style="display:none"><rect width="60" height="40"/></g>
+  <g transform="translate(5 5)">
+    <rect width="10" height="10" style="fill:#000000"/>
+  </g>
+  <path fill-rule="evenodd" d="M30 5 h20 v20 h-20 z m5 5 h10 v10 h-10 z"/>
+  <polygon points="5,35 15,35 10,25"/>
+  <circle cx="50" cy="32" r="4" fill="#ff0000"/>
+  <path d="M0 0 L60 0" stroke="#000" fill="none"/>
+</svg>

@@ -222,16 +222,20 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 Existing geometry comes in through an `import` of the file next to the program, which gives its contents, and a function that turns them into shapes. The dev server reloads when an imported file changes, as it does for code. In the playground, which has no files, pass the contents from `fetch`.
 
 ```js
-import { importSTL } from 'cadcode';
+import { cylinder, importSTL, importSVG } from 'cadcode';
 import bracket from './bracket.stl';
+import logo from './logo.svg';
 
-export default importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]));
+export default importSTL(bracket)
+  .subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]))
+  .union(importSVG(logo, { center: true }).extrude(1).translate([20, 10, 4]));
 ```
 
 | Function | Notes |
 | --- | --- |
 | `importSTL(bytes)` | A solid from a binary or ASCII STL. The mesh must be closed: one with holes, loose triangles or inward-facing triangles fails with a message saying so, instead of being repaired. |
 | `import3MF(bytes)` | An array of solids, one per object on the 3MF's build plate, in millimeters and where the file places them. Colors from the core spec's base materials and the materials extension's color groups come along per triangle; slicer-specific painting and filament settings do not. Each object must be a closed mesh, as for STL. |
+| `importSVG(text, { center, dpi, fn })` | A 2D shape of the SVG's filled paths, rectangles, circles, ellipses, polygons and polylines, with their transforms and fill rules. Sizes come from the document's `width`, `height` and `viewBox` (mm, cm, in, pt, or px at `dpi`, default 96); Y points up and the document's bottom-left corner is the origin, or the shape's center with `center: true`. Strokes, CSS classes, text, clones and images are not imported; text, clones and images fail with how to convert them. |
 
 ## Porting from OpenSCAD
 
@@ -248,6 +252,7 @@ export default importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([
 | `text("A1", size = 10, halign = "center");` | `text('A1', { size: 9.55, halign: 'center' })`: `size` is the height of a capital, which in OpenSCAD's Liberation Sans is 0.955 of its `size` |
 | `text("A1", font = "Roboto");` | `import font from './Roboto.ttf';` then `text('A1', { font })` |
 | `import("part.stl");` | `import part from './part.stl';` then `importSTL(part)` |
+| `import("logo.svg", center = true);` | `import logo from './logo.svg';` then `importSVG(logo, { center: true })` |
 | `import("part.3mf");` | `import part from './part.3mf';` then `import3MF(part)`, an array of solids |
 | `module box() { ... }` | `const box = () => ...` |
 | `part = "box";` with `-D 'part="box"'` | Named parts and `--part box` |

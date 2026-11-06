@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { zipSync, strToU8 } from 'fflate';
-import { cube, sphere, cylinder, importSTL, import3MF } from '../src/lib/index.js';
+import { cube, sphere, cylinder, importSTL, import3MF, importSVG } from '../src/lib/index.js';
 import { toSTL } from '../src/export/stl.js';
 import { to3MF } from '../src/export/3mf.js';
 import { meshGroups } from '../src/core/mesh.js';
@@ -117,4 +117,52 @@ test('import3MF explains files it cannot read', () => {
   assert.throws(() => import3MF(package3MF({ '3D/3dmodel.model': open })), /object "object 1" is not a closed solid \(3 edges/);
   const empty = '<model><resources/><build/></model>';
   assert.throws(() => import3MF(package3MF({ '3D/3dmodel.model': empty })), /nothing on its build plate/);
+});
+
+test('importSVG fills paths, shapes and transforms, in millimeters with Y up', () => {
+  const shape = importSVG(fixture('shapes.svg'));
+  // The square (100), the frame with its hole (400 - 100), the triangle (50) and the circle (about 50).
+  near(shape.area(), 500, 1);
+  const { min, max } = shape.bounds();
+  near(min[0], 5);
+  near(max[0], 54);
+  near(min[1], 4);
+  near(max[1], 35);
+  // The frame's hole stays a hole: the point in its middle, at (40, 40 - 15) mm, is outside the shape.
+  assert.equal(shape.intersect(importSVG('<svg width="60mm" height="40mm" viewBox="0 0 60 40"><rect x="39" y="14" width="2" height="2"/></svg>')).area(), 0);
+
+  const centered = importSVG(fixture('shapes.svg'), { center: true }).bounds();
+  near(centered.min[0], -24.5);
+  near(centered.max[1], 15.5);
+});
+
+test('importSVG sizes px documents by dpi, and follows nested transforms and rounded rectangles', () => {
+  near(importSVG('<svg width="96" height="96"><rect width="96" height="96"/></svg>').bounds().max[0], 25.4, 1e-4);
+  near(importSVG('<svg width="300" height="300"><rect width="300" height="300"/></svg>', { dpi: 300 }).bounds().max[0], 25.4, 1e-4);
+  const nested = importSVG('<svg viewBox="0 0 100 100" width="100mm"><g transform="translate(50 0)"><g transform="scale(2)"><rect width="10" height="5"/></g></g></svg>');
+  assert.deepEqual(nested.bounds(), { min: [50, 90], max: [70, 100] });
+  const rounded = importSVG('<svg width="20mm" height="20mm" viewBox="0 0 20 20"><rect width="20" height="20" rx="5"/></svg>', { fn: 64 });
+  near(rounded.area(), 400 - (4 - Math.PI) * 25, 0.5);
+});
+
+test('importSVG explains what it cannot import', () => {
+  assert.throws(() => importSVG('<svg><path d="M0 0 L10 0" stroke="black" fill="none"/></svg>'), /no filled shapes\. Strokes are not imported/);
+  assert.throws(() => importSVG('<svg><text>Hi</text></svg>'), /text: convert it to paths/);
+  assert.throws(() => importSVG('<svg><use href="#a"/></svg>'), /Unlink Clone/);
+  assert.throws(() => importSVG('<html></html>'), /not an SVG file/);
+  assert.throws(() => importSVG('<svg><rect></svg>'), /does not close/);
+});
+
+test('a program imports an SVG next to it as text', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-import-'));
+  fs.copyFileSync(new URL('fixtures/shapes.svg', import.meta.url), path.join(dir, 'logo.svg'));
+  fs.writeFileSync(path.join(dir, 'model.js'), `import { importSVG } from 'cadcode';\nimport logo from './logo.svg';\nexport default importSVG(logo).extrude(2);\n`);
+  const bundle = await bundleProgram(path.join(dir, 'model.js'));
+  try {
+    const { solids } = await evaluateProgram(bundle);
+    near(solids[0].volume(), 1000, 2);
+  } finally {
+    removeBundle(bundle);
+    fs.rmSync(dir, { recursive: true });
+  }
 });

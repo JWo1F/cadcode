@@ -255,6 +255,27 @@ importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]))`,
 // Everything on the plate, lifted onto a base.
 [cube([80, 80, 2]), import3MF(model).map((s) => s.translate([0, 0, 2]))]`,
       },
+      {
+        id: 'importSVG',
+        name: 'importSVG',
+        signature: 'importSVG(text, options)',
+        summary: 'The filled shapes of an SVG file as a 2D shape, like OpenSCAD\'s `import("logo.svg")`: paths, rectangles, circles, ellipses, polygons and polylines, with their transforms and fill rules. Extrude it for a raised logo, or subtract the extrusion to engrave it.',
+        params: [
+          { name: 'text', type: 'string | Uint8Array | ArrayBuffer', text: 'The file\'s contents: `import logo from \'./logo.svg\'` gives its text.' },
+          { name: 'options.center', type: 'boolean', default: 'false', text: 'Move the center of the shape\'s bounding box to the origin. Without it, the document\'s bottom-left corner is at the origin.' },
+          { name: 'options.dpi', type: 'number', default: '96', text: 'Pixels per inch, for a document sized in px or without units. Sizes in mm, cm, in, pt or pc are exact.' },
+          { name: 'options.fn', type: 'number', text: 'Segments for a full turn of a curve, as for circles. Without it, `setResolution`\'s `fn`, or one segment per `fa` degrees.' },
+        ],
+        returns: 'Shape2',
+        notes: [
+          'The size comes from the document: its `width` and `height`, and its `viewBox` for the drawing\'s units. Y points up, as everywhere in cadcode.',
+          'Only fills are imported. A logo drawn with strokes needs them turned into shapes first (Inkscape: Path → Stroke to Path). Text, clones (`<use>`) and images throw and say how to convert them. CSS classes from a `<style>` element are not read, so a shape colored only by class counts as filled.',
+        ],
+        example: `import logo from './logo.svg';
+
+// A coaster with the logo raised 1 mm in its middle.
+cylinder({ d: 90, h: 3 }).union(importSVG(logo, { center: true }).extrude(1).translate([0, 0, 3]))`,
+      },
     ],
   },
   {

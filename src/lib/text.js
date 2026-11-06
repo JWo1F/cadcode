@@ -1,6 +1,7 @@
 import opentype from 'opentype.js';
 import liberationSans from './fonts/liberation-sans.js';
-import { Shape2, CrossSection, resolution } from './shapes.js';
+import { Shape2, CrossSection } from './shapes.js';
+import { flattenBezier } from './curves.js';
 
 /**
  * @typedef {object} TextOptions
@@ -40,42 +41,6 @@ function capHeight(font) {
   return height;
 }
 
-/** How far the direction turns along a curve's control polygon, in degrees. */
-function turning(points) {
-  let total = 0;
-  let previous;
-  for (let i = 1; i < points.length; i++) {
-    const dx = points[i][0] - points[i - 1][0];
-    const dy = points[i][1] - points[i - 1][1];
-    if (Math.hypot(dx, dy) < 1e-12) continue;
-    const angle = Math.atan2(dy, dx);
-    if (previous !== undefined) {
-      let delta = Math.abs(angle - previous);
-      if (delta > Math.PI) delta = 2 * Math.PI - delta;
-      total += delta;
-    }
-    previous = angle;
-  }
-  return (total * 180) / Math.PI;
-}
-
-/**
- * Segments for one curve. Like a circle: `fn` per full turn when set, otherwise one per `fa` degrees.
- * `fs` is left out: letters are small, and their curves would come out as straight lines.
- */
-function segmentsFor(points, fn) {
-  const f = fn ?? resolution.fn;
-  const degrees = turning(points);
-  return Math.max(1, Math.ceil(f > 0 ? (f * degrees) / 360 : degrees / resolution.fa));
-}
-
-/** Point on a Bézier curve of any degree at t, by de Casteljau. */
-function bezier(points, t) {
-  let row = points;
-  while (row.length > 1) row = row.slice(1).map((p, i) => [row[i][0] + (p[0] - row[i][0]) * t, row[i][1] + (p[1] - row[i][1]) * t]);
-  return row[0];
-}
-
 /** Turns path commands (y pointing down, as opentype.js draws them) into closed contours with y up. */
 function contours(commands, fn) {
   const out = [];
@@ -95,8 +60,7 @@ function contours(commands, fn) {
       contour.push(at);
     } else if (c.type === 'Q' || c.type === 'C') {
       const controls = c.type === 'Q' ? [at, [c.x1, -c.y1], [c.x, -c.y]] : [at, [c.x1, -c.y1], [c.x2, -c.y2], [c.x, -c.y]];
-      const n = segmentsFor(controls, fn);
-      for (let i = 1; i <= n; i++) contour.push(bezier(controls, i / n));
+      contour.push(...flattenBezier(controls, fn));
       at = [c.x, -c.y];
     } else if (c.type === 'Z') {
       close();
