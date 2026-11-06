@@ -100,6 +100,8 @@ export default async (p) => {
 };
 ```
 
+[`examples/icon-stamp.js`](examples/icon-stamp.js) awaits `fetch()` of an SVG icon by name and builds a stamp from it.
+
 Parameters you might want to change from the command line go in `export const params`. `--set` can only override a parameter declared there, so a typo is an error instead of being silently ignored.
 
 ```js
