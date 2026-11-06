@@ -37,7 +37,7 @@ export const sections = [
         ],
         notes: [
           'A 2D shape in a part is drawn in the viewer and in PNGs as a sketch on Z=0 (a see-through blue fill with a bold outline), to check a profile before extruding it. STL leaves it out, and a part with no solids at all fails to export.',
-          'The STL of a part merges all its solids into one body. In the viewer and in PNGs each solid keeps its own color and transparency.',
+          'The STL of a part merges all its solids into one body. The 3MF keeps each solid as its own object, in its colors. In the viewer and in PNGs each solid keeps its own color and transparency.',
           'Functions may be `async`.',
         ],
         example: `export default (p) => ({
@@ -423,7 +423,7 @@ peg.rotate(30, [1, 0, 0], { around: base })`,
         name: 'color',
         owner: 'Solid',
         signature: '.color(color, alpha)',
-        summary: 'Colors the whole solid. Colors survive booleans: a union of colored parts keeps each face\'s color. They show in the viewer and in PNGs; STL files have no color.',
+        summary: 'Colors the whole solid. Colors survive booleans: a union of colored parts keeps each face\'s color. They show in the viewer and in PNGs and go into 3MF files as base materials; STL files have no color.',
         params: [
           { name: 'color', type: 'string | [r, g, b] | [r, g, b, a]', text: 'A CSS color name, `#rgb`, `#rrggbb`, `#rrggbbaa`, or channels from 0 to 1.' },
           { name: 'alpha', type: 'number', text: 'Optional opacity from 0 to 1. Overrides the alpha in `color`.' },
@@ -811,6 +811,14 @@ const lid = lidShape.rotate([-110, 0, 0], { around: hinge })`,
         ],
         example: `cadcode stl case.js --part box --set wall=2.4
 cadcode stl case.js --all -o out/`,
+      },
+      {
+        id: 'cli-3mf',
+        name: 'cadcode 3mf',
+        signature: 'cadcode 3mf <file> [--part | --all] [--set] [--out]',
+        summary: 'Writes a part as a 3MF file in millimeters. Unlike STL each solid stays its own object, and colors go along as the core 3MF base materials, per triangle, so a union of colored pieces keeps them. Slicers read the separate bodies; whether they map the colors to filaments is up to each slicer (PrusaSlicer ignores them). Takes `--part`, `--all`, `--set` and `--out` like `cadcode stl`.',
+        example: `cadcode 3mf case.js --part assembly
+cadcode 3mf case.js --all -o out/`,
       },
       {
         id: 'cli-png',

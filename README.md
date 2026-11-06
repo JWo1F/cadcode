@@ -40,6 +40,7 @@ Requires Node 20 or newer. Typings ship with the package, so editors complete th
 ```bash
 cadcode dev <file>      # live preview in the browser, reloads on save
 cadcode stl <file>      # export a part to binary STL
+cadcode 3mf <file>      # export a part to 3MF, its solids and colors kept apart
 cadcode png <file>      # render a part to a PNG preview
 cadcode parts <file>    # list the parts a program defines
 ```
@@ -47,9 +48,9 @@ cadcode parts <file>    # list the parts a program defines
 | Option | Applies to | Meaning |
 | --- | --- | --- |
 | `-p, --part <name>` | all | Part to use. The default is the first one. |
-| `-a, --all` | stl, png | Export every part, one file each. |
+| `-a, --all` | stl, 3mf, png | Export every part, one file each. |
 | `-s, --set <key=value>` | all | Override a parameter. Repeatable. Values are parsed as JSON, falling back to strings. |
-| `-o, --out <path>` | stl, png | Output file, or a directory with `--all`. The default is `<name>.stl` or `<name>-<part>.stl` in the current directory. |
+| `-o, --out <path>` | stl, 3mf, png | Output file, or a directory with `--all`. The default is `<name>.stl` or `<name>-<part>.stl` (`.3mf`, `.png`) in the current directory. |
 | `--view <name>` | png | `iso` (default), `iso-back`, `front`, `back`, `left`, `right`, `top`, `bottom`, or `sheet` for iso, front, right and top in one image. |
 | `--size <WxH>` | png | Image size. The default is `800x600`. |
 | `--port <n>` | dev | The default is `5173`. |
@@ -59,6 +60,7 @@ cadcode parts <file>    # list the parts a program defines
 ```bash
 cadcode stl case.js --part box --set wall=2.4
 cadcode stl case.js --all -o out/
+cadcode 3mf case.js --part assembly
 cadcode png case.js --part assembly --view sheet --size 1600x1200
 ```
 
@@ -119,7 +121,7 @@ export default (p) => {
 };
 ```
 
-The first part is the default one. The STL of a part merges all its solids into one body. A part may also hold 2D shapes, to check a profile before extruding it: the viewer and PNGs draw them as a sketch on Z=0 (a see-through blue fill with a bold outline), and STL leaves them out (a part with only 2D shapes fails to export). In the viewer and in PNGs each solid keeps its own color and transparency, which is what assembly views are for.
+The first part is the default one. The STL of a part merges all its solids into one body. The 3MF keeps each solid as its own object, in its colors: the core 3MF base materials, per triangle, so a union of colored pieces keeps them. Slicers read the separate bodies; whether they turn the colors into filaments is up to each slicer (PrusaSlicer ignores them). A part may also hold 2D shapes, to check a profile before extruding it: the viewer and PNGs draw them as a sketch on Z=0 (a see-through blue fill with a bold outline), and STL leaves them out (a part with only 2D shapes fails to export). In the viewer and in PNGs each solid keeps its own color and transparency, which is what assembly views are for.
 
 A program can import its own helper files and npm packages like any module. TypeScript files work too.
 

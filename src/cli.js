@@ -11,12 +11,13 @@ const USAGE = `cadcode — code-first CAD
 Usage:
   cadcode dev <file>    Live preview in the browser; reloads on save
   cadcode stl <file>    Export a part to binary STL
+  cadcode 3mf <file>    Export a part to 3MF, its solids and colors kept apart
   cadcode png <file>    Render a part to a PNG preview
   cadcode parts <file>  List the parts a program defines
 
 Options:
   -p, --part <name>     Part to use (default: the first one)
-  -a, --all             stl/png: export every part
+  -a, --all             stl/3mf/png: export every part
   -s, --set <k=v>       Override a parameter (repeatable); values are JSON or strings
   -o, --out <path>      Output file, or directory with --all
       --view <name>     png: iso, iso-back, front, back, left, right, top, bottom, sheet (default: iso)
@@ -67,7 +68,7 @@ async function exportParts(command, bundle, overrides) {
   const first = await evaluateProgram(bundle, { part: values.part, overrides });
 
   if (command === 'parts') return void console.log(first.partNames.join('\n'));
-  if (command !== 'stl' && command !== 'png') throw new Error(`Unknown command "${command}"\n\n${USAGE}`);
+  if (!['stl', '3mf', 'png'].includes(command)) throw new Error(`Unknown command "${command}"\n\n${USAGE}`);
 
   const ext = command;
   const base = path.basename(file).replace(/\.[^.]+$/, '');
@@ -82,6 +83,9 @@ async function exportParts(command, bundle, overrides) {
     if (ext === 'stl') {
       const { toSTL } = await import('./export/stl.js');
       fs.writeFileSync(out, toSTL(result.solids));
+    } else if (ext === '3mf') {
+      const { to3MF } = await import('./export/3mf.js');
+      fs.writeFileSync(out, to3MF(result.solids, { name: part }));
     } else {
       const { toPNG } = await import('./export/png.js');
       const [width, height] = values.size.split('x').map(Number);

@@ -33,6 +33,12 @@ test('a single-part program is named <file>, and -o names the file itself', () =
   assert.ok(exists('shots', 'view.png'));
 });
 
+test('3mf exports like stl, one file per part', () => {
+  cadcode('3mf', 'parts.js', '--all', '-o', 'out3mf');
+  assert.ok(exists('out3mf', 'parts-box.3mf'));
+  assert.ok(exists('out3mf', 'parts-lid.3mf'));
+});
+
 test('parts lists the part names', () => {
   assert.equal(cadcode('parts', 'parts.js'), 'box\nlid\n');
 });

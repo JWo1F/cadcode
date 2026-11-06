@@ -12,10 +12,11 @@
     "csg",
     "3d-printing",
     "stl",
+    "3mf",
     "manifold"
   ],
   "license": "MIT",
-  "description": "Code-first CAD: write models in JavaScript, preview live in the browser, export STL and PNG.",
+  "description": "Code-first CAD: write models in JavaScript, preview live in the browser, export STL, 3MF and PNG.",
   "dependencies": {
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",

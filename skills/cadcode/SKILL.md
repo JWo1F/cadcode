@@ -2,7 +2,7 @@
 name: cadcode
 description: >
   How to model 3D-printable parts as code with cadcode, the JavaScript CAD library and CLI
-  (`cadcode dev`, `cadcode stl`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
+  (`cadcode dev`, `cadcode stl`, `cadcode 3mf`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
   `square`, `circle`, `polygon`, `text`), booleans (`union`, `difference`, `intersection`, `hull`,
   `minkowski`), rounded and chamfered edges,
   2D `offset`/`extrude`/`revolve`, colors, `params` and named parts. Use this skill whenever a
@@ -69,11 +69,12 @@ What `export default` may be:
   being shown or exported is called, so expensive parts cost nothing until asked for);
 - a **function of `params`** returning either of those.
 
-The **first part is the default** for `dev`, `stl` and `png`. Put the part the user looks at most
+The **first part is the default** for `dev`, `stl`, `3mf` and `png`. Put the part the user looks at most
 first — usually the assembly.
 
 A part that is an array renders each solid separately with its own color and transparency, which
-is what assembly views want. `cadcode stl` merges the part's solids into one body, so make the
+is what assembly views want. `cadcode stl` merges the part's solids into one body (`cadcode 3mf`
+keeps them as separate objects, with their colors), so make the
 printable parts the ones that are actually printed, positioned and oriented for the bed (e.g. a lid
 flipped upside down, a `print` part laying several pieces side by side).
 
@@ -151,7 +152,8 @@ each side (shrink it first), and on a part with holes or pockets it takes second
 pieces, then do the booleans.
 
 **Colors** (`.color('orange', 0.35)`, `color('orange', 0.35, shape)`, CSS names, `#hex`,
-`[r, g, b, a]`) are for previews only; STL has none. A color survives booleans, so a colored part
+`[r, g, b, a]`) are for previews; STL has none, and 3MF carries them as base materials, which
+slicers may or may not map to filaments (PrusaSlicer ignores them). A color survives booleans, so a colored part
 unioned into something else keeps its faces' color. Apply color last, outside the booleans of a
 printable part, and leave printable parts uncolored.
 
@@ -202,11 +204,12 @@ preview that reloads on every save and keeps their camera; shift+drag pans, F fi
 | Option | For | Meaning |
 | --- | --- | --- |
 | `-p, --part <name>` | all | Part to use; default is the first |
-| `-a, --all` | stl, png | Every part, one file each |
+| `-a, --all` | stl, 3mf, png | Every part, one file each |
 | `-s, --set <k=v>` | all | Override a declared param; repeatable; JSON values, else string |
-| `-o, --out <path>` | stl, png | Output file, or directory with `--all` |
+| `-o, --out <path>` | stl, 3mf, png | Output file, or directory with `--all` |
 | `--view <name>` | png | View, default `iso` |
 | `--size <WxH>` | png | Default `800x600` |
 | `--port`, `--host`, `--open` | dev | Default `5173`, `127.0.0.1` |
 
-Default output names are `<file>.stl`, or `<file>-<part>.stl` when the program has several parts.
+Default output names are `<file>.stl`, or `<file>-<part>.stl` when the program has several parts
+(likewise `.3mf` and `.png`).
