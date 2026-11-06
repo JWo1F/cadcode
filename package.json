@@ -18,6 +18,7 @@
   "description": "Code-first CAD: write models in JavaScript, preview live in the browser, export STL and PNG.",
   "dependencies": {
     "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
     "manifold-3d": "^3.5.4",
     "opentype.js": "^2.0.0",
     "three": "^0.187.0",

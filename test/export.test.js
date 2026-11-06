@@ -7,6 +7,9 @@ import { bundleProgram, evaluateProgram, parseOverrides, removeBundle } from '..
 import { meshGroups } from '../src/core/mesh.js';
 import { toSTL } from '../src/export/stl.js';
 import { toPNG } from '../src/export/png.js';
+import { to3MF } from '../src/export/3mf.js';
+import { cube } from '../src/lib/index.js';
+import { unzipSync, strFromU8 } from 'fflate';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -86,6 +89,56 @@ test('2D shapes are drawn as flat sketches but left out of STL', async () => {
   const flat = await evaluateProgram(bundle, { part: 'flat' });
   assert.throws(() => toSTL(flat.solids), /no solids/);
   assert.ok(toPNG(flat, { width: 32, height: 32 }).length > 0);
+});
+
+/** The package's files, and the model's objects with their triangles' materials. */
+function read3MF(bytes) {
+  const files = unzipSync(bytes);
+  const xml = strFromU8(files['3D/3dmodel.model']);
+  const objects = [...xml.matchAll(/<object ([^>]*)>(.*?)<\/object>/g)].map(([, attrs, body]) => ({
+    name: attrs.match(/name="([^"]*)"/)[1],
+    pindex: attrs.match(/pindex="(\d+)"/)?.[1],
+    vertices: body.match(/<vertex /g).length,
+    triangles: [...body.matchAll(/<triangle ([^>]*)\/>/g)].map(([, t]) => t.match(/p1="(\d+)"/)?.[1]),
+  }));
+  const colors = [...xml.matchAll(/displaycolor="([^"]+)"/g)].map((m) => m[1]);
+  return { files, xml, objects, colors };
+}
+
+test('3MF keeps each solid as its own object, in millimeters', async () => {
+  const { files, xml, objects, colors } = read3MF(to3MF((await evaluateProgram(bundle)).solids, { name: 'pair' }));
+  assert.deepEqual(Object.keys(files).sort(), ['3D/3dmodel.model', '[Content_Types].xml', '_rels/.rels']);
+  assert.match(strFromU8(files['_rels/.rels']), /Target="\/3D\/3dmodel\.model"/);
+  assert.match(xml, /<model unit="millimeter"/);
+  assert.deepEqual(objects.map((o) => o.name), ['pair-1', 'pair-2']);
+  assert.equal(objects[0].triangles.length, 12);
+  assert.equal(objects[0].vertices, 8);
+  assert.match(xml, /<item objectid="2"\/>\s*<item objectid="3"\/>/);
+  // The red cube has one material for all of it; the plain sphere has none.
+  assert.deepEqual(colors, ['#FF0000']);
+  assert.equal(objects[0].pindex, '0');
+  assert.ok(objects[0].triangles.every((m) => m === undefined));
+  assert.equal(objects[1].pindex, undefined);
+});
+
+test('3MF keeps the colors of a union per triangle', () => {
+  const solid = cube(2).color('red').union(cube(2).translate([2, 0, 0]).color('#0000ff', 0.5), cube(1).translate([0, 0, 2]));
+  const { objects, colors } = read3MF(to3MF([solid], { name: 'a<b' }));
+  assert.equal(objects.length, 1);
+  assert.equal(objects[0].name, 'a&#60;b');
+  // Uncolored faces of a colored solid take the viewer's color.
+  assert.deepEqual(new Set(colors), new Set(['#FF0000', '#0000FF80', '#F2C14E']));
+  const own = objects[0].pindex;
+  const named = new Set(objects[0].triangles.filter(Boolean));
+  assert.equal(named.has(own), false);
+  assert.equal(named.size, 2);
+});
+
+test('3MF of the same model is the same bytes, and needs a solid', async () => {
+  const solids = (await evaluateProgram(bundle)).solids;
+  assert.deepEqual(to3MF(solids), to3MF(solids));
+  const flat = await evaluateProgram(bundle, { part: 'flat' });
+  assert.throws(() => to3MF(flat.solids), /no solids/);
 });
 
 test('PNG is a valid image of the requested size', async () => {
