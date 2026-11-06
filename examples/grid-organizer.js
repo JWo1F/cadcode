@@ -2,7 +2,7 @@
 title: Grid organizer
 description: A drawer tray of pockets with finger scoops, any number of rows and columns.
 ---*/
-import { cylinder, hull, product, range, setResolution, sphere, square } from 'cadcode';
+import { cube, hull, product, range, setResolution, sphere, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -23,16 +23,12 @@ export default (p) => {
   const L = p.cols * p.cell + (p.cols + 1) * p.wall;
   const W = p.rows * p.cell + (p.rows + 1) * p.wall;
 
-  const roundedBox = (l, w, h, r) =>
-    hull(product([r, l - r], [r, w - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
 
   const pocket = () => {
     const r = p.pocketCorner;
     const depth = p.height - p.floor + 1;
-    const straight = square([p.cell - 2 * r, p.cell - 2 * r], { center: true })
-      .offset(r)
-      .extrude(depth - p.scoop)
-      .translate([0, 0, p.scoop]);
+    const straight = cube([p.cell, p.cell, depth - p.scoop], { round: r, edges: 'z' }).translate([-p.cell / 2, -p.cell / 2, p.scoop]);
     // The lower part is a hull of the full outline and two spheres in the front corners,
     // which round the front floor edge into a scoop.
     const scoop = hull(

@@ -111,7 +111,7 @@ export default (p) => {
 
   // A 70 × 45 × 22 mm bar of soap lying on the ribs, for the assembly view.
   const soap = () =>
-    hull(product([-1, 1], [-1, 1], [-1, 1]).map(([x, y, z]) => sphere({ r: 7, fn: 24 }).translate([x * 28, y * 15.5, z * 4])))
+    cube([70, 45, 22], { center: true, round: 7, fn: 24 })
       .translate([0, 0, p.wall + p.ribH + 11]);
 
   const lift = p.tray ? p.wall + p.post : 0;

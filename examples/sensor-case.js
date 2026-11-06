@@ -8,7 +8,7 @@ description: A box and lid for a Pro Micro board, a Li-ion cell and a climate se
 //   cadcode dev examples/sensor-case.js
 //   cadcode stl examples/sensor-case.js --part box
 //   cadcode png examples/sensor-case.js --part assembly --view sheet
-import { cube, cylinder, square, union, difference, intersection, hull, setResolution, range, product } from 'cadcode';
+import { cube, cylinder, square, union, difference, intersection, setResolution, range, product } from 'cadcode';
 
 setResolution({ fn: 40 });
 
@@ -82,8 +82,7 @@ export default (p) => {
   // Snap grooves on the long walls, in both compartments
   const bumpXs = [mainL / 2, sx0 + sensL / 2];
 
-  const roundedBox = (l, w, h, r) =>
-    hull(product([r, l - r], [r, w - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
 
   // Grid of holes in the XY plane over an a x b rectangle
   const poreGrid = (a, b) => {

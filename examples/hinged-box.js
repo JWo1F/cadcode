@@ -9,7 +9,7 @@ description: A small box and lid joined by a hinge that comes off the bed alread
 //
 //   cadcode dev examples/hinged-box.js
 //   cadcode stl examples/hinged-box.js --part print
-import { cube, cylinder, hull, product, range, setResolution } from 'cadcode';
+import { cube, cylinder, hull, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -43,8 +43,7 @@ export default (p) => {
   const hingeL = p.length - 2 * p.margin;
   const segL = hingeL / p.knuckles;
 
-  const roundedBox = (l, w, h, r) =>
-    hull(product([r, l - r], [r, w - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
 
   // Knuckle i occupies [x0, x1] along X, shortened by half the gap on sides facing a neighbour.
   const span = (i) => {

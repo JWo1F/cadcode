@@ -7,7 +7,7 @@ description: A case for the Pi Zero and Zero 2 W with a sliding lid that clicks 
 //
 //   cadcode dev examples/pi-zero-case.js
 //   cadcode stl examples/pi-zero-case.js --part print
-import { cube, cylinder, hull, product, range, setResolution, square } from 'cadcode';
+import { cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -56,8 +56,7 @@ export default (p) => {
   const bx = (x) => p.gap + x;
   const by = (y) => p.gap + y;
 
-  const roundedBox = (l, w, h, r) =>
-    hull(product([r, l - r], [r, w - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
+  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
 
   // A rounded window through a wall facing -Y, with an optional recess for the plug's overmould.
   const sideWindow = (x, z, w, h, recess) => {

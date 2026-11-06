@@ -67,7 +67,7 @@ export default (p) => {
       .extrude(p.width)
       .rotate([90, 0, 0])
       .translate([0, p.width, 0])
-      .intersect(square([p.foot - 2 * p.r, p.width - 2 * p.r]).translate([p.r, p.r]).offset(p.r).extrude(front[1] + 5));
+      .intersect(cube([p.foot, p.width, front[1] + 5], { round: p.r, edges: 'z' }));
 
   // Round-ended slot from under the phone out through the lip.
   const slotEnd = seatBack - p.slotW / 2 - 1;
