@@ -156,6 +156,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | --- | --- |
 | `.translate([x, y, z])` | |
 | `.rotate([x, y, z])` | Around X, then Y, then Z, like OpenSCAD. `.rotate(a)` turns around Z, and `.rotate(a, [x, y, z])` around any axis. |
+| `.rotate(..., { around })` | A last argument that turns around a `point`, another shape's bounding-box center, or `[x, y, z]` instead of the origin: `lid.rotate([-110, 0, 0], { around: hinge })`. |
 | `.scale(s)` or `.scale([x, y, z])` | |
 | `.mirror([nx, ny, nz])` | Across the plane through the origin with this normal. |
 | `.transform(matrix)` | A column-major 4×4 matrix, as 16 numbers. |
@@ -173,6 +174,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | Method | Notes |
 | --- | --- |
 | `.translate([x, y])`, `.rotate(a)`, `.scale(s)`, `.mirror([nx, ny])` | |
+| `.rotate(a, { around })` | Around a `point`, another shape's bounding-box center, or `[x, y]`. |
 | `.offset(r)` | Grow (or shrink, when negative) with rounded corners. `.offset({ delta })` keeps corners sharp, and `.offset({ delta, chamfer: true })` cuts them. |
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | Same as for solids. |
 | `.extrude(h, { center, twist, scale, divisions })` | Extrudes along +Z, like `linear_extrude`. |
@@ -191,6 +193,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `hull(...shapes)` | |
 | `translate(v, ...shapes)` | `union(...shapes).translate(v)` |
 | `rotate(a, ...shapes)` | `union(...shapes).rotate(a)` |
+| `rotate(a, { around }, ...shapes)` | `union(...shapes).rotate(a, { around })` |
 | `scale(v, ...shapes)` | `union(...shapes).scale(v)` |
 | `mirror(n, ...shapes)` | `union(...shapes).mirror(n)` |
 | `color(c, alpha?, ...shapes)` | `union(...shapes).color(c, alpha)` |
@@ -201,6 +204,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 
 | Function | Notes |
 | --- | --- |
+| `point([x, y, z])` | A place without geometry, such as a pivot for `rotate(..., { around })`. It has `.translate`, `.rotate`, `.scale`, `.mirror`, `.transform`, so it can move with its part, and `.x`, `.y`, `.z`, `.toArray()`. It cannot go into booleans or an export. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
 | `setResolution({ fn, fa, fs })` | Default segment count for curves, with the same rules as OpenSCAD's `$fn`, `$fa` and `$fs`. Any primitive also takes its own `fn`. |
