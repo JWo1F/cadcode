@@ -904,6 +904,18 @@ circle(1).sweep(helix({ r: 10, pitch: 5, turns: 6, fn: 48 }))`,
 product(xs, ys).map(([x, y]) => peg.translate([x, y, 0]))`,
       },
       {
+        id: 'memo',
+        name: 'memo',
+        signature: 'memo(fn)',
+        summary: 'Remembers what `fn` builds for each set of arguments, so it is built once per run. In `cadcode dev` and in the playground the result also outlives the run: a save that leaves the function\'s code and its arguments as they were reuses it instead of building again, which keeps a slow part out of every rebuild. The key is the function\'s source, its arguments and the resolution. A change in a helper it calls, or in a variable it reads from outside (such as `p`), is not seen, so pass everything it depends on as arguments.',
+        params: [
+          { name: 'fn', type: 'function', text: 'Returns a solid, a 2D shape, or nested arrays of them; it may be async. Its arguments must be plain data: numbers, strings, booleans, null, arrays and plain objects. A shape as an argument throws.' },
+        ],
+        returns: 'The same function, remembering',
+        example: `const ring = memo((teeth, module) => gear(teeth, module).extrude(10));
+export default (p) => [ring(p.teeth, p.module), hub(p)]`,
+      },
+      {
         id: 'parseColor',
         name: 'parseColor',
         signature: 'parseColor(input, alpha)',

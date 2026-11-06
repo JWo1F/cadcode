@@ -233,6 +233,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `helix({ r \| d, pitch, turns \| height, leftHand, fn })` | Points along a helix around Z from `[r, 0, 0]`, rising `pitch` per turn: a path for `.sweep()`. `fn` is points per turn. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
+| `memo(fn)` | Builds once per set of arguments. In `cadcode dev` and the playground the result outlives the run, so a save that leaves the function and its arguments as they were skips it: `const ring = memo((teeth, module) => ...)`. The key is the function's source, its arguments and the resolution; a helper it calls or a variable it reads from outside (such as `p`) is not part of it, so pass those as arguments. Arguments are plain data; the result is shapes or arrays of them. |
 | `setResolution({ fn, fa, fs })` | Default segment count for curves, with the same rules as OpenSCAD's `$fn`, `$fa` and `$fs`. Any primitive also takes its own `fn`. |
 
 ### Importing files

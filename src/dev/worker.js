@@ -8,6 +8,7 @@ import { evaluateProgram } from '../core/program.js';
 import { meshGroups } from '../core/mesh.js';
 import { toSTL } from '../export/stl.js';
 import { to3MF } from '../export/3mf.js';
+import { loadMemo, memoEntries } from '../lib/memo.js';
 
 // Bundles carry inline source maps; this makes stack traces point at the user's files.
 process.setSourceMapsEnabled(true);
@@ -21,7 +22,9 @@ for (const level of ['log', 'info', 'warn', 'error']) {
   };
 }
 
-const { bundle, part, overrides, output } = workerData;
+const { bundle, part, overrides, output, memo } = workerData;
+// What memo() built in earlier runs, kept by the server; the preview hands back what this run used.
+loadMemo(memo);
 const started = performance.now();
 try {
   // Overrides of parameters the program has dropped are skipped; the server prunes them.
@@ -41,6 +44,7 @@ try {
         groups,
         logs,
         ms: Math.round(performance.now() - started),
+        memo: memoEntries(),
       },
       groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
     );

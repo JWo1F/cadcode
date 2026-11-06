@@ -122,6 +122,7 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | `helix({ r \| d, pitch, turns \| height, leftHand = false, fn })` | `[x, y, z]` points from `[r, 0, 0]`, counterclockwise from above (right-hand), rising `pitch` per turn; `fn` points per turn. For `.sweep()`. |
 | `range(start, end, step = 1)` | Inclusive of `end`. |
 | `product(...lists)` | Cartesian product: `product([1, 2], ['a'])` → `[[1, 'a'], [2, 'a']]`. |
+| `memo(fn)` | Same function, remembering its result per arguments. Key = fn source + JSON args + resolution; in `cadcode dev`/playground it survives across saves (not the CLI). Args: plain data only (no shapes). Result: shapes or nested arrays, may be async. Closure variables (`p`!) and called helpers are NOT in the key: pass them as args or results go stale. |
 | `setResolution({ fn, fa, fs })` | Defaults for curves, OpenSCAD rules. `fn > 0` wins; else `ceil(max(min(360/fa, 2πr/fs), 5))`. |
 | `parseColor(c, alpha?)` | Returns `[r, g, b, a]`. |
 | `Solid`, `Shape2` | Classes, for `instanceof`. |

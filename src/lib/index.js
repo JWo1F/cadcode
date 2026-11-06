@@ -33,3 +33,4 @@ export { importSVG } from './import/svg.js';
 export { importDXF } from './import/dxf.js';
 export { parseColor } from './colors.js';
 export { range, product } from './util.js';
+export { memo } from './memo.js';

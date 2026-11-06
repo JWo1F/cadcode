@@ -270,13 +270,14 @@ let preview = null; // the worker of the run whose result the view is waiting fo
 let shown = null; // the result on screen
 let fitNext = true; // a new example is framed; edits keep the camera
 let notice = ''; // shown in place of the error after the next good run, e.g. a link to a missing example
+let memoCache = []; // what memo() built in the last good run, handed to the next one
 
 async function evaluate() {
   preview?.terminate();
   setStatus('evaluating', 'building');
   setBusy(true);
   let worker;
-  const result = await run({ code: model.getValue(), part: currentPart || undefined }, (w) => (preview = worker = w));
+  const result = await run({ code: model.getValue(), part: currentPart || undefined, memo: memoCache }, (w) => (preview = worker = w));
   if (preview !== worker) return; // a newer run took over
   preview = null;
 
@@ -289,6 +290,7 @@ async function evaluate() {
     return;
   }
   shown = result;
+  memoCache = result.memo;
   showError(notice);
   notice = '';
   markError(null);
@@ -484,7 +486,7 @@ bindViewTools(view, {
 
 async function exportPart(format) {
   if (!shown) return;
-  const result = await run({ code: model.getValue(), part: shown.part, output: format });
+  const result = await run({ code: model.getValue(), part: shown.part, output: format, memo: memoCache });
   if (!result.ok) return showError(`${format.toUpperCase()} export failed: ${result.message}`);
   saveBlob(new Blob([result.file], { type: `model/${format}` }), fileName(format));
 }

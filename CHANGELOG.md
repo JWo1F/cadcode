@@ -10,6 +10,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `loft()` builds a solid through 2D sections stacked along Z. The sections may have different point counts.
 - `thread()` makes screw threads: a threaded rod, or the cutter for its hole.
 - Examples: a screw-top bottle and a compression spring.
+- `memo(fn)` builds once per set of arguments, and in `cadcode dev` and the playground the result is reused across saves while the function's source and arguments stay the same.
 
 ### Changed
 

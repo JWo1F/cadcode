@@ -125,6 +125,11 @@ difference(
 `product(xs, ys)` is OpenSCAD's `for (x = xs, y = ys)`; `range(a, b, step)` is `[a : step : b]` and
 **includes** `b`.
 
+**Slow rebuilds in `cadcode dev`:** wrap the expensive builder in `memo(fn)`, and the dev server and playground
+reuse its result across saves while its source and arguments stay the same. Pass every value it uses as an
+argument (plain data, e.g. `memo((teeth, module) => ...)(p.teeth, p.module)`): a `p` read from the closure or
+an edited helper is not in the key, and the stale result comes back.
+
 **2D needs extruding.** `square`, `circle`, `polygon` and `.offset()` make `Shape2`s; turn them into
 solids with `.extrude(h, { center, twist, scale })`, `.revolve({ angle })` or `.sweep(path)` (along `[x, y, z]`
 points: a handle, a pipe, or a spring along `helix({ r, pitch, turns })`). `loft([a, b, c], { z: [0, 10, 30] })`

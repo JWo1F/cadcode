@@ -86,7 +86,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   // outlive edits to the program, and lose a key once the program stops declaring it.
   // The first browser to connect hands over the values it remembers for this file
   // (restored), under the ones from --set; after that the server's values are the truth.
-  const state = { part, overrides: { ...overrides }, restored: false, lastFrame: null, lastError: null, worker: null, bundle: null };
+  const state = { part, overrides: { ...overrides }, restored: false, lastFrame: null, lastError: null, worker: null, bundle: null, memo: [] };
   const sockets = new Set();
 
   const broadcast = (data) => {
@@ -103,7 +103,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
     if (!state.bundle) return;
     state.worker?.terminate();
     sendStatus('evaluating');
-    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part: state.part, overrides: state.overrides } });
+    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part: state.part, overrides: state.overrides, memo: state.memo } });
     state.worker = worker;
     worker.once('message', (result) => {
       if (state.worker !== worker) return;
@@ -112,6 +112,8 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       if (!result.ok) return sendError({ message: result.message, stack: result.stack, logs: result.logs });
       state.part = result.part;
       state.lastError = null;
+      // memo() results this run used or made; the next run reuses them. A failed run leaves the old ones.
+      state.memo = result.memo;
       for (const key of Object.keys(state.overrides)) if (!(key in result.declared)) delete state.overrides[key];
       state.lastFrame = encodeModel(result, displayName, state);
       broadcast(state.lastFrame);
@@ -135,7 +137,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   // A download evaluates in its own worker, so it never cancels or waits for the preview.
   function download(res, format, part) {
     if (!state.bundle) return void res.writeHead(503, { 'Content-Type': 'text/plain' }).end('The program has not built yet');
-    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: format } });
+    const worker = new Worker(WORKER_URL, { workerData: { bundle: state.bundle, part, overrides: state.overrides, output: format, memo: state.memo } });
     const fail = (message) => {
       if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' }).end(message);
     };

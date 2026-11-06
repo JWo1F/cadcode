@@ -6,6 +6,7 @@ import { evaluateModule } from '../../src/core/evaluate.js';
 import { meshGroups } from '../../src/core/mesh.js';
 import { toSTL } from '../../src/export/stl.js';
 import { to3MF } from '../../src/export/3mf.js';
+import { loadMemo, memoEntries } from '../../src/lib/memo.js';
 
 // The code is loaded from a blob URL, where a bare `'cadcode'` cannot resolve.
 // It is pointed at a module re-exporting this worker's copy of the library:
@@ -26,8 +27,10 @@ for (const level of ['log', 'info', 'warn', 'error']) {
   };
 }
 
-self.onmessage = async ({ data: { code, part, output } }) => {
+self.onmessage = async ({ data: { code, part, output, memo } }) => {
   const started = performance.now();
+  // What memo() built in earlier runs, kept by the page; the preview hands back what this run used.
+  loadMemo(memo);
   const source = code.replace(/(\bfrom\s*|\bimport\s*\(\s*)(['"])cadcode\2/g, `$1"${SHIM_URL}"`);
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   try {
@@ -38,7 +41,7 @@ self.onmessage = async ({ data: { code, part, output } }) => {
     } else {
       const groups = meshGroups(result.solids, result.shapes);
       self.postMessage(
-        { ok: true, partNames: result.partNames, part: result.part, groups, logs, ms: Math.round(performance.now() - started) },
+        { ok: true, partNames: result.partNames, part: result.part, groups, logs, ms: Math.round(performance.now() - started), memo: memoEntries() },
         groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
       );
     }
