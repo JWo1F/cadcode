@@ -34,6 +34,8 @@ installed, otherwise reason from the source.
 | `intersection() { a(); b(); }` | `intersection(a(), b())` |
 | `hull() { ... }` | `hull(...)` |
 | `hull() for (x = xs, y = ys) translate([x, y, 0]) c();` | `hull(product(xs, ys).map(([x, y]) => c().translate([x, y, 0])))` |
+| `minkowski() { a(); sphere(r); }` | `minkowski(a(), sphere(r))` or `a().minkowski(sphere(r))` |
+| `minkowski() { cube(s - 2 * r, center = true); sphere(r); }` (rounded box) | `cube(s, { center: true, round: r })`: exact size, much faster |
 | `for (x = xs) translate([x, 0, 0]) c();` | `xs.map((x) => c().translate([x, 0, 0]))` (an array works anywhere shapes do) |
 | `for (i = [0 : n - 1])` | `range(0, n - 1).map((i) => ...)` |
 | `for (i = [0 : 2 : 10])` | `range(0, 10, 2)` |

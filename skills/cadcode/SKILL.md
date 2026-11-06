@@ -3,7 +3,8 @@ name: cadcode
 description: >
   How to model 3D-printable parts as code with cadcode, the JavaScript CAD library and CLI
   (`cadcode dev`, `cadcode stl`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
-  `square`, `circle`, `polygon`), booleans (`union`, `difference`, `intersection`, `hull`),
+  `square`, `circle`, `polygon`), booleans (`union`, `difference`, `intersection`, `hull`,
+  `minkowski`), rounded and chamfered edges,
   2D `offset`/`extrude`/`revolve`, colors, `params` and named parts. Use this skill whenever a
   project's package.json has `cadcode`, whenever code imports from 'cadcode', and whenever the
   user wants to design, model, modify or export a physical part in code — an enclosure, case,
@@ -126,12 +127,19 @@ only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold ou
 then rotated into place (`.extrude(depth).rotate([0, 90, 0])` points it along +X after rotation).
 Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.
 
-**Rounded boxes** are a hull of four cylinders:
+**Rounded and chamfered edges.** `cube(size, { round: r })` rounds every edge and
+`cube(size, { chamfer: c })` cuts every edge at 45°; `cylinder({ d, h, round })` / `{ chamfer }`
+do the top and bottom edges. All keep the given size. A flat bottom prints better, so when only
+the vertical edges should be round, use a hull of four cylinders:
 
 ```js
 const roundedBox = (l, w, h, r) =>
   hull(product([r, l - r], [r, w - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
 ```
+
+For any other shape, `part.minkowski(sphere(r))` rounds every edge but grows the part by `r` on
+each side (shrink it first), and on a part with holes or pockets it takes seconds: round simple
+pieces, then do the booleans.
 
 **Colors** (`.color('orange', 0.35)`, `color('orange', 0.35, shape)`, CSS names, `#hex`,
 `[r, g, b, a]`) are for previews only; STL has none. A color survives booleans, so a colored part

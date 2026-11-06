@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, square, union, difference, hull, translate, rotate, point, range, product } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -65,6 +65,39 @@ test('2D offset and extrude', () => {
 test('hull of two cylinders spans both', () => {
   const b = hull(cylinder({ r: 1, h: 1, fn: 4 }), cylinder({ r: 1, h: 1, fn: 4 }).translate([10, 0, 0])).bounds();
   near(b.max[0] - b.min[0], 12, 1e-3);
+});
+
+test('cube round and chamfer keep the size', () => {
+  const rounded = cube(10, { round: 1, fn: 256 });
+  assert.deepEqual(rounded.bounds(), { min: [0, 0, 0], max: [10, 10, 10] });
+  // 8³ core, six 8×8×1 slabs, twelve quarter cylinders, eight eighth spheres.
+  near(rounded.volume(), 512 + 6 * 64 + Math.PI * 24 + (4 / 3) * Math.PI, 0.05);
+  // Twelve edge prisms of 1/2 × 8, and eight corners of 1 - 1/6.
+  near(cube(10, { chamfer: 1 }).volume(), 1000 - 48 - 8 * (5 / 6));
+  assert.deepEqual(cube([10, 8, 6], { round: 1, center: true }).bounds(), { min: [-5, -4, -3], max: [5, 4, 3] });
+  assert.throws(() => cube(10, { round: 6 }), /round must be between 0 and 5, got 6/);
+  assert.throws(() => cube(10, { round: 1, chamfer: 1 }), /not both/);
+});
+
+test('cylinder round and chamfer cut the top and bottom edges', () => {
+  const full = Math.PI * 25 * 10;
+  // Two rings of triangles with legs 1, their centroid 5 - 1/3 from the axis.
+  near(cylinder({ r: 5, h: 10, chamfer: 1, fn: 512 }).volume(), full - 2 * 2 * Math.PI * (5 - 1 / 3) * 0.5, 0.05);
+  // Two rings of the area a quarter circle leaves in its square, centroid (10 - 3π) / (12 - 3π) in from the corner.
+  const spandrel = 1 - Math.PI / 4;
+  const inset = (10 - 3 * Math.PI) / (12 - 3 * Math.PI);
+  const rounded = cylinder({ r: 5, h: 10, round: 1, fn: 512, center: true });
+  near(rounded.volume(), full - 2 * 2 * Math.PI * (5 - inset) * spandrel, 0.05);
+  near(rounded.bounds().min[2], -5);
+  near(rounded.bounds().max[0], 5, 1e-3);
+  assert.throws(() => cylinder({ r: 1, h: 10, round: 2 }), /round must be between 0 and 1, got 2/);
+});
+
+test('minkowski grows a solid by another', () => {
+  const b = minkowski(cube(10), sphere(1)).bounds();
+  assert.deepEqual(b, { min: [-1, -1, -1], max: [11, 11, 11] });
+  near(cube(2).minkowski(cube(1, { center: true }), null).volume(), 27);
+  assert.throws(() => minkowski(cube(1), square(1)), /solids only/);
 });
 
 test('range is inclusive and product is cartesian', () => {

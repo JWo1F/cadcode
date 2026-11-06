@@ -15,6 +15,7 @@ export {
   difference,
   intersection,
   hull,
+  minkowski,
   translate,
   rotate,
   scale,

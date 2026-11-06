@@ -78,9 +78,14 @@ export const sections = [
         params: [
           { name: 'size', type: 'number | [x, y, z]', default: '1', text: 'A number makes a cube with equal sides.' },
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center the box on the origin instead.' },
+          { name: 'options.round', type: 'number', text: 'Round every edge with this radius. The box keeps its size. At most half the smallest side.' },
+          { name: 'options.chamfer', type: 'number', text: 'Cut every edge this far back along both faces, at 45°. The box keeps its size. Not together with `round`.' },
+          { ...fn, text: 'Segments of a full circle for the rounded edges, like OpenSCAD\'s `$fn`. Without it the defaults from `setResolution` apply.' },
         ],
         returns: 'Solid',
-        example: `cube([40, 20, 5], { center: true })`,
+        example: `cube([40, 20, 5], { center: true })
+cube([40, 30, 12], { round: 2 })
+cube([40, 30, 12], { chamfer: 1 })`,
       },
       {
         id: 'cylinder',
@@ -96,12 +101,15 @@ export const sections = [
           { name: 'options.d1', type: 'number', text: 'Bottom diameter, instead of `r1`.' },
           { name: 'options.d2', type: 'number', text: 'Top diameter, instead of `r2`.' },
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center it on the origin along Z, from `-h/2` to `h/2`.' },
+          { name: 'options.round', type: 'number', text: 'Round the top and bottom edges with this radius. The cylinder keeps its size. At most half the height and the smaller radius.' },
+          { name: 'options.chamfer', type: 'number', text: 'Cut the top and bottom edges this far back along both faces. The cylinder keeps its size. Not together with `round`.' },
           fn,
         ],
         returns: 'Solid',
-        notes: ['The segment count follows the larger of the two radii.'],
+        notes: ['The segment count follows the larger of the two radii; a rounded edge follows its own radius.'],
         example: `cylinder({ d: 3.2, h: 10, center: true, fn: 32 })
-cylinder({ h: 8, r1: 6, r2: 0 }) // a cone`,
+cylinder({ h: 8, r1: 6, r2: 0 }) // a cone
+cylinder({ d: 20, h: 8, round: 1 }) // a knob with soft edges`,
       },
       {
         id: 'sphere',
@@ -233,6 +241,21 @@ polygon(
         returns: 'Solid | Shape2',
         example: `// A box with rounded vertical edges.
 hull(product([3, 37], [3, 17]).map(([x, y]) => cylinder({ r: 3, h: 10 }).translate([x, y, 0])))`,
+      },
+      {
+        id: 'minkowski',
+        name: 'minkowski',
+        signature: 'minkowski(...solids)',
+        summary: 'The Minkowski sum of all solids, like OpenSCAD\'s `minkowski()`: the first one with the second swept over its whole surface.',
+        params: [{ name: '...solids', type: 'Solid | arrays of them', text: 'Nested arrays and falsy entries are allowed. 2D shapes throw: use `offset()` for them.' }],
+        returns: 'Solid',
+        notes: [
+          'A sphere rounds every edge and corner, and makes the part larger by its radius on every side: shrink the part first to keep its size. For a plain box or cylinder, the `round` and `chamfer` options are exact and much faster.',
+          'Fast when both solids are convex. A part with holes or pockets can take seconds.',
+          'The result is uncolored; color it afterwards.',
+        ],
+        example: `// Any shape with rounded edges: 2 larger on every side.
+minkowski(polygon([[0, 0], [30, 0], [0, 20]]).extrude(5), sphere(1))`,
       },
       {
         id: 'translate',
@@ -417,6 +440,16 @@ peg.rotate(30, [1, 0, 0], { around: base })`,
         summary: 'The convex hull of this solid together with the others.',
         params: [solids('Solids to include. With none, the hull of this solid alone.')],
         returns: 'Solid',
+      },
+      {
+        id: 'solid-minkowski',
+        name: 'minkowski',
+        owner: 'Solid',
+        signature: '.minkowski(...others)',
+        summary: 'The Minkowski sum of this solid with the others. See `minkowski`.',
+        params: [solids('Solids to sweep over this one.')],
+        returns: 'Solid',
+        example: `cube([36, 26, 10]).minkowski(sphere(2)) // 40 × 30 × 14, every edge rounded`,
       },
       {
         id: 'solid-slice',

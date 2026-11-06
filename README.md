@@ -137,8 +137,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 
 | Function | Notes |
 | --- | --- |
-| `cube(size, { center })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. |
-| `cylinder({ h, r \| d, r1, r2, d1, d2, center, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. |
+| `cube(size, { center, round, chamfer })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°; the size stays the same. |
+| `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size. |
 | `sphere(r)` or `sphere({ r \| d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices clockwise when seen from outside, as in OpenSCAD. |
 
@@ -165,6 +165,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.subtract(...shapes)` | |
 | `.intersect(...shapes)` | |
 | `.hull(...shapes)` | Convex hull of this shape and the others. |
+| `.minkowski(...shapes)` | Minkowski sum, like OpenSCAD's `minkowski()`: `.minkowski(sphere(1))` rounds every edge and grows the part by 1 on each side. Fast for convex shapes, seconds for a part with holes. The result is uncolored. |
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
@@ -191,6 +192,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `difference(base, ...cutters)` | `base.subtract(...cutters)` |
 | `intersection(...shapes)` | |
 | `hull(...shapes)` | |
+| `minkowski(...solids)` | `first.minkowski(...rest)`. Solids only; 2D shapes have `offset`. |
 | `translate(v, ...shapes)` | `union(...shapes).translate(v)` |
 | `rotate(a, ...shapes)` | `union(...shapes).rotate(a)` |
 | `rotate(a, { around }, ...shapes)` | `union(...shapes).rotate(a, { around })` |

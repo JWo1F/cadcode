@@ -66,6 +66,13 @@ function flatten(items) {
   return out;
 }
 
+/** Flattens items that must all be solids, for an operation that has no 2D form. */
+function solidsFor(op, items) {
+  const flat = flatten(items);
+  if (flat.some((s) => !(s instanceof Solid))) throw new Error(`${op}() works on solids only; for 2D shapes use offset()`);
+  return flat;
+}
+
 /** @param {number[]} v @returns {Vec3} */
 function toVec3(v) {
   return [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0];
@@ -200,6 +207,16 @@ export class Solid {
   /** Convex hull of this solid together with any others. @param {...Items<Solid>} others */
   hull(...others) {
     return new Solid(Manifold.hull([this.manifold, ...flatten(others).map((s) => s.manifold)]));
+  }
+
+  /**
+   * Minkowski sum of this solid with the others, like OpenSCAD's minkowski(): `part.minkowski(sphere(1))`
+   * rounds every edge with radius 1 and makes the part 2 larger in each direction. The result is uncolored.
+   * Fast when the shapes are convex; a part with holes or pockets can take seconds.
+   * @param {...Items<Solid>} others
+   */
+  minkowski(...others) {
+    return new Solid(solidsFor('minkowski', others).reduce((sum, s) => sum.minkowskiSum(s.manifold), this.manifold));
   }
 
   /** The cross-section at height `z`. */
@@ -426,13 +443,54 @@ export function point(position = [0, 0, 0]) {
 // 3D primitives
 
 /**
+ * Checks a `round` or `chamfer` option against the largest value the shape has room for.
+ * @param {string} op
+ * @param {number} round
+ * @param {number} chamfer
+ * @param {number} limit
+ */
+function checkEdge(op, round, chamfer, limit) {
+  if (round && chamfer) throw new Error(`${op}(): give round or chamfer, not both`);
+  const [name, value] = round ? ['round', round] : ['chamfer', chamfer];
+  if (!(value >= 0 && value <= limit)) throw new Error(`${op}(): ${name} must be between 0 and ${+limit.toFixed(4)}, got ${value}`);
+}
+
+/**
+ * @typedef {object} CubeOptions
+ * @property {boolean} [center]
+ * @property {number} [round] radius every edge is rounded with; the size stays the same
+ * @property {number} [chamfer] how far back every edge is cut at 45°; the size stays the same
+ * @property {number} [fn] segments of a full circle, for `round`
+ */
+
+/**
  * A box with one corner at the origin, or centered with `{ center: true }`.
+ * `{ round }` rounds every edge and `{ chamfer }` cuts every edge, inside the same size.
  * @param {number | number[]} [size]
- * @param {{ center?: boolean }} [options]
+ * @param {CubeOptions} [options]
  */
 export function cube(size = 1, options = {}) {
   const s = typeof size === 'number' ? [size, size, size] : toVec3(size);
-  return new Solid(Manifold.cube(s, options.center ?? false));
+  const { center = false, round = 0, chamfer = 0, fn } = options;
+  if (!round && !chamfer) return new Solid(Manifold.cube(s, center));
+  checkEdge('cube', round, chamfer, Math.min(...s) / 2);
+  let manifold;
+  if (round) {
+    // The hull of a ball in each corner: flat faces, quarter-cylinder edges, eighth-sphere corners.
+    const ball = Manifold.sphere(round, segmentsFor(round, fn));
+    const corners = [];
+    for (const x of [round, s[0] - round]) for (const y of [round, s[1] - round]) for (const z of [round, s[2] - round]) corners.push(ball.translate([x, y, z]));
+    manifold = Manifold.hull(corners);
+  } else {
+    // The hull of three boxes, each as large as the cube along one axis and inset by the chamfer along the others.
+    const c = chamfer;
+    manifold = Manifold.hull([
+      Manifold.cube([s[0], s[1] - 2 * c, s[2] - 2 * c]).translate([0, c, c]),
+      Manifold.cube([s[0] - 2 * c, s[1], s[2] - 2 * c]).translate([c, 0, c]),
+      Manifold.cube([s[0] - 2 * c, s[1] - 2 * c, s[2]]).translate([c, c, 0]),
+    ]);
+  }
+  return new Solid(center ? manifold.translate(s.map((v) => -v / 2)) : manifold);
 }
 
 /**
@@ -445,19 +503,46 @@ export function cube(size = 1, options = {}) {
  * @property {number} [d1]
  * @property {number} [d2]
  * @property {boolean} [center]
+ * @property {number} [round] radius the top and bottom edges are rounded with; the size stays the same
+ * @property {number} [chamfer] how far back the top and bottom edges are cut; the size stays the same
  * @property {number} [fn]
  */
 
 /**
  * A cylinder or cone standing on the XY plane along +Z, like OpenSCAD's cylinder().
+ * `{ round }` rounds the top and bottom edges and `{ chamfer }` cuts them, inside the same size.
  * @param {CylinderOptions} options
  */
 export function cylinder(options) {
-  const { h, r, d, r1, r2, d1, d2, center = false, fn } = options;
+  const { h, r, d, r1, r2, d1, d2, center = false, fn, round = 0, chamfer = 0 } = options;
   const base = r ?? (d !== undefined ? d / 2 : 1);
   const bottom = r1 ?? (d1 !== undefined ? d1 / 2 : base);
   const top = r2 ?? (d2 !== undefined ? d2 / 2 : base);
-  return new Solid(Manifold.cylinder(h, bottom, top, segmentsFor(Math.max(bottom, top), fn), center));
+  const segments = segmentsFor(Math.max(bottom, top), fn);
+  if (!round && !chamfer) return new Solid(Manifold.cylinder(h, bottom, top, segments, center));
+  checkEdge('cylinder', round, chamfer, Math.min(h / 2, bottom, top));
+  const profile = round ? roundedProfile(h, bottom, top, round, segmentsFor(round, fn)) : chamferedProfile(h, bottom, top, chamfer);
+  const manifold = profile.revolve(segments, 360);
+  return new Solid(center ? manifold.translate([0, 0, -h / 2]) : manifold);
+}
+
+/**
+ * The right half of a cylinder's section, X from the axis out and Y up, with its corners
+ * rounded: the whole section is shrunk and grown back with round corners, then cut at the axis.
+ */
+function roundedProfile(h, bottom, top, round, segments) {
+  const section = new CrossSection([[[-bottom, 0], [bottom, 0], [top, h], [-top, h]]]);
+  const rounded = section.offset(-round, 'Miter', 1e6).offset(round, 'Round', 2, segments);
+  return rounded.intersect(CrossSection.square([Math.max(bottom, top), h]));
+}
+
+/** The right half of a cylinder's section with its outer corners cut `chamfer` back along both sides. */
+function chamferedProfile(h, bottom, top, chamfer) {
+  // Along the side, which leans by k: chamfer / s up and k * chamfer / s out.
+  const k = (top - bottom) / h;
+  const s = Math.hypot(1, k);
+  const [dz, dx] = [chamfer / s, (k * chamfer) / s];
+  return new CrossSection([[[0, 0], [bottom - chamfer, 0], [bottom + dx, dz], [top - dx, h - dz], [top - chamfer, h], [0, h]]]);
 }
 
 /**
@@ -573,6 +658,17 @@ export function intersection(...items) {
 /** Convex hull of all given shapes, like OpenSCAD's hull(). @param {...Items<Solid | Shape2>} items */
 export function hull(...items) {
   return combine(items, 'hull', (ms) => Manifold.hull(ms), (cs) => CrossSection.hull(cs));
+}
+
+/**
+ * Minkowski sum of all given solids, like OpenSCAD's minkowski(): `minkowski(part, sphere(1))`.
+ * See {@link Solid#minkowski}.
+ * @param {...Items<Solid>} items
+ * @returns {Solid}
+ */
+export function minkowski(...items) {
+  const [first, ...rest] = solidsFor('minkowski', items);
+  return first ? first.minkowski(rest) : new Solid(Manifold.compose([]));
 }
 
 /** @param {number[]} v @param {...Items<Solid | Shape2>} items */
