@@ -1,5 +1,6 @@
 import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
+import { range } from './util.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -442,84 +443,167 @@ export function point(position = [0, 0, 0]) {
 // ---------------------------------------------------------------------------
 // 3D primitives
 
+// Rounded and chamfered edges. `round` and `chamfer` take a size for every edge or an object
+// of sizes by group of edges; edgeSpecs() turns them into one { kind, size } per group.
+
+/** @typedef {{ kind: 'round' | 'chamfer', size: number }} EdgeSpec */
+
 /**
- * Checks a `round` or `chamfer` option against the largest value the shape has room for.
  * @param {string} op
- * @param {number} round
- * @param {number} chamfer
- * @param {number} limit
+ * @param {string[]} groups the groups of edges the shape has
+ * @param {unknown} round
+ * @param {unknown} chamfer
+ * @returns {Record<string, EdgeSpec>}
  */
-function checkEdge(op, round, chamfer, limit) {
-  if (round && chamfer) throw new Error(`${op}(): give round or chamfer, not both`);
-  const [name, value] = round ? ['round', round] : ['chamfer', chamfer];
-  if (!(value >= 0 && value <= limit)) throw new Error(`${op}(): ${name} must be between 0 and ${+limit.toFixed(4)}, got ${value}`);
+function edgeSpecs(op, groups, round, chamfer) {
+  /** @type {Record<string, EdgeSpec>} */
+  const specs = {};
+  for (const [kind, value] of /** @type {const} */ ([['round', round], ['chamfer', chamfer]])) {
+    if (value === undefined) continue;
+    const sizes = typeof value === 'number' ? Object.fromEntries(groups.map((g) => [g, value])) : value;
+    if (!sizes || typeof sizes !== 'object') throw new Error(`${op}(): ${kind} must be a number or an object like { ${groups[0]}: 1 }`);
+    for (const [group, size] of Object.entries(sizes)) {
+      if (!groups.includes(group)) throw new Error(`${op}(): ${kind} has no edges "${group}"; the groups are ${groups.join(', ')}`);
+      if (!(typeof size === 'number' && size >= 0)) throw new Error(`${op}(): ${kind} must be 0 or more, got ${JSON.stringify(size)} for ${group}`);
+      if (size === 0) continue;
+      if (specs[group]) throw new Error(`${op}(): give the ${group} edges round or chamfer, not both`);
+      specs[group] = { kind, size };
+    }
+  }
+  return specs;
+}
+
+/**
+ * The points of a convex polygon, counter-clockwise, with corner `i` rounded or chamfered as
+ * `specs[i]` says. A rounded corner is an arc tangent to both sides; a chamfered one is cut
+ * `size` back along both sides.
+ * @param {string} op
+ * @param {Vec2[]} points
+ * @param {(EdgeSpec | undefined)[]} specs
+ * @param {number | undefined} fn
+ * @returns {Vec2[]}
+ */
+function cornered(op, points, specs, fn) {
+  const n = points.length;
+  const corners = points.map((p, i) => {
+    const spec = specs[i];
+    if (!spec) return { cut: 0 };
+    const along = (q) => {
+      const [dx, dy] = [q[0] - p[0], q[1] - p[1]];
+      const len = Math.hypot(dx, dy);
+      return [dx / len, dy / len];
+    };
+    const u = along(points[(i + n - 1) % n]);
+    const v = along(points[(i + 1) % n]);
+    const half = Math.acos(Math.max(-1, Math.min(1, u[0] * v[0] + u[1] * v[1]))) / 2;
+    return { spec, u, v, half, cut: spec.kind === 'round' ? spec.size / Math.tan(half) : spec.size };
+  });
+  // Each side must have room for the cuts at both its ends.
+  points.forEach((p, i) => {
+    const q = points[(i + 1) % n];
+    const room = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const [a, b] = [corners[i], corners[(i + 1) % n]];
+    if (a.cut + b.cut > room + 1e-9) {
+      const { kind, size } = (a.spec ?? b.spec);
+      throw new Error(`${op}(): ${kind} ${size} does not fit`);
+    }
+  });
+  /** @type {Vec2[]} */
+  const out = [];
+  points.forEach((p, i) => {
+    const c = corners[i];
+    if (!c.spec) return void out.push(p);
+    const a = [p[0] + c.u[0] * c.cut, p[1] + c.u[1] * c.cut];
+    const b = [p[0] + c.v[0] * c.cut, p[1] + c.v[1] * c.cut];
+    if (c.spec.kind === 'chamfer') return void out.push(a, b);
+    const r = c.spec.size;
+    const [bx, by] = [c.u[0] + c.v[0], c.u[1] + c.v[1]];
+    const bl = Math.hypot(bx, by);
+    const center = [p[0] + (bx / bl) * (r / Math.sin(c.half)), p[1] + (by / bl) * (r / Math.sin(c.half))];
+    const from = Math.atan2(a[1] - center[1], a[0] - center[0]);
+    let sweep = Math.atan2(b[1] - center[1], b[0] - center[0]) - from;
+    if (sweep > Math.PI) sweep -= 2 * Math.PI;
+    if (sweep < -Math.PI) sweep += 2 * Math.PI;
+    const steps = Math.max(1, Math.ceil((segmentsFor(r, fn) * Math.abs(sweep)) / (2 * Math.PI)));
+    for (let k = 0; k <= steps; k++) {
+      const t = from + (sweep * k) / steps;
+      out.push([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]);
+    }
+  });
+  // Cuts that meet in the middle of a side leave the same point twice.
+  return out.filter((p, i) => {
+    const q = out[(i + 1) % out.length];
+    return Math.hypot(q[0] - p[0], q[1] - p[1]) > 1e-9;
+  });
 }
 
 /**
  * @typedef {object} CubeOptions
  * @property {boolean} [center]
- * @property {number} [round] radius the edges are rounded with; the size stays the same
- * @property {number} [chamfer] how far back the edges are cut at 45°; the size stays the same
- * @property {'all' | 'x' | 'y' | 'z'} [edges] which edges `round` and `chamfer` apply to: all of them,
- *   or only the four parallel to one axis (`'z'`: the vertical ones, leaving a flat top and bottom)
+ * @property {number | { z?: number, top?: number, bottom?: number }} [round] radius the edges are
+ *   rounded with: a number for every edge, or by group: `z` the four vertical edges, `top` and
+ *   `bottom` the four around that face. The size stays the same.
+ * @property {number | { z?: number, top?: number, bottom?: number }} [chamfer] how far back the edges
+ *   are cut at 45°, for every edge or by group, as for `round`. A group takes round or chamfer, not both.
  * @property {number} [fn] segments of a full circle, for `round`
  */
 
-// Column-major matrices that turn a solid built along Z so that it runs along X or along Y.
-// Both are cyclic swaps of the axes, so they turn without mirroring.
-const ALONG = {
-  x: [0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-  y: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-};
+const CUBE_EDGES = ['z', 'top', 'bottom'];
 
 /**
  * A box with one corner at the origin, or centered with `{ center: true }`.
- * `{ round }` rounds the edges and `{ chamfer }` cuts them, inside the same size;
- * `{ edges: 'z' }` limits that to the vertical edges.
+ * `{ round }` rounds edges and `{ chamfer }` cuts them, inside the same size: `{ round: 2 }` does
+ * every edge, `{ round: { z: 3 }, chamfer: { top: 1 } }` the vertical edges and the top's.
  * @param {number | number[]} [size]
  * @param {CubeOptions} [options]
  */
 export function cube(size = 1, options = {}) {
   const s = typeof size === 'number' ? [size, size, size] : toVec3(size);
-  const { center = false, round = 0, chamfer = 0, edges = 'all', fn } = options;
-  if (!['all', 'x', 'y', 'z'].includes(edges)) throw new Error(`cube(): edges must be 'all', 'x', 'y' or 'z', got ${JSON.stringify(edges)}`);
-  if (!round && !chamfer) return new Solid(Manifold.cube(s, center));
-  const manifold = edges === 'all' ? edgedCube(s, round, chamfer, fn) : edgedPrism(s, edges, round, chamfer, fn);
+  const { center = false, round, chamfer, fn } = options;
+  const specs = edgeSpecs('cube', CUBE_EDGES, round, chamfer);
+  if (Object.keys(specs).length === 0) return new Solid(Manifold.cube(s, center));
+  const manifold = edgedCube(s, specs, fn);
   return new Solid(center ? manifold.translate(s.map((v) => -v / 2)) : manifold);
 }
 
-/** A box with every edge rounded or chamfered. */
-function edgedCube(s, round, chamfer, fn) {
-  checkEdge('cube', round, chamfer, Math.min(...s) / 2);
-  if (round) {
-    // The hull of a ball in each corner: flat faces, quarter-cylinder edges, eighth-sphere corners.
-    const ball = Manifold.sphere(round, segmentsFor(round, fn));
-    const corners = [];
-    for (const x of [round, s[0] - round]) for (const y of [round, s[1] - round]) for (const z of [round, s[2] - round]) corners.push(ball.translate([x, y, z]));
-    return Manifold.hull(corners);
+/**
+ * The hull of horizontal slices of the box: the plan with its vertical edges rounded or cut, and
+ * near the top and bottom smaller copies of it that trace the edges around those faces. Following
+ * the plan's corners, a top edge's rounding or chamfer turns around a rounded vertical edge too.
+ * @param {Vec3} s
+ * @param {Record<string, EdgeSpec>} specs
+ * @param {number | undefined} fn
+ */
+function edgedCube(s, specs, fn) {
+  const [w, d, h] = s;
+  const { z: vertical, top, bottom } = specs;
+  for (const [name, ring] of [['top', top], ['bottom', bottom]]) {
+    if (ring && ring.size > Math.min(w, d) / 2) throw new Error(`cube(): ${ring.kind} ${ring.size} does not fit around the ${name}`);
   }
-  // The hull of three boxes, each as large as the cube along one axis and inset by the chamfer along the others.
-  const c = chamfer;
-  return Manifold.hull([
-    Manifold.cube([s[0], s[1] - 2 * c, s[2] - 2 * c]).translate([0, c, c]),
-    Manifold.cube([s[0] - 2 * c, s[1], s[2] - 2 * c]).translate([c, 0, c]),
-    Manifold.cube([s[0] - 2 * c, s[1] - 2 * c, s[2]]).translate([c, c, 0]),
-  ]);
-}
+  if ((top?.size ?? 0) + (bottom?.size ?? 0) > h) throw new Error('cube(): the top and bottom edges do not fit in the height');
 
-/** A box with only the four edges along `axis` rounded or chamfered: a rectangle with those corners, extruded. */
-function edgedPrism(s, axis, round, chamfer, fn) {
-  // [w, d] is the rectangle across the axis, l the length along it, in the order ALONG maps them.
-  const [w, d, l] = axis === 'x' ? [s[1], s[2], s[0]] : axis === 'y' ? [s[2], s[0], s[1]] : s;
-  checkEdge('cube', round, chamfer, Math.min(w, d) / 2);
-  const e = round || chamfer;
-  // Rounded: the hull of a circle in each corner, which still works when they touch (round = half a side).
-  const circle = round && CrossSection.circle(round, segmentsFor(round, fn));
-  const section = round
-    ? CrossSection.hull([[e, e], [w - e, e], [e, d - e], [w - e, d - e]].map((c) => circle.translate(c)))
-    : new CrossSection([[[e, 0], [w - e, 0], [w, e], [w, d - e], [w - e, d], [e, d], [0, d - e], [0, e]]]);
-  const prism = section.extrude(l);
-  return axis === 'z' ? prism : prism.transform(ALONG[axis]);
+  // The plan inset by `inset` on every side. Its corners shrink by as much, so a rounded corner
+  // meets a rounded top in a ball, and a chamfered one a chamfered top in a three-sided facet.
+  const plan = (inset) => {
+    const corner = vertical && vertical.size > inset ? { kind: vertical.kind, size: vertical.size - inset } : undefined;
+    const [x0, y0, x1, y1] = [inset, inset, w - inset, d - inset];
+    if (x1 - x0 < 1e-9 || y1 - y0 < 1e-9) return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+    return cornered('cube', [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], Array(4).fill(corner), fn);
+  };
+
+  // Slices as [height, inset], from the face inwards to where the edge's side begins.
+  const ring = (spec, face, inwards) => {
+    if (!spec) return [[face, 0]];
+    if (spec.kind === 'chamfer') return [[face, spec.size], [face + inwards * spec.size, 0]];
+    const r = spec.size;
+    const steps = Math.max(1, Math.ceil(segmentsFor(r, fn) / 4));
+    return range(0, steps).map((k) => {
+      const t = ((Math.PI / 2) * k) / steps;
+      return [face + inwards * (r - r * Math.cos(t)), r - r * Math.sin(t)];
+    });
+  };
+  const slices = [...ring(bottom, 0, 1), ...ring(top, h, -1)];
+  return Manifold.hull(slices.flatMap(([z, inset]) => plan(inset).map(([x, y]) => [x, y, z])));
 }
 
 /**
@@ -532,46 +616,31 @@ function edgedPrism(s, axis, round, chamfer, fn) {
  * @property {number} [d1]
  * @property {number} [d2]
  * @property {boolean} [center]
- * @property {number} [round] radius the top and bottom edges are rounded with; the size stays the same
- * @property {number} [chamfer] how far back the top and bottom edges are cut; the size stays the same
+ * @property {number | { top?: number, bottom?: number }} [round] radius the top and bottom edges
+ *   are rounded with, both or each on its own. The size stays the same.
+ * @property {number | { top?: number, bottom?: number }} [chamfer] how far back the top and bottom
+ *   edges are cut along both faces, both or each on its own. An edge takes round or chamfer, not both.
  * @property {number} [fn]
  */
 
 /**
  * A cylinder or cone standing on the XY plane along +Z, like OpenSCAD's cylinder().
- * `{ round }` rounds the top and bottom edges and `{ chamfer }` cuts them, inside the same size.
+ * `{ round }` rounds the top and bottom edges and `{ chamfer }` cuts them, inside the same size;
+ * `{ chamfer: { top: 1 } }` does the top edge only.
  * @param {CylinderOptions} options
  */
 export function cylinder(options) {
-  const { h, r, d, r1, r2, d1, d2, center = false, fn, round = 0, chamfer = 0 } = options;
+  const { h, r, d, r1, r2, d1, d2, center = false, fn, round, chamfer } = options;
   const base = r ?? (d !== undefined ? d / 2 : 1);
   const bottom = r1 ?? (d1 !== undefined ? d1 / 2 : base);
   const top = r2 ?? (d2 !== undefined ? d2 / 2 : base);
   const segments = segmentsFor(Math.max(bottom, top), fn);
-  if (!round && !chamfer) return new Solid(Manifold.cylinder(h, bottom, top, segments, center));
-  checkEdge('cylinder', round, chamfer, Math.min(h / 2, bottom, top));
-  const profile = round ? roundedProfile(h, bottom, top, round, segmentsFor(round, fn)) : chamferedProfile(h, bottom, top, chamfer);
-  const manifold = profile.revolve(segments, 360);
+  const specs = edgeSpecs('cylinder', ['top', 'bottom'], round, chamfer);
+  if (Object.keys(specs).length === 0) return new Solid(Manifold.cylinder(h, bottom, top, segments, center));
+  // The right half of the section, X from the axis out and Y up, revolved.
+  const section = cornered('cylinder', [[0, 0], [bottom, 0], [top, h], [0, h]], [undefined, specs.bottom, specs.top, undefined], fn);
+  const manifold = new CrossSection([section]).revolve(segments, 360);
   return new Solid(center ? manifold.translate([0, 0, -h / 2]) : manifold);
-}
-
-/**
- * The right half of a cylinder's section, X from the axis out and Y up, with its corners
- * rounded: the whole section is shrunk and grown back with round corners, then cut at the axis.
- */
-function roundedProfile(h, bottom, top, round, segments) {
-  const section = new CrossSection([[[-bottom, 0], [bottom, 0], [top, h], [-top, h]]]);
-  const rounded = section.offset(-round, 'Miter', 1e6).offset(round, 'Round', 2, segments);
-  return rounded.intersect(CrossSection.square([Math.max(bottom, top), h]));
-}
-
-/** The right half of a cylinder's section with its outer corners cut `chamfer` back along both sides. */
-function chamferedProfile(h, bottom, top, chamfer) {
-  // Along the side, which leans by k: chamfer / s up and k * chamfer / s out.
-  const k = (top - bottom) / h;
-  const s = Math.hypot(1, k);
-  const [dz, dx] = [chamfer / s, (k * chamfer) / s];
-  return new CrossSection([[[0, 0], [bottom - chamfer, 0], [bottom + dx, dz], [top - dx, h - dz], [top - chamfer, h], [0, h]]]);
 }
 
 /**

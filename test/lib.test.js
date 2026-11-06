@@ -75,22 +75,31 @@ test('cube round and chamfer keep the size', () => {
   // Twelve edge prisms of 1/2 × 8, and eight corners of 1 - 1/6.
   near(cube(10, { chamfer: 1 }).volume(), 1000 - 48 - 8 * (5 / 6));
   assert.deepEqual(cube([10, 8, 6], { round: 1, center: true }).bounds(), { min: [-5, -4, -3], max: [5, 4, 3] });
-  assert.throws(() => cube(10, { round: 6 }), /round must be between 0 and 5, got 6/);
+  assert.throws(() => cube(10, { round: 6 }), /round 6 does not fit/);
   assert.throws(() => cube(10, { round: 1, chamfer: 1 }), /not both/);
 });
 
-test('cube edges limits round and chamfer to the edges along one axis', () => {
+test('cube round and chamfer by group of edges', () => {
   // Four edges of length l each lose the corner a quarter circle leaves in its square, or a triangle.
   const spandrel = 4 * (1 - Math.PI / 4);
-  for (const [edges, l] of [['x', 10], ['y', 20], ['z', 30]]) {
-    const rounded = cube([10, 20, 30], { round: 1, edges, fn: 512 });
-    assert.deepEqual(rounded.bounds(), { min: [0, 0, 0], max: [10, 20, 30] });
-    near(rounded.volume(), 6000 - spandrel * l, 0.01);
-    near(cube([10, 20, 30], { chamfer: 1, edges }).volume(), 6000 - 2 * l);
-  }
-  // Only the two sides across the axis limit the radius.
-  assert.ok(cube([4, 4, 1], { round: 2, edges: 'z' }).volume() > 0);
-  assert.throws(() => cube(10, { round: 1, edges: 'up' }), /edges must be/);
+  const vertical = cube([10, 20, 30], { round: { z: 1 }, fn: 512 });
+  assert.deepEqual(vertical.bounds(), { min: [0, 0, 0], max: [10, 20, 30] });
+  near(vertical.volume(), 6000 - spandrel * 30, 0.01);
+  near(cube([10, 20, 30], { chamfer: { z: 1 } }).volume(), 6000 - 2 * 30);
+  // A chamfered top around sharp vertical edges: four wedges of section 1/2, mitred where they
+  // meet, so each corner counts the 1/3 the two wedges share only once.
+  near(cube([10, 20, 30], { chamfer: { top: 1 } }).volume(), 6000 - (1 / 2) * 2 * (10 + 20) + 4 * (1 / 3));
+  // Rounded vertical edges and a top chamfered around them, as a hull of the plan and its inset copy.
+  const plan = (w, d, r) => square([w - 2 * r, d - 2 * r]).translate([r, r]).offset({ r, fn: 512 });
+  const expected = hull(plan(10, 20, 3).extrude(29), plan(8, 18, 2).translate([1, 1]).extrude(1).translate([0, 0, 29]));
+  const mixed = cube([10, 20, 30], { round: { z: 3 }, chamfer: { top: 1 }, fn: 512 });
+  assert.ok(Math.abs(mixed.volume() - expected.volume()) < expected.volume() * 1e-3);
+  assert.deepEqual(mixed.bounds(), { min: [0, 0, 0], max: [10, 20, 30] });
+  // Round vertical edges whose arcs meet across the narrow side.
+  assert.ok(cube([4, 4, 1], { round: { z: 2 } }).volume() > 0);
+  assert.throws(() => cube(10, { round: { up: 1 } }), /no edges "up"/);
+  assert.throws(() => cube(10, { round: { top: 1 }, chamfer: { top: 1 } }), /not both/);
+  assert.throws(() => cube([10, 10, 3], { round: { top: 2, bottom: 2 } }), /do not fit in the height/);
 });
 
 test('cylinder round and chamfer cut the top and bottom edges', () => {
@@ -104,7 +113,11 @@ test('cylinder round and chamfer cut the top and bottom edges', () => {
   near(rounded.volume(), full - 2 * 2 * Math.PI * (5 - inset) * spandrel, 0.05);
   near(rounded.bounds().min[2], -5);
   near(rounded.bounds().max[0], 5, 1e-3);
-  assert.throws(() => cylinder({ r: 1, h: 10, round: 2 }), /round must be between 0 and 1, got 2/);
+  assert.throws(() => cylinder({ r: 1, h: 10, round: 2 }), /round 2 does not fit/);
+  // One end only: the bottom stays flat.
+  const top = cylinder({ r: 5, h: 10, chamfer: { top: 1 }, fn: 512 });
+  near(top.volume(), full - 2 * Math.PI * (5 - 1 / 3) * 0.5, 0.05);
+  near(top.slice(0.001).area(), Math.PI * 25, 0.01);
 });
 
 test('minkowski grows a solid by another', () => {

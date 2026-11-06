@@ -130,10 +130,13 @@ Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).of
 **Rounded and chamfered edges.** `cube(size, { round: r })` rounds every edge and
 `cube(size, { chamfer: c })` cuts every edge at 45°; `cylinder({ d, h, round })` / `{ chamfer }`
 do the top and bottom edges. All keep the given size. A flat bottom prints better, so for
-enclosures and trays round only the vertical edges with `edges: 'z'`:
+enclosures and trays pick edges by group — `z` (vertical), `top`, `bottom` — and leave the bottom
+sharp. Round and chamfer mix by group, and a top chamfer follows the rounded corners:
 
 ```js
-const roundedBox = (l, w, h, r) => cube([l, w, h], { round: r, edges: 'z' });
+const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
+const block = cube([60, 30, 20], { round: { z: 3 }, chamfer: { top: 1.5 } });
+cylinder({ d: 20, h: 8, chamfer: { top: 1 } }); // flat bottom, chamfered top
 ```
 
 For any other shape, `part.minkowski(sphere(r))` rounds every edge but grows the part by `r` on

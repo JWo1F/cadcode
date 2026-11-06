@@ -78,16 +78,16 @@ export const sections = [
         params: [
           { name: 'size', type: 'number | [x, y, z]', default: '1', text: 'A number makes a cube with equal sides.' },
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center the box on the origin instead.' },
-          { name: 'options.round', type: 'number', text: 'Round every edge with this radius. The box keeps its size. At most half the smallest side.' },
-          { name: 'options.chamfer', type: 'number', text: 'Cut every edge this far back along both faces, at 45°. The box keeps its size. Not together with `round`.' },
-          { name: 'options.edges', type: "'all' | 'x' | 'y' | 'z'", default: "'all'", text: 'Which edges `round` and `chamfer` apply to: all twelve, or the four that run along one axis. `\'z\'` rounds only the vertical edges and keeps a flat top and bottom, for boxes that print on their floor.' },
+          { name: 'options.round', type: 'number | { z, top, bottom }', text: 'Round the edges with this radius; the box keeps its size. A number does every edge. An object does groups of edges: `z` the four vertical ones, `top` and `bottom` the four around that face. A top or bottom rounding follows rounded vertical corners.' },
+          { name: 'options.chamfer', type: 'number | { z, top, bottom }', text: 'Cut the edges this far back along both faces, at 45°; the box keeps its size. A number or groups, as for `round`. A group takes `round` or `chamfer`, not both.' },
           { ...fn, text: 'Segments of a full circle for the rounded edges, like OpenSCAD\'s `$fn`. Without it the defaults from `setResolution` apply.' },
         ],
         returns: 'Solid',
         example: `cube([40, 20, 5], { center: true })
 cube([40, 30, 12], { round: 2 })
 cube([40, 30, 12], { chamfer: 1 })
-cube([40, 30, 12], { round: 3, edges: 'z' }) // flat top and bottom`,
+cube([40, 30, 12], { round: { z: 3 } }) // flat top and bottom
+cube([60, 30, 20], { round: { z: 3 }, chamfer: { top: 1.5 } })`,
       },
       {
         id: 'cylinder',
@@ -103,15 +103,16 @@ cube([40, 30, 12], { round: 3, edges: 'z' }) // flat top and bottom`,
           { name: 'options.d1', type: 'number', text: 'Bottom diameter, instead of `r1`.' },
           { name: 'options.d2', type: 'number', text: 'Top diameter, instead of `r2`.' },
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center it on the origin along Z, from `-h/2` to `h/2`.' },
-          { name: 'options.round', type: 'number', text: 'Round the top and bottom edges with this radius. The cylinder keeps its size. At most half the height and the smaller radius.' },
-          { name: 'options.chamfer', type: 'number', text: 'Cut the top and bottom edges this far back along both faces. The cylinder keeps its size. Not together with `round`.' },
+          { name: 'options.round', type: 'number | { top, bottom }', text: 'Round the top and bottom edges with this radius; the cylinder keeps its size. An object rounds one end, or each by its own radius.' },
+          { name: 'options.chamfer', type: 'number | { top, bottom }', text: 'Cut the top and bottom edges this far back along both faces; the cylinder keeps its size. A number or ends, as for `round`. An end takes `round` or `chamfer`, not both.' },
           fn,
         ],
         returns: 'Solid',
         notes: ['The segment count follows the larger of the two radii; a rounded edge follows its own radius.'],
         example: `cylinder({ d: 3.2, h: 10, center: true, fn: 32 })
 cylinder({ h: 8, r1: 6, r2: 0 }) // a cone
-cylinder({ d: 20, h: 8, round: 1 }) // a knob with soft edges`,
+cylinder({ d: 20, h: 8, round: 1 }) // a knob with soft edges
+cylinder({ d: 20, h: 8, chamfer: { top: 1 } }) // flat bottom for the bed`,
       },
       {
         id: 'sphere',

@@ -103,7 +103,7 @@ export const params = {
 
 export default (p) => {
   // Only the vertical edges are rounded, so the tray stands on a flat bottom.
-  const roundedBox = (w, d, h, r) => cube([w, d, h], { round: r, edges: 'z' });
+  const roundedBox = (w, d, h, r) => cube([w, d, h], { round: { z: r } });
 
   const tray = () =>
     roundedBox(p.width, p.depth, p.height, p.radius).subtract(
@@ -137,8 +137,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 
 | Function | Notes |
 | --- | --- |
-| `cube(size, { center, round, chamfer, edges })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°; the size stays the same. `edges: 'z'` (or `'x'`, `'y'`) limits that to the four edges along one axis: `'z'` keeps a flat top and bottom. |
-| `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size. |
+| `cube(size, { center, round, chamfer, fn })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge and `chamfer: c` cuts every edge at 45°, inside the same size. Either also takes sizes by group of edges, `z` (the vertical ones), `top` and `bottom` (around those faces): `{ round: { z: 3 }, chamfer: { top: 1 } }` keeps a flat bottom. |
+| `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size; `{ chamfer: { top: 1 } }` does one end only. |
 | `sphere(r)` or `sphere({ r \| d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices clockwise when seen from outside, as in OpenSCAD. |
 
