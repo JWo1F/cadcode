@@ -796,6 +796,29 @@ square([8, 12], { center: true }).offset(2).sweep(arch)`,
     ],
   },
   {
+    id: 'profiles',
+    title: 'Lofts and threads',
+    intro: 'More ways to turn 2D into a solid, beside `.extrude`, `.revolve` and `.sweep`.',
+    entries: [
+      {
+        id: 'loft',
+        name: 'loft',
+        signature: 'loft(sections, options)',
+        summary: 'A solid through 2D sections stacked along Z: each section lies flat at its height, and straight faces join it to the next. A square base can flow into a round neck.',
+        params: [
+          { name: 'sections', type: 'Shape2[]', text: 'Two or more sections, bottom to top. Each must be one outline without holes; cut holes into the solid afterwards.' },
+          { name: 'options.z', type: 'number[]', text: 'The height of each section, one per section, increasing.' },
+        ],
+        returns: 'Solid',
+        notes: [
+          'Sections need not have the same number of points: points are added along the edges of the sparser ones, so every corner is kept. Each section starts at the point that lines up best with the section below, so the sides do not twist.',
+          'Faces between two sections are straight. For a curved side, add sections in between.',
+        ],
+        example: `loft([square(30, { center: true }), circle({ r: 10, fn: 48 }), circle({ r: 14, fn: 48 })], { z: [0, 25, 40] })`,
+      },
+    ],
+  },
+  {
     id: 'helpers',
     title: 'Helpers',
     entries: [

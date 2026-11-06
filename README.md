@@ -218,6 +218,12 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `offset(r, ...shapes)` | `union(...shapes).offset(r)` |
 | `linearExtrude(h, options, ...shapes)` | `union(...shapes).extrude(h, options)` |
 
+### Lofts and threads
+
+| Function | Notes |
+| --- | --- |
+| `loft(sections, { z })` | A solid through 2D sections laid flat at heights `z`, joined by straight faces: a square base into a round neck. Each section is one outline without holes (cut holes afterwards). Sections with different point counts are evened out, keeping their corners. |
+
 ### Helpers
 
 | Function | Notes |

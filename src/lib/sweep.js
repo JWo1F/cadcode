@@ -39,18 +39,20 @@ function perpendicular(v) {
 
 /**
  * A closed solid from rings of the same profile. `polygons` are the profile's loops
- * (counterclockwise outlines, clockwise holes); `place(ring, x, y)` puts profile point
- * (x, y) of ring `ring` in space. Consecutive rings are joined by quads; a closed tube
- * also joins the last ring to the first, an open one gets the profile as caps.
+ * (counterclockwise outlines, clockwise holes); `place(ring, x, y, index)` puts profile point
+ * (x, y), the `index`-th of the ring, of ring `ring` in space. Consecutive rings are joined by
+ * quads; a closed tube also joins the last ring to the first, an open one gets caps
+ * triangulated from `caps` (the first ring's and the last ring's loops, by default the profile).
  * The winding is checked on the result, so `place` may run the rings either way.
  * @param {Vec2[][]} polygons
  * @param {number} rings
- * @param {(ring: number, x: number, y: number) => Vec3} place
+ * @param {(ring: number, x: number, y: number, index: number) => Vec3} place
  * @param {boolean} closed
  * @param {string} what names the operation in errors
+ * @param {[Vec2[][], Vec2[][]]} [caps]
  * @returns {Solid}
  */
-export function tube(polygons, rings, place, closed, what) {
+export function tube(polygons, rings, place, closed, what, caps = [polygons, polygons]) {
   const starts = [];
   let perRing = 0;
   for (const poly of polygons) {
@@ -59,10 +61,11 @@ export function tube(polygons, rings, place, closed, what) {
   }
   const positions = new Float32Array(rings * perRing * 3);
   for (let r = 0; r < rings; r++) {
-    let k = (r * perRing) * 3;
+    let k = r * perRing * 3;
+    let index = 0;
     for (const poly of polygons) {
       for (const [x, y] of poly) {
-        const p = place(r, x, y);
+        const p = place(r, x, y, index++);
         positions[k++] = p[0];
         positions[k++] = p[1];
         positions[k++] = p[2];
@@ -85,7 +88,8 @@ export function tube(polygons, rings, place, closed, what) {
   }
   if (!closed) {
     const last = (rings - 1) * perRing;
-    for (const [i, j, k] of triangulate(polygons)) triangles.push(i, k, j, last + i, last + j, last + k);
+    for (const [i, j, k] of triangulate(caps[0])) triangles.push(i, k, j);
+    for (const [i, j, k] of triangulate(caps[1])) triangles.push(last + i, last + j, last + k);
   }
   let manifold = manifoldOf(positions, triangles, what);
   if (manifold.volume() < 0) {
@@ -255,4 +259,79 @@ export function helix(options) {
     points.push([r * Math.cos(a), sign * r * Math.sin(a), pitch * t]);
   }
   return points;
+}
+
+/**
+ * The outline with `count` points: its own corners, plus points spread along its edges,
+ * more on longer ones, so sections with different point counts can be joined one to one.
+ * @param {Vec2[]} outline
+ * @param {number} count
+ * @returns {Vec2[]}
+ */
+function withPoints(outline, count) {
+  const n = outline.length;
+  const edges = outline.map((p, i) => Math.hypot(outline[(i + 1) % n][0] - p[0], outline[(i + 1) % n][1] - p[1]));
+  const perimeter = edges.reduce((a, b) => a + b, 0);
+  const extra = count - n;
+  // Largest remainder: each edge gets its share of the extra points by length, rounded so they add up.
+  const shares = edges.map((e) => (extra * e) / perimeter);
+  const added = shares.map(Math.floor);
+  const order = shares.map((share, i) => [share - added[i], i]).sort((a, b) => b[0] - a[0]);
+  for (let k = 0; k < extra - added.reduce((a, b) => a + b, 0); k++) added[order[k][1]]++;
+  /** @type {Vec2[]} */
+  const out = [];
+  outline.forEach((p, i) => {
+    const q = outline[(i + 1) % n];
+    for (let k = 0; k <= added[i]; k++) {
+      const t = k / (added[i] + 1);
+      out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+    }
+  });
+  return out;
+}
+
+/** `outline` started at the point that lines it up best with `previous`, point for point. */
+function alignedTo(outline, previous) {
+  const n = outline.length;
+  let best = 0;
+  let bestCost = Infinity;
+  for (let shift = 0; shift < n; shift++) {
+    let cost = 0;
+    for (let i = 0; i < n && cost < bestCost; i++) {
+      const p = outline[(i + shift) % n];
+      cost += (p[0] - previous[i][0]) ** 2 + (p[1] - previous[i][1]) ** 2;
+    }
+    if (cost < bestCost) [best, bestCost] = [shift, cost];
+  }
+  return outline.slice(best).concat(outline.slice(0, best));
+}
+
+/**
+ * A solid through 2D sections stacked along Z: section `i` lies flat at height `z[i]`, and
+ * straight faces join each section to the next. Each section must be one outline without holes;
+ * cut holes afterwards. Sections with different point counts are evened out by adding points
+ * along their edges, keeping every corner, and each is started where it lines up best with the
+ * one below, so a square can loft into a circle.
+ * @param {import('./shapes.js').Shape2[]} sections
+ * @param {{ z: number[] }} options heights, one per section, increasing
+ * @returns {Solid}
+ */
+export function loft(sections, options) {
+  const z = options?.z;
+  if (!Array.isArray(sections) || sections.length < 2) throw new Error('loft(): give at least two sections');
+  if (!Array.isArray(z) || z.length !== sections.length) throw new Error('loft(): `z` needs one height per section');
+  for (let i = 1; i < z.length; i++) if (!(z[i] > z[i - 1])) throw new Error('loft(): the heights in `z` must increase');
+  const outlines = sections.map((section, i) => {
+    const polygons = section.toPolygons();
+    if (polygons.length !== 1) throw new Error(`loft(): section ${i} has ${polygons.length} outlines; each section must be one outline without holes (cut holes after lofting)`);
+    return polygons[0];
+  });
+  const count = Math.max(...outlines.map((o) => o.length));
+  const rings = [];
+  for (const outline of outlines) {
+    const even = withPoints(outline, count);
+    rings.push(rings.length === 0 ? even : alignedTo(even, rings[rings.length - 1]));
+  }
+  const place = (ring, _x, _y, index) => /** @type {Vec3} */ ([rings[ring][index][0], rings[ring][index][1], z[ring]]);
+  return tube([rings[0]], rings.length, place, false, 'loft()', [[rings[0]], [rings[rings.length - 1]]]);
 }

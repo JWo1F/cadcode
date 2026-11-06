@@ -127,7 +127,8 @@ difference(
 
 **2D needs extruding.** `square`, `circle`, `polygon` and `.offset()` make `Shape2`s; turn them into
 solids with `.extrude(h, { center, twist, scale })`, `.revolve({ angle })` or `.sweep(path)` (along `[x, y, z]`
-points: a handle, a pipe, or a spring along `helix({ r, pitch, turns })`). A 2D shape left in a part is
+points: a handle, a pipe, or a spring along `helix({ r, pitch, turns })`). `loft([a, b, c], { z: [0, 10, 30] })`
+joins sections at those heights, for a square base flowing into a round neck. A 2D shape left in a part is
 only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold outline), left out of STL (a part with no solids fails to export). `.extrude` grows along +Z, so a profile meant for a side wall is extruded and
 then rotated into place (`.extrude(depth).rotate([0, 90, 0])` points it along +X after rotation).
 Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.

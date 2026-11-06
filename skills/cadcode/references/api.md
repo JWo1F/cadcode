@@ -10,6 +10,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 - `Solid` methods
 - `Shape2` methods
 - Functions
+- Lofts and threads
 - Helpers
 
 ## 3D primitives
@@ -106,6 +107,12 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | `color(c, alpha?, ...shapes)` | `union(...shapes).color(c, alpha)` |
 | `offset(r, ...shapes)` | `union(...shapes).offset(r)` |
 | `linearExtrude(h, options, ...shapes)` | `union(...shapes).extrude(h, options)` |
+
+## Lofts and threads
+
+| Function | Notes |
+| --- | --- |
+| `loft(sections, { z })` | `Shape2` sections flat at increasing heights `z[i]`, straight faces between neighbours (several sections for a curve). One outline per section, no holes: subtract them after. Point counts are evened by adding points along edges (corners kept); each section starts where it best lines up with the one below. |
 
 ## Helpers
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { circle, square, helix } from '../src/lib/index.js';
+import { circle, square, helix, loft } from '../src/lib/index.js';
 import { toSTL } from '../src/export/stl.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
@@ -68,4 +68,25 @@ test('helix: a spring is a closed solid of the expected volume', () => {
   assert.ok(toSTL([spring]).length > 0);
   assert.ok(helix({ d: 20, pitch: 4, height: 4, leftHand: true, fn: 4 })[1][1] < 0);
   assert.throws(() => helix({ r: 5, pitch: 2 }), /turns/);
+});
+
+test('loft: between equal and shrinking squares', () => {
+  near(loft([square(10, { center: true }), square(10, { center: true })], { z: [0, 10] }).volume(), 1000);
+  // A frustum: h / 3 * (A1 + A2 + sqrt(A1 * A2)).
+  near(loft([square(10, { center: true }), square(4, { center: true })], { z: [0, 6] }).volume(), 312);
+});
+
+test('loft: sections with different point counts keep their corners', () => {
+  const vase = loft([square(20, { center: true }), circle({ r: 6, fn: 40 }), circle({ r: 10, fn: 40 })], { z: [0, 10, 30] });
+  assert.deepEqual(vase.bounds(), { min: [-10, -10, 0], max: [10, 10, 30] });
+  assert.deepEqual(vase.slice(0.001).bounds().max.map((v) => Math.round(v * 10) / 10), [10, 10]);
+  assert.ok(toSTL([vase]).length > 0);
+});
+
+test('loft: bad input is refused', () => {
+  assert.throws(() => loft([square(1)], { z: [0] }), /at least two/);
+  assert.throws(() => loft([square(1), square(1)], { z: [0] }), /one height per section/);
+  assert.throws(() => loft([square(1), square(1)], { z: [5, 0] }), /must increase/);
+  const ring = circle(5).subtract(circle(3));
+  assert.throws(() => loft([ring, ring], { z: [0, 1] }), /without holes/);
 });
