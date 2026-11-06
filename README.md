@@ -238,6 +238,8 @@ export default importSTL(bracket)
 | `importSVG(text, { center, dpi, fn })` | A 2D shape of the SVG's filled paths, rectangles, circles, ellipses, polygons and polylines, with their transforms and fill rules. Sizes come from the document's `width`, `height` and `viewBox` (mm, cm, in, pt, or px at `dpi`, default 96); Y points up and the document's bottom-left corner is the origin, or the shape's center with `center: true`. Strokes, CSS classes, text, clones and images are not imported; text, clones and images fail with how to convert them. |
 | `importDXF(text, { layer, center, fn })` | A 2D shape of a DXF drawing's closed outlines: lines, arcs, circles, ellipses and polylines with bulges. Loose lines and arcs that meet end to end are joined; outlines inside others are holes. `layer` picks one layer or an array of them. Units are taken as millimeters. Text and dimensions are skipped; an outline that does not close, splines and blocks fail with what to do. |
 
+[`examples/logo-tag.js`](examples/logo-tag.js) puts an SVG logo on a keyring tag, raised or engraved.
+
 ## Porting from OpenSCAD
 
 | OpenSCAD | cadcode |
