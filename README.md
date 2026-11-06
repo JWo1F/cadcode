@@ -89,7 +89,16 @@ A program is an ES module. Its default export is one of these:
 
 - **A model**: a solid, or an array of solids. Arrays may nest.
 - **An object of named parts**: each value is a model, or a function that returns one. Functions are only called for the part being shown or exported.
-- **A function of `params`**: it returns either of the above.
+- **A function of `params`**: it returns either of the above, or a function that returns a model.
+
+Any of these functions may be `async`, so a program can `await` before building:
+
+```js
+export default async (p) => {
+  const { gear } = await import('./gear.js');
+  return async () => gear({ teeth: p.teeth });
+};
+```
 
 Parameters you might want to change from the command line go in `export const params`. `--set` can only override a parameter declared there, so a typo is an error instead of being silently ignored.
 

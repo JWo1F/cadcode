@@ -67,7 +67,10 @@ What `export default` may be:
 - a **model** — a `Solid`, or an array of solids (arrays may nest);
 - an **object of named parts** — values are models, or functions returning models (only the part
   being shown or exported is called, so expensive parts cost nothing until asked for);
-- a **function of `params`** returning either of those.
+- a **function of `params`** returning either of those, or returning a function that returns a model
+  (one part, called with `params`).
+
+Every one of these functions may be `async`.
 
 The **first part is the default** for `dev`, `stl`, `3mf` and `png`. Put the part the user looks at most
 first — usually the assembly.

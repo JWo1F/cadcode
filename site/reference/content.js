@@ -28,7 +28,7 @@ export const sections = [
       {
         id: 'export-default',
         name: 'export default',
-        signature: 'export default model | parts | (params) => model | parts',
+        signature: 'export default model | parts | (params) => model | parts | (params) => model',
         summary: 'What the program builds. The CLI, the dev viewer and the playground all read it the same way.',
         params: [
           { name: 'model', type: 'Solid | Shape2 | arrays of them', text: 'A solid or a 2D shape, or an array of them. Arrays may nest. The program then has one part, named `default`.' },
@@ -38,7 +38,8 @@ export const sections = [
         notes: [
           'A 2D shape in a part is drawn in the viewer and in PNGs as a sketch on Z=0 (a see-through blue fill with a bold outline), to check a profile before extruding it. STL leaves it out, and a part with no solids at all fails to export.',
           'The STL of a part merges all its solids into one body. The 3MF keeps each solid as its own object, in its colors. In the viewer and in PNGs each solid keeps its own color and transparency.',
-          'Functions may be `async`.',
+          'A function may also return a function that returns a model: that is one part, called with `params`.',
+          'Every one of these functions may be `async`.',
         ],
         example: `export default (p) => ({
   assembly: () => [box(p).color('steelblue'), lid(p).color('orange', 0.6)],

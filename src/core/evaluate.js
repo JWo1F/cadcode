@@ -24,7 +24,8 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
  *
  * A program `export default`s either a model (a solid or an array of solids), or an
  * object of named parts whose values are models or functions returning models, or a
- * function of `params` returning either. `export const params = {...}` declares the
+ * function of `params` returning either, or returning a function that returns a model
+ * (one part, built lazily). Any of these functions may be async. `export const params = {...}` declares the
  * parameters that `overrides` may change.
  *
  * `fallbackToFirst` shows the first part instead of failing when `part` no longer
@@ -48,7 +49,8 @@ export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirs
   const params = { ...declared, ...known };
 
   const value = typeof mod.default === 'function' ? await mod.default(params) : mod.default;
-  const parts = isModel(value) ? { default: value } : value;
+  // A returned function is one part, called with params like a part's function.
+  const parts = isModel(value) || typeof value === 'function' ? { default: value } : value;
   if (!parts || typeof parts !== 'object') throw new Error('The default export must be a model, an object of parts, or a function returning one');
 
   const partNames = Object.keys(parts);

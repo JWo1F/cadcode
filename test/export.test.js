@@ -156,3 +156,13 @@ test('a program imports a font file as bytes for text()', async () => {
 test('overrides parse JSON values and fall back to strings', () => {
   assert.deepEqual(parseOverrides(['a=2.5', 'b=true', 'c=hello', 'd=[1,2]']), { a: 2.5, b: true, c: 'hello', d: [1, 2] });
 });
+
+test('a program may be async, and may return a function that builds its one part', async () => {
+  const { evaluateModule } = await import('../src/core/evaluate.js');
+  const params = { size: 2 };
+  const lazy = await evaluateModule({ params, default: async (p) => async (q) => cube(p.size + q.size) });
+  assert.deepEqual(lazy.partNames, ['default']);
+  assert.equal(Math.round(lazy.solids[0].volume()), 64);
+  const parts = await evaluateModule({ params, default: async () => ({ a: async (p) => cube(p.size) }) }, { overrides: { size: 3 } });
+  assert.equal(Math.round(parts.solids[0].volume()), 27);
+});
