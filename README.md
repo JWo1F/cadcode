@@ -89,7 +89,7 @@ A program is an ES module. Its default export is one of these:
 Parameters you might want to change from the command line go in `export const params`. `--set` can only override a parameter declared there, so a typo is an error instead of being silently ignored.
 
 ```js
-import { cube, cylinder, hull, product, setResolution } from 'cadcode';
+import { cube, setResolution } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -102,8 +102,8 @@ export const params = {
 };
 
 export default (p) => {
-  const roundedBox = (w, d, h, r) =>
-    hull(product([r, w - r], [r, d - r]).map(([x, y]) => cylinder({ r, h }).translate([x, y, 0])));
+  // Only the vertical edges are rounded, so the tray stands on a flat bottom.
+  const roundedBox = (w, d, h, r) => cube([w, d, h], { round: r, edges: 'z' });
 
   const tray = () =>
     roundedBox(p.width, p.depth, p.height, p.radius).subtract(
@@ -137,7 +137,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 
 | Function | Notes |
 | --- | --- |
-| `cube(size, { center, round, chamfer })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°; the size stays the same. |
+| `cube(size, { center, round, chamfer, edges })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°; the size stays the same. `edges: 'z'` (or `'x'`, `'y'`) limits that to the four edges along one axis: `'z'` keeps a flat top and bottom. |
 | `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size. |
 | `sphere(r)` or `sphere({ r \| d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices clockwise when seen from outside, as in OpenSCAD. |

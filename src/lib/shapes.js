@@ -458,39 +458,68 @@ function checkEdge(op, round, chamfer, limit) {
 /**
  * @typedef {object} CubeOptions
  * @property {boolean} [center]
- * @property {number} [round] radius every edge is rounded with; the size stays the same
- * @property {number} [chamfer] how far back every edge is cut at 45°; the size stays the same
+ * @property {number} [round] radius the edges are rounded with; the size stays the same
+ * @property {number} [chamfer] how far back the edges are cut at 45°; the size stays the same
+ * @property {'all' | 'x' | 'y' | 'z'} [edges] which edges `round` and `chamfer` apply to: all of them,
+ *   or only the four parallel to one axis (`'z'`: the vertical ones, leaving a flat top and bottom)
  * @property {number} [fn] segments of a full circle, for `round`
  */
 
+// Column-major matrices that turn a solid built along Z so that it runs along X or along Y.
+// Both are cyclic swaps of the axes, so they turn without mirroring.
+const ALONG = {
+  x: [0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+  y: [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+};
+
 /**
  * A box with one corner at the origin, or centered with `{ center: true }`.
- * `{ round }` rounds every edge and `{ chamfer }` cuts every edge, inside the same size.
+ * `{ round }` rounds the edges and `{ chamfer }` cuts them, inside the same size;
+ * `{ edges: 'z' }` limits that to the vertical edges.
  * @param {number | number[]} [size]
  * @param {CubeOptions} [options]
  */
 export function cube(size = 1, options = {}) {
   const s = typeof size === 'number' ? [size, size, size] : toVec3(size);
-  const { center = false, round = 0, chamfer = 0, fn } = options;
+  const { center = false, round = 0, chamfer = 0, edges = 'all', fn } = options;
+  if (!['all', 'x', 'y', 'z'].includes(edges)) throw new Error(`cube(): edges must be 'all', 'x', 'y' or 'z', got ${JSON.stringify(edges)}`);
   if (!round && !chamfer) return new Solid(Manifold.cube(s, center));
+  const manifold = edges === 'all' ? edgedCube(s, round, chamfer, fn) : edgedPrism(s, edges, round, chamfer, fn);
+  return new Solid(center ? manifold.translate(s.map((v) => -v / 2)) : manifold);
+}
+
+/** A box with every edge rounded or chamfered. */
+function edgedCube(s, round, chamfer, fn) {
   checkEdge('cube', round, chamfer, Math.min(...s) / 2);
-  let manifold;
   if (round) {
     // The hull of a ball in each corner: flat faces, quarter-cylinder edges, eighth-sphere corners.
     const ball = Manifold.sphere(round, segmentsFor(round, fn));
     const corners = [];
     for (const x of [round, s[0] - round]) for (const y of [round, s[1] - round]) for (const z of [round, s[2] - round]) corners.push(ball.translate([x, y, z]));
-    manifold = Manifold.hull(corners);
-  } else {
-    // The hull of three boxes, each as large as the cube along one axis and inset by the chamfer along the others.
-    const c = chamfer;
-    manifold = Manifold.hull([
-      Manifold.cube([s[0], s[1] - 2 * c, s[2] - 2 * c]).translate([0, c, c]),
-      Manifold.cube([s[0] - 2 * c, s[1], s[2] - 2 * c]).translate([c, 0, c]),
-      Manifold.cube([s[0] - 2 * c, s[1] - 2 * c, s[2]]).translate([c, c, 0]),
-    ]);
+    return Manifold.hull(corners);
   }
-  return new Solid(center ? manifold.translate(s.map((v) => -v / 2)) : manifold);
+  // The hull of three boxes, each as large as the cube along one axis and inset by the chamfer along the others.
+  const c = chamfer;
+  return Manifold.hull([
+    Manifold.cube([s[0], s[1] - 2 * c, s[2] - 2 * c]).translate([0, c, c]),
+    Manifold.cube([s[0] - 2 * c, s[1], s[2] - 2 * c]).translate([c, 0, c]),
+    Manifold.cube([s[0] - 2 * c, s[1] - 2 * c, s[2]]).translate([c, c, 0]),
+  ]);
+}
+
+/** A box with only the four edges along `axis` rounded or chamfered: a rectangle with those corners, extruded. */
+function edgedPrism(s, axis, round, chamfer, fn) {
+  // [w, d] is the rectangle across the axis, l the length along it, in the order ALONG maps them.
+  const [w, d, l] = axis === 'x' ? [s[1], s[2], s[0]] : axis === 'y' ? [s[2], s[0], s[1]] : s;
+  checkEdge('cube', round, chamfer, Math.min(w, d) / 2);
+  const e = round || chamfer;
+  // Rounded: the hull of a circle in each corner, which still works when they touch (round = half a side).
+  const circle = round && CrossSection.circle(round, segmentsFor(round, fn));
+  const section = round
+    ? CrossSection.hull([[e, e], [w - e, e], [e, d - e], [w - e, d - e]].map((c) => circle.translate(c)))
+    : new CrossSection([[[e, 0], [w - e, 0], [w, e], [w, d - e], [w - e, d], [e, d], [0, d - e], [0, e]]]);
+  const prism = section.extrude(l);
+  return axis === 'z' ? prism : prism.transform(ALONG[axis]);
 }
 
 /**

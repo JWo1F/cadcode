@@ -79,6 +79,20 @@ test('cube round and chamfer keep the size', () => {
   assert.throws(() => cube(10, { round: 1, chamfer: 1 }), /not both/);
 });
 
+test('cube edges limits round and chamfer to the edges along one axis', () => {
+  // Four edges of length l each lose the corner a quarter circle leaves in its square, or a triangle.
+  const spandrel = 4 * (1 - Math.PI / 4);
+  for (const [edges, l] of [['x', 10], ['y', 20], ['z', 30]]) {
+    const rounded = cube([10, 20, 30], { round: 1, edges, fn: 512 });
+    assert.deepEqual(rounded.bounds(), { min: [0, 0, 0], max: [10, 20, 30] });
+    near(rounded.volume(), 6000 - spandrel * l, 0.01);
+    near(cube([10, 20, 30], { chamfer: 1, edges }).volume(), 6000 - 2 * l);
+  }
+  // Only the two sides across the axis limit the radius.
+  assert.ok(cube([4, 4, 1], { round: 2, edges: 'z' }).volume() > 0);
+  assert.throws(() => cube(10, { round: 1, edges: 'up' }), /edges must be/);
+});
+
 test('cylinder round and chamfer cut the top and bottom edges', () => {
   const full = Math.PI * 25 * 10;
   // Two rings of triangles with legs 1, their centroid 5 - 1/3 from the axis.

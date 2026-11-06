@@ -16,7 +16,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 
 | Function | Notes |
 | --- | --- |
-| `cube(size = 1, { center = false, round, chamfer, fn })` | `size`: number or `[x, y, z]`. Corner at origin unless centered. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°, inside the same size; r, c ≤ half the smallest side; not both. |
+| `cube(size = 1, { center = false, round, chamfer, edges = 'all', fn })` | `size`: number or `[x, y, z]`. Corner at origin unless centered. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°, inside the same size; r, c ≤ half the smallest side; not both. `edges: 'x' \| 'y' \| 'z'`: only the four edges along that axis (`'z'`: vertical, flat top and bottom). |
 | `cylinder({ h, r, d, r1, r2, d1, d2, center = false, round, chamfer, fn })` | Along +Z from z = 0 (or centered). `r1`/`d1` bottom, `r2`/`d2` top for cones. `round`/`chamfer` soften the top and bottom edges inside the same size; ≤ h/2 and the smaller radius. |
 | `sphere(r)` / `sphere({ r, d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices **clockwise seen from outside** (OpenSCAD order). Throws if not closed. |

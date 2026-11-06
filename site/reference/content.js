@@ -80,12 +80,14 @@ export const sections = [
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center the box on the origin instead.' },
           { name: 'options.round', type: 'number', text: 'Round every edge with this radius. The box keeps its size. At most half the smallest side.' },
           { name: 'options.chamfer', type: 'number', text: 'Cut every edge this far back along both faces, at 45°. The box keeps its size. Not together with `round`.' },
+          { name: 'options.edges', type: "'all' | 'x' | 'y' | 'z'", default: "'all'", text: 'Which edges `round` and `chamfer` apply to: all twelve, or the four that run along one axis. `\'z\'` rounds only the vertical edges and keeps a flat top and bottom, for boxes that print on their floor.' },
           { ...fn, text: 'Segments of a full circle for the rounded edges, like OpenSCAD\'s `$fn`. Without it the defaults from `setResolution` apply.' },
         ],
         returns: 'Solid',
         example: `cube([40, 20, 5], { center: true })
 cube([40, 30, 12], { round: 2 })
-cube([40, 30, 12], { chamfer: 1 })`,
+cube([40, 30, 12], { chamfer: 1 })
+cube([40, 30, 12], { round: 3, edges: 'z' }) // flat top and bottom`,
       },
       {
         id: 'cylinder',
@@ -239,8 +241,8 @@ polygon(
         summary: 'The convex hull of all shapes, like OpenSCAD\'s `hull()`: as if they were shrink-wrapped together.',
         params: [shapes],
         returns: 'Solid | Shape2',
-        example: `// A box with rounded vertical edges.
-hull(product([3, 37], [3, 17]).map(([x, y]) => cylinder({ r: 3, h: 10 }).translate([x, y, 0])))`,
+        example: `// A capsule: two balls shrink-wrapped together.
+hull(sphere(5), sphere(5).translate([30, 0, 0]))`,
       },
       {
         id: 'minkowski',
