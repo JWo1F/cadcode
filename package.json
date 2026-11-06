@@ -2,7 +2,7 @@
   "name": "cadcode",
   "version": "0.8.0",
   "scripts": {
-    "test": "node --test \"test/*.test.js\"",
+    "test": "node --test test/*.test.js",
     "types": "tsc -p tsconfig.json",
     "prepack": "npm run types",
     "site": "node site/build.js"
