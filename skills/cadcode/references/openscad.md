@@ -47,6 +47,7 @@ installed, otherwise reason from the source.
 | `text("A1", size = 10, halign = "center", valign = "center");` | `text('A1', { size: 9.55, halign: 'center', valign: 'center' })`: cadcode's `size` is the capital height, 0.955 of OpenSCAD's `size` in Liberation Sans |
 | `text(t, font = "Roboto:style=Bold");` | `import font from './Roboto-Bold.ttf';` then `text(t, { font })`: fonts are files, not system names |
 | `text(t, spacing = 1.2, direction = "rtl")` | `spacing` works the same; `direction`, `language` and `script` are not supported |
+| `import("part.stl");` | `import part from './part.stl';` then `importSTL(part)` |
 | `offset(delta = 1) shape2d;` | `shape2d.offset({ delta: 1 })` |
 | `offset(delta = 1, chamfer = true)` | `shape2d.offset({ delta: 1, chamfer: true })` |
 | `color("orange", 0.35) lid();` | `lid().color('orange', 0.35)` |

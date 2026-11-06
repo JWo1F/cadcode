@@ -37,8 +37,9 @@ export function bundleOptions(entry) {
     sourcemap: 'inline',
     metafile: true,
     logLevel: 'silent',
-    // `import font from './Roboto.ttf'` gives the file's bytes, for text({ font }).
-    loader: { '.ttf': 'binary', '.otf': 'binary', '.woff': 'binary' },
+    // `import font from './Roboto.ttf'` gives the file's bytes, for text({ font }), and
+    // `import part from './part.stl'` for importSTL(). Imported files are watched like code.
+    loader: { '.ttf': 'binary', '.otf': 'binary', '.woff': 'binary', '.stl': 'binary' },
     plugins: [cadcodePlugin],
   };
 }

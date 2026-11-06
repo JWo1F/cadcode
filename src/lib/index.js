@@ -25,5 +25,6 @@ export {
   linearExtrude,
 } from './shapes.js';
 export { text } from './text.js';
+export { importSTL } from './import/stl.js';
 export { parseColor } from './colors.js';
 export { range, product } from './util.js';

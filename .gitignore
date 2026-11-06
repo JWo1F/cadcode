@@ -6,3 +6,4 @@ out/
 site/dist/
 !site/apple-touch-icon.png
 types/
+!test/fixtures/*.stl

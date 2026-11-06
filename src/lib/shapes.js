@@ -16,8 +16,8 @@ import { range } from './util.js';
 const wasm = await Module();
 wasm.setup();
 const { Manifold, CrossSection, Mesh } = wasm;
-/** @internal The WASM instance's CrossSection, for text(): shapes must all come from one instance. */
-export { CrossSection };
+/** @internal The WASM instance's classes, for text() and the importers: shapes must all come from one instance. */
+export { CrossSection, Manifold, Mesh };
 
 // ---------------------------------------------------------------------------
 // Resolution of curved primitives — the same rules as OpenSCAD's $fn/$fa/$fs.
@@ -33,7 +33,8 @@ export function setResolution(options) {
   Object.assign(resolution, options);
 }
 
-function segmentsFor(r, fn) {
+/** @internal Segments for a full circle of radius `r`, by the `fn`/`fa`/`fs` rules; the importers use it for arcs. */
+export function segmentsFor(r, fn) {
   const f = fn ?? resolution.fn;
   if (r < 1e-9) return 3;
   if (f > 0) return Math.max(Math.round(f), 3);
@@ -47,6 +48,21 @@ function segmentsFor(r, fn) {
 
 /** @type {Map<number, RGBA>} */
 const colorById = new Map();
+
+/**
+ * @internal Reserves one manifold original ID per color, for meshes built with their
+ * colors in triangle runs (the 3MF importer). Returns the IDs, in the order of `colors`.
+ * @param {RGBA[]} colors
+ * @returns {number[]}
+ */
+export function reserveColorIds(colors) {
+  if (colors.length === 0) return [];
+  const first = Manifold.reserveIDs(colors.length);
+  return colors.map((color, i) => {
+    colorById.set(first + i, color);
+    return first + i;
+  });
+}
 
 /** @internal Looks up the color assigned to a manifold original ID. */
 export function colorOfId(id) {

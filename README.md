@@ -217,6 +217,21 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
 | `setResolution({ fn, fa, fs })` | Default segment count for curves, with the same rules as OpenSCAD's `$fn`, `$fa` and `$fs`. Any primitive also takes its own `fn`. |
 
+### Importing files
+
+Existing geometry comes in through an `import` of the file next to the program, which gives its contents, and a function that turns them into shapes. The dev server reloads when an imported file changes, as it does for code. In the playground, which has no files, pass the contents from `fetch`.
+
+```js
+import { importSTL } from 'cadcode';
+import bracket from './bracket.stl';
+
+export default importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]));
+```
+
+| Function | Notes |
+| --- | --- |
+| `importSTL(bytes)` | A solid from a binary or ASCII STL. The mesh must be closed: one with holes, loose triangles or inward-facing triangles fails with a message saying so, instead of being repaired. |
+
 ## Porting from OpenSCAD
 
 | OpenSCAD | cadcode |
@@ -231,6 +246,7 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `color("orange", 0.35) lid();` | `lid().color('orange', 0.35)` |
 | `text("A1", size = 10, halign = "center");` | `text('A1', { size: 9.55, halign: 'center' })`: `size` is the height of a capital, which in OpenSCAD's Liberation Sans is 0.955 of its `size` |
 | `text("A1", font = "Roboto");` | `import font from './Roboto.ttf';` then `text('A1', { font })` |
+| `import("part.stl");` | `import part from './part.stl';` then `importSTL(part)` |
 | `module box() { ... }` | `const box = () => ...` |
 | `part = "box";` with `-D 'part="box"'` | Named parts and `--part box` |
 | `wall = 2;` with `-D wall=2.4` | `export const params = { wall: 2 }` and `--set wall=2.4` |

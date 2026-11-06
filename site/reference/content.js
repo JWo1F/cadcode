@@ -220,6 +220,27 @@ cube([60, 20, 3]).subtract(
     ],
   },
   {
+    id: 'import',
+    title: 'Importing files',
+    intro:
+      'Existing geometry comes in through an `import` of the file next to the program, which gives the file\'s contents, and a function that turns them into shapes. `cadcode dev` reloads when an imported file changes, as it does for code. The playground has no files: pass the contents from `fetch` there.',
+    entries: [
+      {
+        id: 'importSTL',
+        name: 'importSTL',
+        signature: 'importSTL(bytes)',
+        summary: 'A solid from an STL file, binary or ASCII, like OpenSCAD\'s `import("part.stl")`. It keeps the file\'s origin and orientation, so check its `bounds()` before placing it.',
+        params: [{ name: 'bytes', type: 'Uint8Array | ArrayBuffer', text: 'The file\'s contents: `import part from \'./part.stl\'` gives them.' }],
+        returns: 'Solid',
+        notes: ['The mesh must be a closed solid with its triangles facing outward. One with holes, loose triangles or inward-facing triangles throws and says which, instead of being repaired: repair the file in a slicer or a mesh editor.'],
+        example: `import bracket from './bracket.stl';
+
+// A downloaded bracket with one more hole.
+importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]))`,
+      },
+    ],
+  },
+  {
     id: 'functions',
     title: 'Functions',
     intro:

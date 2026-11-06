@@ -30,6 +30,15 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | `polygon(points, paths?)` | Even-odd fill: paths inside other paths are holes. |
 | `text(string, { size = 10, font, halign = 'left', valign = 'baseline', spacing = 1, lineHeight = 1, fn })` | A number for options is `{ size }`. `size`: height of the capital H. `font`: TTF/OTF/WOFF bytes (`import font from './x.ttf'`), default Liberation Sans. `halign`: left/center/right by advance width; `valign`: baseline (first line's) or top/center/bottom of the ink. `\n` breaks lines. Curves: `fn` per full turn, else one segment per `fa` degrees (`fs` unused). Throws on a font without an H. |
 
+## Importing files
+
+`import x from './file.ext'` next to the program gives the file's contents (the dev server
+watches it); the playground has no files, so pass the contents from `fetch` there.
+
+| Function | Notes |
+| --- | --- |
+| `importSTL(bytes)` | `Solid` from binary or ASCII STL (`Uint8Array` or `ArrayBuffer`). Throws, without repairing, on an open mesh (counts the open edges), an inside-out one, or a file that is not STL. |
+
 ## `point`
 
 `point([x, y, z])` marks a place without geometry (never in an STL), e.g. a pivot. It has
