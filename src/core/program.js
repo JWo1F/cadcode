@@ -39,11 +39,21 @@ export function bundleOptions(entry) {
   };
 }
 
-/** Bundles a program once and returns the path of the bundle. */
+/** Bundles a program once and returns the path of the bundle; removeBundle deletes it. */
 export async function bundleProgram(entry) {
   const options = bundleOptions(entry);
-  await esbuild.build(options);
+  try {
+    await esbuild.build(options);
+  } catch (error) {
+    removeBundle(options.outfile);
+    throw error;
+  }
   return options.outfile;
+}
+
+/** Deletes a bundle and the temporary directory bundleOptions made for it. */
+export function removeBundle(bundlePath) {
+  fs.rmSync(path.dirname(bundlePath), { recursive: true, force: true });
 }
 
 /**

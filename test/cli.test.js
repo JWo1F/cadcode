@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,6 +9,8 @@ const CLI = new URL('../src/cli.js', import.meta.url).pathname;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-cli-'));
 fs.writeFileSync(path.join(dir, 'parts.js'), `import { cube } from 'cadcode';\nexport default { box: cube(2), lid: cube([2, 2, 1]) };\n`);
 fs.writeFileSync(path.join(dir, 'single.js'), `import { cube } from 'cadcode';\nexport default cube(2);\n`);
+
+after(() => fs.rmSync(dir, { recursive: true }));
 
 const cadcode = (...args) => execFileSync(process.execPath, [CLI, ...args], { cwd: dir, encoding: 'utf8' });
 const exists = (...file) => fs.existsSync(path.join(dir, ...file));

@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { bundleProgram, evaluateProgram, parseOverrides } from './core/program.js';
+import { bundleProgram, evaluateProgram, parseOverrides, removeBundle } from './core/program.js';
 
 process.setSourceMapsEnabled(true);
 
@@ -56,6 +56,14 @@ async function main() {
   }
 
   const bundle = await bundleProgram(file);
+  try {
+    await exportParts(command, bundle, overrides);
+  } finally {
+    removeBundle(bundle);
+  }
+}
+
+async function exportParts(command, bundle, overrides) {
   const first = await evaluateProgram(bundle, { part: values.part, overrides });
 
   if (command === 'parts') return void console.log(first.partNames.join('\n'));

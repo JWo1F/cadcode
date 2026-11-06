@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { bundleProgram, evaluateProgram } from '../src/core/program.js';
+import { bundleProgram, evaluateProgram, removeBundle } from '../src/core/program.js';
 import { meshGroups } from '../src/core/mesh.js';
 import { toSTL } from '../src/export/stl.js';
 
@@ -25,6 +25,7 @@ const quietly = async (run) => {
 for (const file of files) {
   test(`example ${file}`, async (t) => {
     const bundle = await bundleProgram(new URL(file, EXAMPLES).pathname);
+    t.after(() => removeBundle(bundle));
     const { partNames } = await quietly(() => evaluateProgram(bundle));
     for (const part of partNames) {
       await t.test(part, async () => {

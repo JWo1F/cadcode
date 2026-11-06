@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import * as esbuild from 'esbuild';
 import { WebSocketServer } from 'ws';
-import { bundleOptions } from '../core/program.js';
+import { bundleOptions, removeBundle } from '../core/program.js';
 
 const CLIENT_DIR = fileURLToPath(new URL('../../client/', import.meta.url));
 const WORKER_URL = new URL('./worker.js', import.meta.url);
@@ -217,6 +217,7 @@ export async function startDevServer({ file, port, host, part, overrides, open }
   const shutdown = async () => {
     state.worker?.terminate();
     await ctx.dispose();
+    removeBundle(options.outfile);
     server.close();
     process.exit(0);
   };

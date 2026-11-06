@@ -1,9 +1,9 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { bundleProgram, evaluateProgram, parseOverrides } from '../src/core/program.js';
+import { bundleProgram, evaluateProgram, parseOverrides, removeBundle } from '../src/core/program.js';
 import { meshGroups } from '../src/core/mesh.js';
 import { toSTL } from '../src/export/stl.js';
 import { toPNG } from '../src/export/png.js';
@@ -23,6 +23,10 @@ export default (p) => ({
 });`,
 );
 const bundle = await bundleProgram(program);
+after(() => {
+  removeBundle(bundle);
+  fs.rmSync(dir, { recursive: true });
+});
 
 test('parts, params and overrides', async () => {
   const result = await evaluateProgram(bundle, { overrides: { size: 4 } });
