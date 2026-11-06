@@ -33,7 +33,8 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 
 `point([x, y, z])` marks a place without geometry (never in an STL), e.g. a pivot. It has
 `.translate`, `.rotate` (same arguments as `Solid.rotate`), `.scale`, `.mirror`, `.transform`,
-each returning a new point, and `.x`, `.y`, `.z`, `.toArray()`.
+each returning a new point, and `.x`, `.y`, `.z`, `.toArray()`. It cannot go into
+booleans or a part's export.
 
 ## `Solid` methods
 
