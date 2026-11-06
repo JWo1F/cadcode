@@ -52,6 +52,11 @@ test('points move like solids', () => {
   close(point([1, 2]), [1, 2, 0]);
 });
 
+test('points are refused where shapes are expected', () => {
+  assert.throws(() => union(cube(1), point([1, 1, 1])), /point has no geometry/);
+  assert.throws(() => cube(1).subtract([point()]), /point has no geometry/);
+});
+
 test('2D offset and extrude', () => {
   near(square([4, 2], { center: true }).extrude(3).volume(), 24);
   assert.ok(square([4, 2]).offset(1).area() > 8 + 12);

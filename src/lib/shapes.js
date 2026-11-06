@@ -50,11 +50,16 @@ export function colorOfId(id) {
 
 // ---------------------------------------------------------------------------
 
+/** @internal */
+export const POINT_IS_NOT_A_SHAPE =
+  'A point has no geometry, so it cannot be combined with shapes or exported. Use it as a pivot (`rotate(a, { around: p })`) or read its coordinates with `.toArray()`.';
+
 /** @template T @param {Items<T>[]} items @returns {T[]} */
 function flatten(items) {
   const out = [];
   const walk = (item) => {
     if (Array.isArray(item)) item.forEach(walk);
+    else if (item instanceof Point) throw new Error(POINT_IS_NOT_A_SHAPE);
     else if (item) out.push(item);
   };
   items.forEach(walk);

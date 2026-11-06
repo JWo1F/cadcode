@@ -12,20 +12,21 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cadcode-test-'));
 const program = path.join(dir, 'model.js');
 fs.writeFileSync(
   program,
-  `import { cube, sphere, square, circle } from 'cadcode';
+  `import { cube, sphere, square, circle, point } from 'cadcode';
 export const params = { size: 10 };
 export default (p) => ({
   pair: () => [cube(p.size).color('red'), sphere(3).translate([20, 0, 0])],
   single: cube(1),
   mixed: [cube(1), square(5).translate([10, 0])],
   flat: [square(5), circle(2)],
+  withPoint: [cube(1), point([1, 2, 3])],
 });`,
 );
 const bundle = await bundleProgram(program);
 
 test('parts, params and overrides', async () => {
   const result = await evaluateProgram(bundle, { overrides: { size: 4 } });
-  assert.deepEqual(result.partNames, ['pair', 'single', 'mixed', 'flat']);
+  assert.deepEqual(result.partNames, ['pair', 'single', 'mixed', 'flat', 'withPoint']);
   assert.equal(result.part, 'pair');
   assert.equal(result.solids.length, 2);
   assert.equal(Math.round(result.solids[0].volume()), 64);
@@ -36,6 +37,7 @@ test('parts, params and overrides', async () => {
   assert.deepEqual(Object.keys(lenient.declared), Object.keys(lenient.params));
   await assert.rejects(evaluateProgram(bundle, { part: 'nope' }), /No part "nope"/);
   assert.equal((await evaluateProgram(bundle, { part: 'nope', fallbackToFirst: true })).part, 'pair');
+  await assert.rejects(evaluateProgram(bundle, { part: 'withPoint' }), /Part "withPoint" contains a point\. A point has no geometry/);
 });
 
 test('colors survive into mesh groups', async () => {

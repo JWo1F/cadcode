@@ -1,6 +1,7 @@
 // Turns a loaded program module into the solids of one part. Free of Node APIs:
 // the CLI and dev server reach it through program.js, the site's playground directly.
-import { Solid, Shape2 } from '../lib/index.js';
+import { Solid, Shape2, Point } from '../lib/index.js';
+import { POINT_IS_NOT_A_SHAPE } from '../lib/shapes.js';
 
 function flattenModel(model, partName) {
   const solids = [];
@@ -9,6 +10,7 @@ function flattenModel(model, partName) {
     if (Array.isArray(item)) item.forEach(walk);
     else if (item instanceof Solid) solids.push(item);
     else if (item instanceof Shape2) shapes.push(item);
+    else if (item instanceof Point) throw new Error(`Part "${partName}" contains a point. ${POINT_IS_NOT_A_SHAPE}`);
     else if (item) throw new Error(`Part "${partName}" contains ${typeof item} ${String(item)}, not a solid or a 2D shape`);
   };
   walk(model);
