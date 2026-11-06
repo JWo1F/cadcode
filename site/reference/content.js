@@ -276,6 +276,27 @@ importSTL(bracket).subtract(cylinder({ d: 5, h: 20 }).translate([10, 10, -1]))`,
 // A coaster with the logo raised 1 mm in its middle.
 cylinder({ d: 90, h: 3 }).union(importSVG(logo, { center: true }).extrude(1).translate([0, 0, 3]))`,
       },
+      {
+        id: 'importDXF',
+        name: 'importDXF',
+        signature: 'importDXF(text, options)',
+        summary: 'The closed outlines of a DXF drawing as a 2D shape, like OpenSCAD\'s `import("plate.dxf")`: lines, arcs, circles, ellipses and polylines with bulges. Loose lines and arcs that meet end to end are joined into outlines, and outlines inside others are holes.',
+        params: [
+          { name: 'text', type: 'string | Uint8Array | ArrayBuffer', text: 'The file\'s contents: `import plate from \'./plate.dxf\'` gives its text.' },
+          { name: 'options.layer', type: 'string | string[]', text: 'Import only the entities on this layer, or these layers. Without it, every layer.' },
+          { name: 'options.center', type: 'boolean', default: 'false', text: 'Move the center of the shape\'s bounding box to the origin. Without it, the drawing keeps its own origin.' },
+          { name: 'options.fn', type: 'number', text: 'Segments for a full circle; an arc gets its share. Without it, the `setResolution` rules, as for `circle()`.' },
+        ],
+        returns: 'Shape2',
+        notes: [
+          'Units are taken as millimeters, as OpenSCAD does: the drawing\'s unit setting is not read.',
+          'Text, dimensions, hatches and points are skipped. An outline that does not close fails and says where it ends and on which layer; when that is a center line or construction geometry, pick the outline layers with `layer`. Splines and blocks fail too: convert splines to polylines and explode blocks first.',
+        ],
+        example: `import plate from './plate.dxf';
+
+// A laser-cut outline, 3 mm thick for printing instead.
+importDXF(plate, { layer: 'cut' }).extrude(3)`,
+      },
     ],
   },
   {

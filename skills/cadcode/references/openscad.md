@@ -49,6 +49,7 @@ installed, otherwise reason from the source.
 | `text(t, spacing = 1.2, direction = "rtl")` | `spacing` works the same; `direction`, `language` and `script` are not supported |
 | `import("part.stl");` | `import part from './part.stl';` then `importSTL(part)` |
 | `import("logo.svg", center = true, dpi = 96);` | `import logo from './logo.svg';` then `importSVG(logo, { center: true, dpi: 96 })` |
+| `import("plate.dxf", layer = "cut");` | `import plate from './plate.dxf';` then `importDXF(plate, { layer: 'cut' })` |
 | `import("part.3mf");` | `import part from './part.3mf';` then `import3MF(part)`: an array of solids, one per object |
 | `offset(delta = 1) shape2d;` | `shape2d.offset({ delta: 1 })` |
 | `offset(delta = 1, chamfer = true)` | `shape2d.offset({ delta: 1, chamfer: true })` |

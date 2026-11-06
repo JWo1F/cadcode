@@ -28,5 +28,6 @@ export { text } from './text.js';
 export { importSTL } from './import/stl.js';
 export { import3MF } from './import/3mf.js';
 export { importSVG } from './import/svg.js';
+export { importDXF } from './import/dxf.js';
 export { parseColor } from './colors.js';
 export { range, product } from './util.js';

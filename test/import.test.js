@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { zipSync, strToU8 } from 'fflate';
-import { cube, sphere, cylinder, importSTL, import3MF, importSVG } from '../src/lib/index.js';
+import { cube, sphere, cylinder, importSTL, import3MF, importSVG, importDXF } from '../src/lib/index.js';
 import { toSTL } from '../src/export/stl.js';
 import { to3MF } from '../src/export/3mf.js';
 import { meshGroups } from '../src/core/mesh.js';
@@ -165,4 +165,33 @@ test('a program imports an SVG next to it as text', async () => {
     removeBundle(bundle);
     fs.rmSync(dir, { recursive: true });
   }
+});
+
+/** A DXF with an ENTITIES section holding the given entities, each a list of [code, value] pairs. */
+const dxf = (...entities) => ['0', 'SECTION', '2', 'ENTITIES', ...entities.flat(2).map(String), '0', 'ENDSEC', '0', 'EOF'].join('\n');
+
+test('importDXF reads polylines with bulges, circles, and joins loose lines and arcs', () => {
+  const text = fixture('plate.dxf');
+  // A 40 × 20 rectangle under a half circle of radius 20, less a round hole of radius 3 and a 10 × 5 slot with round ends.
+  const plate = importDXF(text, { layer: 'cut', fn: 256 });
+  near(plate.area(), 800 + 200 * Math.PI - 9 * Math.PI - (50 + 6.25 * Math.PI), 0.2);
+  assert.deepEqual(plate.bounds(), { min: [0, 0], max: [40, 40] });
+  const centered = importDXF(text, { layer: ['cut'], fn: 256, center: true }).bounds();
+  assert.deepEqual([...centered.min, ...centered.max].map(Math.round), [-20, -20, 20, 20]);
+});
+
+test('importDXF reads ellipses and mirrored arcs', () => {
+  const ellipse = importDXF(dxf([[0, 'ELLIPSE'], [10, 0], [20, 0], [11, 10], [21, 0], [40, 0.5], [41, 0], [42, 2 * Math.PI]]), { fn: 256 });
+  near(ellipse.area(), Math.PI * 10 * 5, 0.1);
+  // A half disc: a line and an arc from 0° to 180°, seen from below, so it lies at negative x.
+  const half = importDXF(dxf([[0, 'ARC'], [10, 20], [20, 0], [40, 5], [50, 0], [51, 180], [230, -1]], [[0, 'LINE'], [10, -25], [20, 0], [11, -15], [21, 0]]));
+  assert.deepEqual(half.bounds().min.map(Math.round), [-25, 0]);
+  assert.deepEqual(half.bounds().max.map(Math.round), [-15, 5]);
+});
+
+test('importDXF explains drawings it cannot import', () => {
+  assert.throws(() => importDXF(fixture('plate.dxf')), /outline on layer "notes" is not closed: it runs from \(20, -5\) to \(20, 45\)/);
+  assert.throws(() => importDXF(fixture('plate.dxf'), { layer: 'nope' }), /no closed outlines on layer "nope"/);
+  assert.throws(() => importDXF(dxf([[0, 'SPLINE'], [8, '0']])), /splines/);
+  assert.throws(() => importDXF('hello\nworld'), /not a DXF file/);
 });

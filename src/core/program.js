@@ -39,8 +39,8 @@ export function bundleOptions(entry) {
     logLevel: 'silent',
     // `import font from './Roboto.ttf'` gives the file's bytes, for text({ font }), and
     // `import part from './part.stl'` for importSTL() and import3MF(), and the text of
-    // `import logo from './logo.svg'` for importSVG(). Imported files are watched like code.
-    loader: { '.ttf': 'binary', '.otf': 'binary', '.woff': 'binary', '.stl': 'binary', '.3mf': 'binary', '.svg': 'text' },
+    // `import logo from './logo.svg'` for importSVG() and importDXF(). Imported files are watched like code.
+    loader: { '.ttf': 'binary', '.otf': 'binary', '.woff': 'binary', '.stl': 'binary', '.3mf': 'binary', '.svg': 'text', '.dxf': 'text' },
     plugins: [cadcodePlugin],
   };
 }

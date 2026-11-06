@@ -5,7 +5,7 @@ description: >
   (`cadcode dev`, `cadcode stl`, `cadcode 3mf`, `cadcode png`): primitives (`cube`, `cylinder`, `sphere`,
   `square`, `circle`, `polygon`, `text`), booleans (`union`, `difference`, `intersection`, `hull`,
   `minkowski`), rounded and chamfered edges,
-  2D `offset`/`extrude`/`revolve`, importing STL, 3MF and SVG files (`importSTL`, `import3MF`, `importSVG`), colors, `params` and named parts. Use this skill whenever a
+  2D `offset`/`extrude`/`revolve`, importing STL, 3MF, SVG and DXF files (`importSTL`, `import3MF`, `importSVG`, `importDXF`), colors, `params` and named parts. Use this skill whenever a
   project's package.json has `cadcode`, whenever code imports from 'cadcode', and whenever the
   user wants to design, model, modify or export a physical part in code — an enclosure, case,
   bracket, mount, box with lid, adapter, spacer, knob — or wants an STL or a rendered preview of
@@ -139,7 +139,9 @@ printing, keep letters at least ~5 mm tall and strokes over two nozzle widths, o
 shapes: `import part from './part.stl'` then `importSTL(part)` is a `Solid` to cut, combine and
 move like any other; `import3MF(model)` gives an array of solids, one per object, with their colors.
 `import logo from './logo.svg'` then `importSVG(logo, { center: true })` is a `Shape2` in mm, Y up,
-to extrude or engrave; only filled shapes come in, so a logo drawn with strokes needs Stroke to Path first. The dev server reloads when the file changes. The mesh must be closed and
+to extrude or engrave; only filled shapes come in, so a logo drawn with strokes needs Stroke to Path first.
+`importDXF(drawing, { layer: 'cut' })` reads a DXF's closed outlines (holes inside), joining loose lines and
+arcs; pick the outline layer when the drawing also has center lines or construction geometry. The dev server reloads when the file changes. The mesh must be closed and
 face outward; otherwise it throws and says what is wrong, and the fix is to repair the file (a
 slicer or mesh editor), not to work around it in code. Check an imported part's `bounds()` before
 placing it: files keep whatever origin and orientation they were drawn in.
