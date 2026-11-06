@@ -6,11 +6,12 @@ import { range } from './util.js';
 /** @typedef {import('./colors.js').RGBA} RGBA */
 /** @typedef {[number, number]} Vec2 */
 /** @typedef {[number, number, number]} Vec3 */
-/**
- * Nested arrays of shapes, as produced by loops. Falsy entries are skipped, so `cond && shape` works.
- * @template T
- * @typedef {T | null | undefined | false | Items<T>[]} Items
- */
+// Nested arrays of shapes, as produced by loops. Falsy entries are skipped, so `cond && shape` works.
+// One typedef per element type: tsc drops the type parameter of a generic JSDoc
+// typedef from the .d.ts it emits, which breaks the published typings.
+/** @typedef {Solid | null | undefined | false | SolidItems[]} SolidItems Solids in nested arrays; falsy entries are skipped. */
+/** @typedef {Shape2 | null | undefined | false | Shape2Items[]} Shape2Items 2D shapes in nested arrays; falsy entries are skipped. */
+/** @typedef {Solid | Shape2 | null | undefined | false | ShapeItems[]} ShapeItems Solids or 2D shapes in nested arrays; falsy entries are skipped. */
 
 const wasm = await Module();
 wasm.setup();
@@ -55,7 +56,7 @@ export function colorOfId(id) {
 export const POINT_IS_NOT_A_SHAPE =
   'A point has no geometry, so it cannot be combined with shapes or exported. Use it as a pivot (`rotate(a, { around: p })`) or read its coordinates with `.toArray()`.';
 
-/** @template T @param {Items<T>[]} items @returns {T[]} */
+/** @param {ShapeItems[]} items @returns {any[]} */
 function flatten(items) {
   const out = [];
   const walk = (item) => {
@@ -188,24 +189,24 @@ export class Solid {
     return new Solid(m);
   }
 
-  /** @param {...Items<Solid>} others */
+  /** @param {...SolidItems} others */
   union(...others) {
     return new Solid(Manifold.union([this.manifold, ...flatten(others).map((s) => s.manifold)]));
   }
 
-  /** @param {...Items<Solid>} others */
+  /** @param {...SolidItems} others */
   subtract(...others) {
     const cutters = flatten(others);
     if (cutters.length === 0) return this;
     return new Solid(this.manifold.subtract(Manifold.union(cutters.map((s) => s.manifold))));
   }
 
-  /** @param {...Items<Solid>} others */
+  /** @param {...SolidItems} others */
   intersect(...others) {
     return new Solid(Manifold.intersection([this.manifold, ...flatten(others).map((s) => s.manifold)]));
   }
 
-  /** Convex hull of this solid together with any others. @param {...Items<Solid>} others */
+  /** Convex hull of this solid together with any others. @param {...SolidItems} others */
   hull(...others) {
     return new Solid(Manifold.hull([this.manifold, ...flatten(others).map((s) => s.manifold)]));
   }
@@ -214,7 +215,7 @@ export class Solid {
    * Minkowski sum of this solid with the others, like OpenSCAD's minkowski(): `part.minkowski(sphere(1))`
    * rounds every edge with radius 1 and makes the part 2 larger in each direction. The result is uncolored.
    * Fast when the shapes are convex; a part with holes or pockets can take seconds.
-   * @param {...Items<Solid>} others
+   * @param {...SolidItems} others
    */
   minkowski(...others) {
     return new Solid(solidsFor('minkowski', others).reduce((sum, s) => sum.minkowskiSum(s.manifold), this.manifold));
@@ -230,10 +231,12 @@ export class Solid {
     return new Shape2(this.manifold.project());
   }
 
+  /** @returns {number} */
   volume() {
     return this.manifold.volume();
   }
 
+  /** @returns {number} */
   surfaceArea() {
     return this.manifold.surfaceArea();
   }
@@ -244,6 +247,7 @@ export class Solid {
     return { min: [...min], max: [...max] };
   }
 
+  /** @returns {boolean} */
   isEmpty() {
     return this.manifold.isEmpty();
   }
@@ -306,24 +310,24 @@ export class Shape2 {
     return new Shape2(this.section.offset(o.delta, o.chamfer ? 'Square' : 'Miter', 1e6));
   }
 
-  /** @param {...Items<Shape2>} others */
+  /** @param {...Shape2Items} others */
   union(...others) {
     return new Shape2(CrossSection.union([this.section, ...flatten(others).map((s) => s.section)]));
   }
 
-  /** @param {...Items<Shape2>} others */
+  /** @param {...Shape2Items} others */
   subtract(...others) {
     const cutters = flatten(others);
     if (cutters.length === 0) return this;
     return new Shape2(this.section.subtract(CrossSection.union(cutters.map((s) => s.section))));
   }
 
-  /** @param {...Items<Shape2>} others */
+  /** @param {...Shape2Items} others */
   intersect(...others) {
     return new Shape2(CrossSection.intersection([this.section, ...flatten(others).map((s) => s.section)]));
   }
 
-  /** @param {...Items<Shape2>} others */
+  /** @param {...Shape2Items} others */
   hull(...others) {
     return new Shape2(CrossSection.hull([this.section, ...flatten(others).map((s) => s.section)]));
   }
@@ -350,6 +354,7 @@ export class Shape2 {
     return new Solid(this.section.revolve(segmentsFor(radius, options.fn), options.angle ?? 360));
   }
 
+  /** @returns {number} */
   area() {
     return this.section.area();
   }
@@ -360,6 +365,7 @@ export class Shape2 {
     return { min: [...min], max: [...max] };
   }
 
+  /** @returns {boolean} */
   isEmpty() {
     return this.section.isEmpty();
   }
@@ -734,7 +740,7 @@ function combine(items, op, solidOp, shapeOp) {
   }
 }
 
-/** @param {...Items<Solid | Shape2>} items */
+/** @param {...ShapeItems} items */
 export function union(...items) {
   return combine(items, 'union', (ms) => Manifold.union(ms), (cs) => CrossSection.union(cs));
 }
@@ -742,18 +748,18 @@ export function union(...items) {
 /**
  * Subtracts every following shape from the first one.
  * @param {Solid | Shape2} base
- * @param {...Items<Solid | Shape2>} cutters
+ * @param {...ShapeItems} cutters
  */
 export function difference(base, ...cutters) {
   return base.subtract(...cutters);
 }
 
-/** @param {...Items<Solid | Shape2>} items */
+/** @param {...ShapeItems} items */
 export function intersection(...items) {
   return combine(items, 'intersection', (ms) => Manifold.intersection(ms), (cs) => CrossSection.intersection(cs));
 }
 
-/** Convex hull of all given shapes, like OpenSCAD's hull(). @param {...Items<Solid | Shape2>} items */
+/** Convex hull of all given shapes, like OpenSCAD's hull(). @param {...ShapeItems} items */
 export function hull(...items) {
   return combine(items, 'hull', (ms) => Manifold.hull(ms), (cs) => CrossSection.hull(cs));
 }
@@ -761,7 +767,7 @@ export function hull(...items) {
 /**
  * Minkowski sum of all given solids, like OpenSCAD's minkowski(): `minkowski(part, sphere(1))`.
  * See {@link Solid#minkowski}.
- * @param {...Items<Solid>} items
+ * @param {...SolidItems} items
  * @returns {Solid}
  */
 export function minkowski(...items) {
@@ -769,7 +775,7 @@ export function minkowski(...items) {
   return first ? first.minkowski(rest) : new Solid(Manifold.compose([]));
 }
 
-/** @param {number[]} v @param {...Items<Solid | Shape2>} items */
+/** @param {number[]} v @param {...ShapeItems} items */
 export function translate(v, ...items) {
   return union(...items).translate(v);
 }
@@ -777,7 +783,7 @@ export function translate(v, ...items) {
 /**
  * `rotate(angles, ...shapes)` or `rotate(angles, { around }, ...shapes)`. 2D shapes take a single angle.
  * @param {number[] | number} angles
- * @param {...(RotateOptions | Items<Solid | Shape2>)} rest
+ * @param {...(RotateOptions | ShapeItems)} rest
  */
 export function rotate(angles, ...rest) {
   const first = rest[0];
@@ -786,12 +792,12 @@ export function rotate(angles, ...rest) {
   return union(...rest).rotate(angles, options);
 }
 
-/** @param {number[] | number} v @param {...Items<Solid | Shape2>} items */
+/** @param {number[] | number} v @param {...ShapeItems} items */
 export function scale(v, ...items) {
   return union(...items).scale(v);
 }
 
-/** @param {number[]} normal @param {...Items<Solid | Shape2>} items */
+/** @param {number[]} normal @param {...ShapeItems} items */
 export function mirror(normal, ...items) {
   return union(...items).mirror(normal);
 }
@@ -799,19 +805,20 @@ export function mirror(normal, ...items) {
 /**
  * `color('orange', lid)` or `color('orange', 0.35, lid)`.
  * @param {ColorInput} c
- * @param {...(number | Items<Solid>)} rest
+ * @param {...(number | SolidItems)} rest
+ * @returns {Solid}
  */
 export function color(c, ...rest) {
   const alpha = typeof rest[0] === 'number' ? rest.shift() : undefined;
   return union(...rest).color(c, alpha);
 }
 
-/** @param {number | OffsetOptions} options @param {...Items<Shape2>} items */
+/** @param {number | OffsetOptions} options @param {...Shape2Items} items @returns {Shape2} */
 export function offset(options, ...items) {
   return union(...items).offset(options);
 }
 
-/** @param {number} height @param {ExtrudeOptions} options @param {...Items<Shape2>} items */
+/** @param {number} height @param {ExtrudeOptions} options @param {...Shape2Items} items @returns {Solid} */
 export function linearExtrude(height, options, ...items) {
   return union(...items).extrude(height, options);
 }
