@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-07
+
 ### Added
 
 - `Shape2.sweep(path, options)` carries a 2D profile along a 3D path, and `helix()` gives a coil's path.
@@ -94,7 +96,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/139761d...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/a2de021...HEAD
+[0.9.0]: https://github.com/JWo1F/cadcode/compare/139761d...a2de021
 [0.8.0]: https://github.com/JWo1F/cadcode/compare/923cfa8...139761d
 [0.7.0]: https://github.com/JWo1F/cadcode/compare/e03ad35...923cfa8
 [0.6.1]: https://github.com/JWo1F/cadcode/compare/b0aa988...e03ad35
