@@ -4,6 +4,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- `export const params` may be an array of `{ name, children }` sections. The Parameters panel shows each under a heading that folds away, and the examples use them.
+
 ## [0.9.0] - 2026-11-07
 
 ### Added

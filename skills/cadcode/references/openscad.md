@@ -10,7 +10,7 @@ installed, otherwise reason from the source.
 | --- | --- |
 | `$fn = 40;` | `setResolution({ fn: 40 });` at the top of the module |
 | `$fa = 6; $fs = 0.5;` | `setResolution({ fa: 6, fs: 0.5 });` |
-| `wall = 2.0;  // comment` (top-level tunable) | an entry `wall: { value: 2.0, name: 'Wall', description: '…' }` in `export const params`, the comment becoming the description |
+| `wall = 2.0;  // comment` (top-level tunable) | an entry `wall: { value: 2.0, name: 'Wall', description: '…' }` in `export const params`, the comment becoming the description; a commented group of tunables becomes a `{ name, children }` section |
 | derived values (`iL = main_l + div_t + sens_l;`) | `const` inside the default-export function, after destructuring `p` |
 | `module box() { ... }` | `const box = () => ...` inside the default-export function |
 | `module grid(a, b) { ... }` | `const grid = (a, b) => ...` returning a shape (use `union(...)` for many) |

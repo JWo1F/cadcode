@@ -50,19 +50,29 @@ export const sections = [
       {
         id: 'export-params',
         name: 'export const params',
-        signature: 'export const params = { key: { value, name, description }, ... }',
+        signature: 'export const params = { key: { value, name, description }, ... } | [{ name, children }, ...]',
         summary: 'The parameters a program declares. Their values reach the default export and its part functions; `--set` may override them, and so may the Parameters panel of `cadcode dev`.',
         params: [
           { name: 'key', type: 'string', text: 'The parameter\'s key, as the program reads it (`p.width`). `--set` only accepts keys declared here, so a typo is an error instead of being silently ignored.' },
           { name: 'value', type: 'any', text: 'The default value; the program\'s functions get it in place of the whole entry. Overrides from `--set` are parsed as JSON, and kept as strings when they are not valid JSON.' },
           { name: 'name', type: 'string', text: 'The label of the parameter in the Parameters panel.' },
           { name: 'description', type: 'string', text: 'What the parameter does, shown under its name in the Parameters panel.' },
+          { name: '[{ name, children }]', type: 'array', text: 'Sections instead of one object: `name` heads a section of the Parameters panel that folds away, and `children` is an object of `{ value, name, description }` entries. Keys must be unique across sections, since the program gets one flat object of values.' },
         ],
-        notes: ['`value`, `name` and `description` are all required: a program missing one fails at start, naming the parameter.'],
+        notes: [
+          '`value`, `name` and `description` are all required: a program missing one fails at start, naming the parameter.',
+          'Which sections are folded is remembered per file, and a folded section with a changed value shows a dot.',
+        ],
         example: `export const params = {
   width: { value: 60, name: 'Width', description: 'Outside, along X, in mm.' },
   wall: { value: 2, name: 'Wall', description: 'Thickness of the walls, in mm.' },
-};`,
+};
+
+// Or in sections:
+export const params = [
+  { name: 'Box', children: { width: { value: 60, name: 'Width', description: 'Outside, along X, in mm.' } } },
+  { name: 'Lid', children: { lidH: { value: 6, name: 'Lid height', description: 'In mm.' } } },
+];`,
       },
       {
         id: 'console-log',

@@ -40,7 +40,9 @@ setResolution({ fn: 48 }); // like $fn = 48; top level, before building anything
 
 // Everything a user might tune, each as { value, name, description }: all three are required,
 // and name and description label it in the Parameters panel. The functions below get the values
-// alone (p.width is 40). `--set key=value` can only override keys declared here.
+// alone (p.width is 40). `--set key=value` can only override keys declared here. For many params,
+// group them as an array of sections instead: [{ name: 'Box', children: { width: {...}, ... } }, ...],
+// keys unique across sections; the panel shows each section under a heading that folds away.
 export const params = {
   width: { value: 40, name: 'Width', description: 'Outside, along X, in mm.' },
   depth: { value: 30, name: 'Depth', description: 'Outside, along Y, in mm.' },
