@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-07
+
 ### Added
 
 - `export const params` may be an array of `{ name, children }` sections. The Parameters panel shows each under a heading that folds away, and the examples use them.
@@ -100,7 +102,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/a2de021...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/89058c4...HEAD
+[0.10.0]: https://github.com/JWo1F/cadcode/compare/a2de021...89058c4
 [0.9.0]: https://github.com/JWo1F/cadcode/compare/139761d...a2de021
 [0.8.0]: https://github.com/JWo1F/cadcode/compare/923cfa8...139761d
 [0.7.0]: https://github.com/JWo1F/cadcode/compare/e03ad35...923cfa8
