@@ -11,16 +11,23 @@ import { cube, product, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 64 });
 
-export const params = {
-  // Body
-  size: { value: 16, name: 'Size', description: 'Edge of the die in mm; 16 is a standard large die.' },
-  round: { value: 1.5, name: 'Roundness', description: 'Diameter of the rounding sphere as a share of the edge: 1.0 is a ball, √3 a sharp cube.' },
-
-  // Pips
-  pipD: { value: 3.6, name: 'Pip diameter', description: 'Diameter of the sphere that cuts each pip, in mm.' },
-  pipDepth: { value: 1.3, name: 'Pip depth', description: 'Depth of each dimple, in mm.' },
-  pipSpread: { value: 0.27, name: 'Pip spread', description: 'Pip offset from the face centre, as a share of the edge.' },
-};
+export const params = [
+  {
+    name: 'Body',
+    children: {
+      size: { value: 16, name: 'Size', description: 'Edge of the die in mm; 16 is a standard large die.' },
+      round: { value: 1.5, name: 'Roundness', description: 'Diameter of the rounding sphere as a share of the edge: 1.0 is a ball, √3 a sharp cube.' },
+    },
+  },
+  {
+    name: 'Pips',
+    children: {
+      pipD: { value: 3.6, name: 'Pip diameter', description: 'Diameter of the sphere that cuts each pip, in mm.' },
+      pipDepth: { value: 1.3, name: 'Pip depth', description: 'Depth of each dimple, in mm.' },
+      pipSpread: { value: 0.27, name: 'Pip spread', description: 'Pip offset from the face centre, as a share of the edge.' },
+    },
+  },
+];
 
 export default (p) => {
   const half = p.size / 2;

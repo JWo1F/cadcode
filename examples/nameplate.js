@@ -12,21 +12,34 @@ description: A desk or door sign with a name and a second line, engraved or rais
 //   cadcode stl examples/nameplate.js --set 'name="Ada Lovelace"' --all
 import { cube, text } from 'cadcode';
 
-export const params = {
-  name: { value: 'Grace Hopper', name: 'Name', description: 'First line of text; the plate grows to fit it.' },
-  subtitle: { value: 'Rear Admiral', name: 'Subtitle', description: 'Second, smaller line of text; empty for none.' },
-  raised: { value: true, name: 'Raised', description: 'Raise the text above the face; false engraves it instead.' },
-
-  nameSize: { value: 9, name: 'Name size', description: 'Height of a capital letter in the name, in mm.' },
-  subtitleSize: { value: 4.5, name: 'Subtitle size', description: 'Height of a capital letter in the subtitle, in mm.' },
-  gap: { value: 4, name: 'Line gap', description: 'Space between the two lines, in mm.' },
-  margin: { value: 8, name: 'Margin', description: 'Space from the text to the border, in mm.' },
-
-  thick: { value: 3, name: 'Thickness', description: 'Thickness of the plate, in mm.' },
-  depth: { value: 0.8, name: 'Letter depth', description: 'How far the letters stand above the face, or go into it, in mm.' },
-  border: { value: 1.6, name: 'Border', description: 'Width of the frame around the edge, in mm; 0 for none.' },
-  round: { value: 3, name: 'Corner radius', description: 'Radius of the plate corners, in mm.' },
-};
+export const params = [
+  {
+    name: 'Text',
+    children: {
+      name: { value: 'Grace Hopper', name: 'Name', description: 'First line of text; the plate grows to fit it.' },
+      subtitle: { value: 'Rear Admiral', name: 'Subtitle', description: 'Second, smaller line of text; empty for none.' },
+      raised: { value: true, name: 'Raised', description: 'Raise the text above the face; false engraves it instead.' },
+    },
+  },
+  {
+    name: 'Layout',
+    children: {
+      nameSize: { value: 9, name: 'Name size', description: 'Height of a capital letter in the name, in mm.' },
+      subtitleSize: { value: 4.5, name: 'Subtitle size', description: 'Height of a capital letter in the subtitle, in mm.' },
+      gap: { value: 4, name: 'Line gap', description: 'Space between the two lines, in mm.' },
+      margin: { value: 8, name: 'Margin', description: 'Space from the text to the border, in mm.' },
+    },
+  },
+  {
+    name: 'Plate',
+    children: {
+      thick: { value: 3, name: 'Thickness', description: 'Thickness of the plate, in mm.' },
+      depth: { value: 0.8, name: 'Letter depth', description: 'How far the letters stand above the face, or go into it, in mm.' },
+      border: { value: 1.6, name: 'Border', description: 'Width of the frame around the edge, in mm; 0 for none.' },
+      round: { value: 3, name: 'Corner radius', description: 'Radius of the plate corners, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   // Both lines centered on x = 0; the name's baseline sits on y = 0.

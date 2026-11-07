@@ -12,28 +12,38 @@ import { cube, cylinder, hull, polygon, product, range, setResolution, sphere, s
 
 setResolution({ fn: 72 });
 
-export const params = {
-  // Dish
-  r: { value: 40, name: 'Half width', description: 'Half the short side of the dish, in mm; the long side is Oval times longer.' },
-  oval: { value: 1.45, name: 'Oval', description: 'How many times longer the long side is than the short one.' },
-  height: { value: 22, name: 'Height', description: 'Height of the dish, in mm.' },
-  wall: { value: 2.4, name: 'Wall', description: 'Wall thickness of the dish and the tray, in mm.' },
-  round: { value: 10, name: 'Floor rounding', description: 'Radius where the floor turns into the wall, in mm.' },
-  flare: { value: 7, name: 'Flare', description: 'How much wider the rim is than the edge of the floor, in mm.' },
-
-  // Ribs and drain slots
-  ribs: { value: 6, name: 'Ribs', description: 'Number of ribs running the long way across the floor.' },
-  ribH: { value: 2.4, name: 'Rib height', description: 'Height of the ribs above the floor, in mm.' },
-  ribW: { value: 2.4, name: 'Rib width', description: 'Width of the ribs at their base, in mm.' },
-  slotW: { value: 3, name: 'Slot width', description: 'Width of the drain slots, in mm.' },
-  slotLen: { value: 10, name: 'Slot length', description: 'Length of the drain slots, in mm.' },
-
-  // Tray
-  tray: { value: true, name: 'Tray', description: 'Make the drip tray the dish stands in.' },
-  trayGap: { value: 3, name: 'Tray gap', description: 'Gap between the dish and the tray, all round, in mm.' },
-  trayH: { value: 10, name: 'Tray height', description: 'Height of the tray, in mm.' },
-  post: { value: 3, name: 'Post height', description: "How high the dish stands above the tray's floor, in mm." },
-};
+export const params = [
+  {
+    name: 'Dish',
+    children: {
+      r: { value: 40, name: 'Half width', description: 'Half the short side of the dish, in mm; the long side is Oval times longer.' },
+      oval: { value: 1.45, name: 'Oval', description: 'How many times longer the long side is than the short one.' },
+      height: { value: 22, name: 'Height', description: 'Height of the dish, in mm.' },
+      wall: { value: 2.4, name: 'Wall', description: 'Wall thickness of the dish and the tray, in mm.' },
+      round: { value: 10, name: 'Floor rounding', description: 'Radius where the floor turns into the wall, in mm.' },
+      flare: { value: 7, name: 'Flare', description: 'How much wider the rim is than the edge of the floor, in mm.' },
+    },
+  },
+  {
+    name: 'Ribs and drain slots',
+    children: {
+      ribs: { value: 6, name: 'Ribs', description: 'Number of ribs running the long way across the floor.' },
+      ribH: { value: 2.4, name: 'Rib height', description: 'Height of the ribs above the floor, in mm.' },
+      ribW: { value: 2.4, name: 'Rib width', description: 'Width of the ribs at their base, in mm.' },
+      slotW: { value: 3, name: 'Slot width', description: 'Width of the drain slots, in mm.' },
+      slotLen: { value: 10, name: 'Slot length', description: 'Length of the drain slots, in mm.' },
+    },
+  },
+  {
+    name: 'Tray',
+    children: {
+      tray: { value: true, name: 'Tray', description: 'Make the drip tray the dish stands in.' },
+      trayGap: { value: 3, name: 'Tray gap', description: 'Gap between the dish and the tray, all round, in mm.' },
+      trayH: { value: 10, name: 'Tray height', description: 'Height of the tray, in mm.' },
+      post: { value: 3, name: 'Post height', description: "How high the dish stands above the tray's floor, in mm." },
+    },
+  },
+];
 
 export default (p) => {
   // Half cross-section of a bowl: X is the radius, Y is height. A flared core with its corners

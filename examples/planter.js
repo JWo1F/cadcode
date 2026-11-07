@@ -12,27 +12,37 @@ import { cube, cylinder, polygon, range, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Pot
-  radius: { value: 40, name: 'Radius', description: 'Radius to the outer corners, at the bottom, in mm.' },
-  facets: { value: 12, name: 'Facets', description: 'Number of points of the star outline.' },
-  depth: { value: 0.1, name: 'Facet depth', description: 'How far the inner corners sit in, as a share of the radius.' },
-  height: { value: 90, name: 'Height', description: 'Height of the pot, in mm.' },
-  twist: { value: 40, name: 'Twist', description: 'Twist over the whole height, in degrees.' },
-  flare: { value: 1.3, name: 'Flare', description: 'Top size over bottom size.' },
-  wall: { value: 2, name: 'Wall', description: 'Wall thickness of the pot, in mm.' },
-  bottom: { value: 3, name: 'Bottom', description: "Thickness of the pot's bottom, in mm." },
-
-  // Drainage
-  hole: { value: 10, name: 'Drainage hole', description: 'Diameter of the drainage hole, in mm.' },
-  channel: { value: 3, name: 'Channel', description: 'Width of the grooves under the pot, in mm.' },
-
-  // Saucer
-  gap: { value: 2, name: 'Gap', description: 'Space between pot and saucer wall, in mm.' },
-  saucerWall: { value: 2, name: 'Saucer wall', description: 'Wall thickness of the saucer, in mm.' },
-  saucerH: { value: 14, name: 'Saucer height', description: 'Height of the saucer, in mm.' },
-  saucerFloor: { value: 2, name: 'Saucer floor', description: 'Floor thickness of the saucer, in mm.' },
-};
+export const params = [
+  {
+    name: 'Pot',
+    children: {
+      radius: { value: 40, name: 'Radius', description: 'Radius to the outer corners, at the bottom, in mm.' },
+      facets: { value: 12, name: 'Facets', description: 'Number of points of the star outline.' },
+      depth: { value: 0.1, name: 'Facet depth', description: 'How far the inner corners sit in, as a share of the radius.' },
+      height: { value: 90, name: 'Height', description: 'Height of the pot, in mm.' },
+      twist: { value: 40, name: 'Twist', description: 'Twist over the whole height, in degrees.' },
+      flare: { value: 1.3, name: 'Flare', description: 'Top size over bottom size.' },
+      wall: { value: 2, name: 'Wall', description: 'Wall thickness of the pot, in mm.' },
+      bottom: { value: 3, name: 'Bottom', description: "Thickness of the pot's bottom, in mm." },
+    },
+  },
+  {
+    name: 'Drainage',
+    children: {
+      hole: { value: 10, name: 'Drainage hole', description: 'Diameter of the drainage hole, in mm.' },
+      channel: { value: 3, name: 'Channel', description: 'Width of the grooves under the pot, in mm.' },
+    },
+  },
+  {
+    name: 'Saucer',
+    children: {
+      gap: { value: 2, name: 'Gap', description: 'Space between pot and saucer wall, in mm.' },
+      saucerWall: { value: 2, name: 'Saucer wall', description: 'Wall thickness of the saucer, in mm.' },
+      saucerH: { value: 14, name: 'Saucer height', description: 'Height of the saucer, in mm.' },
+      saucerFloor: { value: 2, name: 'Saucer floor', description: 'Floor thickness of the saucer, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const profile = () =>

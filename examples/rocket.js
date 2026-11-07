@@ -12,22 +12,32 @@ import { cylinder, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 72 });
 
-export const params = {
-  // Body
-  radius: { value: 17, name: 'Body radius', description: 'Radius of the body tube at its widest, in mm.' },
-  tail: { value: 10, name: 'Nozzle height', description: 'Height of the nozzle, where the boat tail starts, in mm.' },
-  tubeTop: { value: 80, name: 'Tube top', description: 'Height where the nose cone begins, in mm.' },
-  noseLength: { value: 50, name: 'Nose length', description: 'Length of the ogive nose cone, in mm.' },
-
-  // Fins
-  fins: { value: 4, name: 'Fins', description: 'Number of fins; they come in mirrored pairs, so keep it even.' },
-  finT: { value: 3, name: 'Fin thickness', description: 'Thickness of each fin, in mm.' },
-  finSpan: { value: 33, name: 'Fin span', description: 'From the axis out to the fin tip, in mm.' },
-
-  // Portholes
-  portD: { value: 9, name: 'Porthole', description: 'Diameter of the upper porthole, in mm; the lower one is 0.7 of it.' },
-  rim: { value: 1.5, name: 'Porthole rim', description: 'How far the porthole rim stands proud of the body, in mm.' },
-};
+export const params = [
+  {
+    name: 'Body',
+    children: {
+      radius: { value: 17, name: 'Body radius', description: 'Radius of the body tube at its widest, in mm.' },
+      tail: { value: 10, name: 'Nozzle height', description: 'Height of the nozzle, where the boat tail starts, in mm.' },
+      tubeTop: { value: 80, name: 'Tube top', description: 'Height where the nose cone begins, in mm.' },
+      noseLength: { value: 50, name: 'Nose length', description: 'Length of the ogive nose cone, in mm.' },
+    },
+  },
+  {
+    name: 'Fins',
+    children: {
+      fins: { value: 4, name: 'Fins', description: 'Number of fins; they come in mirrored pairs, so keep it even.' },
+      finT: { value: 3, name: 'Fin thickness', description: 'Thickness of each fin, in mm.' },
+      finSpan: { value: 33, name: 'Fin span', description: 'From the axis out to the fin tip, in mm.' },
+    },
+  },
+  {
+    name: 'Portholes',
+    children: {
+      portD: { value: 9, name: 'Porthole', description: 'Diameter of the upper porthole, in mm; the lower one is 0.7 of it.' },
+      rim: { value: 1.5, name: 'Porthole rim', description: 'How far the porthole rim stands proud of the body, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const R = p.radius;

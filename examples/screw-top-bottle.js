@@ -6,24 +6,31 @@ import { circle, cube, cylinder, loft, range, setResolution, square, thread } fr
 
 setResolution({ fn: 64 });
 
-export const params = {
-  // Body
-  width: { value: 60, name: 'Width', description: 'Width of the rounded-square body, in mm.' },
-  corner: { value: 10, name: 'Corner radius', description: "Radius of the body's vertical edges, in mm." },
-  bodyHeight: { value: 90, name: 'Body height', description: 'Height of the straight part of the body, in mm.' },
-  shoulder: { value: 25, name: 'Shoulder', description: 'Height of the slope from the body to the neck, in mm.' },
-  wall: { value: 2, name: 'Wall', description: 'Wall thickness of the bottle, in mm.' },
-
-  // Neck and cap
-  neckD: { value: 28, name: 'Neck diameter', description: 'Diameter of the neck across the thread crests, in mm.' },
-  neckHeight: { value: 14, name: 'Neck height', description: 'Height of the threaded neck, in mm.' },
-  pitch: { value: 4, name: 'Thread pitch', description: 'Thread pitch, in mm; the thread is half a pitch deep.' },
-  starts: { value: 2, name: 'Thread starts', description: 'Number of thread starts; a two-start thread closes in half a turn per pitch.' },
-  clearance: { value: 0.3, name: 'Thread clearance', description: 'Gap between the neck and cap threads, in mm.' },
-  capWall: { value: 2.5, name: 'Cap wall', description: 'Wall thickness of the cap outside its thread, in mm.' },
-  capTop: { value: 2, name: 'Cap top', description: 'Thickness of the top of the cap, in mm.' },
-  grips: { value: 24, name: 'Grips', description: 'Number of grip grooves round the cap.' },
-};
+export const params = [
+  {
+    name: 'Body',
+    children: {
+      width: { value: 60, name: 'Width', description: 'Width of the rounded-square body, in mm.' },
+      corner: { value: 10, name: 'Corner radius', description: "Radius of the body's vertical edges, in mm." },
+      bodyHeight: { value: 90, name: 'Body height', description: 'Height of the straight part of the body, in mm.' },
+      shoulder: { value: 25, name: 'Shoulder', description: 'Height of the slope from the body to the neck, in mm.' },
+      wall: { value: 2, name: 'Wall', description: 'Wall thickness of the bottle, in mm.' },
+    },
+  },
+  {
+    name: 'Neck and cap',
+    children: {
+      neckD: { value: 28, name: 'Neck diameter', description: 'Diameter of the neck across the thread crests, in mm.' },
+      neckHeight: { value: 14, name: 'Neck height', description: 'Height of the threaded neck, in mm.' },
+      pitch: { value: 4, name: 'Thread pitch', description: 'Thread pitch, in mm; the thread is half a pitch deep.' },
+      starts: { value: 2, name: 'Thread starts', description: 'Number of thread starts; a two-start thread closes in half a turn per pitch.' },
+      clearance: { value: 0.3, name: 'Thread clearance', description: 'Gap between the neck and cap threads, in mm.' },
+      capWall: { value: 2.5, name: 'Cap wall', description: 'Wall thickness of the cap outside its thread, in mm.' },
+      capTop: { value: 2, name: 'Cap top', description: 'Thickness of the top of the cap, in mm.' },
+      grips: { value: 24, name: 'Grips', description: 'Number of grip grooves round the cap.' },
+    },
+  },
+];
 
 export default (p) => {
   const depth = p.pitch / 2; // a trapezoid thread is half a pitch deep

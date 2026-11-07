@@ -11,34 +11,49 @@ import { cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Print
-  wall: { value: 2, name: 'Wall', description: 'Wall thickness, in mm.' },
-  floor: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
-  top: { value: 1.6, name: 'Top', description: "Thickness of the cover's top, in mm." },
-  gap: { value: 0.5, name: 'Gap', description: 'Clearance from the board to the wall, in mm.' },
-
-  // Board
-  boardL: { value: 85, name: 'Board length', description: 'Length of the board, in mm.' },
-  boardW: { value: 56, name: 'Board width', description: 'Width of the board, in mm.' },
-  boardT: { value: 1.4, name: 'Board thickness', description: 'Thickness of the board, in mm.' },
-  standoff: { value: 3, name: 'Standoff', description: 'Height of the standoffs, room for the SD card underneath, in mm.' },
-  screwHole: { value: 2.2, name: 'Screw hole', description: 'Hole in the standoffs for M2.5 self-tapping screws, in mm.' },
-  headroom: { value: 1.6, name: 'Headroom', description: 'Space over the USB stack, the tallest part, in mm.' },
-
+export const params = [
+  {
+    name: 'Print',
+    children: {
+      wall: { value: 2, name: 'Wall', description: 'Wall thickness, in mm.' },
+      floor: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
+      top: { value: 1.6, name: 'Top', description: "Thickness of the cover's top, in mm." },
+      gap: { value: 0.5, name: 'Gap', description: 'Clearance from the board to the wall, in mm.' },
+    },
+  },
+  {
+    name: 'Board',
+    children: {
+      boardL: { value: 85, name: 'Board length', description: 'Length of the board, in mm.' },
+      boardW: { value: 56, name: 'Board width', description: 'Width of the board, in mm.' },
+      boardT: { value: 1.4, name: 'Board thickness', description: 'Thickness of the board, in mm.' },
+      standoff: { value: 3, name: 'Standoff', description: 'Height of the standoffs, room for the SD card underneath, in mm.' },
+      screwHole: { value: 2.2, name: 'Screw hole', description: 'Hole in the standoffs for M2.5 self-tapping screws, in mm.' },
+      headroom: { value: 1.6, name: 'Headroom', description: 'Space over the USB stack, the tallest part, in mm.' },
+    },
+  },
   // Joint between base and cover
-  split: { value: 7.6, name: 'Split height', description: "Height of the joint between base and cover above the board's top face, in mm." },
-  lipH: { value: 4, name: 'Lip height', description: 'Height of the lip on the base that the cover fits over, in mm.' },
-  lipT: { value: 1, name: 'Lip thickness', description: 'Thickness of the lip, the inner part of the wall, in mm.' },
-  fit: { value: 0.15, name: 'Fit', description: 'Clearance between the lip and the cover, in mm.' },
-  snapLen: { value: 12, name: 'Snap length', description: 'Length of each snap bump, in mm.' },
-  snapIn: { value: 0.4, name: 'Snap depth', description: 'How far the snap bumps stand out of the lip, in mm.' },
-
+  {
+    name: 'Joint',
+    children: {
+      split: { value: 7.6, name: 'Split height', description: "Height of the joint between base and cover above the board's top face, in mm." },
+      lipH: { value: 4, name: 'Lip height', description: 'Height of the lip on the base that the cover fits over, in mm.' },
+      lipT: { value: 1, name: 'Lip thickness', description: 'Thickness of the lip, the inner part of the wall, in mm.' },
+      fit: { value: 0.15, name: 'Fit', description: 'Clearance between the lip and the cover, in mm.' },
+      snapLen: { value: 12, name: 'Snap length', description: 'Length of each snap bump, in mm.' },
+      snapIn: { value: 0.4, name: 'Snap depth', description: 'How far the snap bumps stand out of the lip, in mm.' },
+    },
+  },
   // Vents in the cover, over the SoC
-  ventW: { value: 1.6, name: 'Vent width', description: 'Width of each vent slot, in mm.' },
-  ventPitch: { value: 3.5, name: 'Vent pitch', description: 'Distance between vent slots, in mm.' },
-  vents: { value: 7, name: 'Vents', description: 'Number of vent slots.' },
-};
+  {
+    name: 'Vents',
+    children: {
+      ventW: { value: 1.6, name: 'Vent width', description: 'Width of each vent slot, in mm.' },
+      ventPitch: { value: 3.5, name: 'Vent pitch', description: 'Distance between vent slots, in mm.' },
+      vents: { value: 7, name: 'Vents', description: 'Number of vent slots.' },
+    },
+  },
+];
 
 export default (p) => {
   const iL = p.gap + p.boardL + p.gap;

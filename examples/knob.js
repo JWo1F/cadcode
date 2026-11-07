@@ -6,24 +6,36 @@ import { cube, cylinder, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });
 
-export const params = {
-  // Grip
-  d: { value: 24, name: 'Diameter', description: 'Diameter of the grip, in mm.' },
-  height: { value: 16, name: 'Height', description: 'Overall height of the knob, in mm.' },
-  chamfer: { value: 1.5, name: 'Chamfer', description: 'Chamfer on the top edge of the grip, in mm.' },
-  knurls: { value: 18, name: 'Knurls', description: 'Number of grooves around the grip.' },
-  knurlD: { value: 2, name: 'Knurl diameter', description: 'Diameter of each groove, in mm.' },
-
+export const params = [
+  {
+    name: 'Grip',
+    children: {
+      d: { value: 24, name: 'Diameter', description: 'Diameter of the grip, in mm.' },
+      height: { value: 16, name: 'Height', description: 'Overall height of the knob, in mm.' },
+      chamfer: { value: 1.5, name: 'Chamfer', description: 'Chamfer on the top edge of the grip, in mm.' },
+      knurls: { value: 18, name: 'Knurls', description: 'Number of grooves around the grip.' },
+      knurlD: { value: 2, name: 'Knurl diameter', description: 'Diameter of each groove, in mm.' },
+    },
+  },
   // Skirt with the pointer
-  skirtD: { value: 30, name: 'Skirt diameter', description: 'Diameter of the skirt that carries the pointer, in mm.' },
-  skirtH: { value: 3, name: 'Skirt height', description: 'Height of the skirt, in mm.' },
-
+  {
+    name: 'Skirt',
+    children: {
+      skirtD: { value: 30, name: 'Skirt diameter', description: 'Diameter of the skirt that carries the pointer, in mm.' },
+      skirtH: { value: 3, name: 'Skirt height', description: 'Height of the skirt, in mm.' },
+    },
+  },
   // D-shaft of a 6 mm potentiometer
-  shaftD: { value: 6, name: 'Shaft diameter', description: 'Diameter of the potentiometer shaft, in mm.' },
-  shaftFlat: { value: 4.5, name: 'Shaft flat', description: 'Width of the shaft across the flat, in mm.' },
-  shaftDepth: { value: 11, name: 'Shaft depth', description: 'Depth of the D-hole, in mm.' },
-  fit: { value: 0.2, name: 'Fit', description: 'Clearance added to the hole, across the round and the flat, in mm.' },
-};
+  {
+    name: 'Shaft',
+    children: {
+      shaftD: { value: 6, name: 'Shaft diameter', description: 'Diameter of the potentiometer shaft, in mm.' },
+      shaftFlat: { value: 4.5, name: 'Shaft flat', description: 'Width of the shaft across the flat, in mm.' },
+      shaftDepth: { value: 11, name: 'Shaft depth', description: 'Depth of the D-hole, in mm.' },
+      fit: { value: 0.2, name: 'Fit', description: 'Clearance added to the hole, across the round and the flat, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const r = p.d / 2;

@@ -8,15 +8,20 @@ setResolution({ fn: 20 });
 
 // A (p, q) torus knot: the tube winds p times around the axis and q times through the hole.
 // p and q must be coprime, or the curve closes early into separate loops.
-export const params = {
-  p: { value: 3, name: 'P', description: 'How many times the tube winds around the axis; must be coprime with q.' },
-  q: { value: 5, name: 'Q', description: 'How many times the tube winds through the hole; must be coprime with p.' },
-  radius: { value: 30, name: 'Radius', description: 'Radius of the centre circle of the torus the knot lies on, in mm.' },
-  swing: { value: 12, name: 'Swing', description: 'How far the curve swings off that circle, in mm.' },
-  tube: { value: 4, name: 'Tube radius', description: 'Radius of the tube, in mm.' },
-  segments: { value: 240, name: 'Segments', description: 'Number of hulled links along the curve.' },
-  flatBottom: { value: 1, name: 'Flat bottom', description: 'How much is cut off under the lowest point so it stands on the bed, in mm.' },
-};
+export const params = [
+  {
+    name: 'Knot',
+    children: {
+      p: { value: 3, name: 'P', description: 'How many times the tube winds around the axis; must be coprime with q.' },
+      q: { value: 5, name: 'Q', description: 'How many times the tube winds through the hole; must be coprime with p.' },
+      radius: { value: 30, name: 'Radius', description: 'Radius of the centre circle of the torus the knot lies on, in mm.' },
+      swing: { value: 12, name: 'Swing', description: 'How far the curve swings off that circle, in mm.' },
+      tube: { value: 4, name: 'Tube radius', description: 'Radius of the tube, in mm.' },
+      segments: { value: 240, name: 'Segments', description: 'Number of hulled links along the curve.' },
+      flatBottom: { value: 1, name: 'Flat bottom', description: 'How much is cut off under the lowest point so it stands on the bed, in mm.' },
+    },
+  },
+];
 
 export default (k) => {
   const gcd = (a, b) => (b ? gcd(b, a % b) : a);

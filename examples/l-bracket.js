@@ -12,24 +12,36 @@ import { cylinder, polygon, product, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Legs
-  wallLeg: { value: 60, name: 'Wall leg', description: 'Length of the leg up the wall, in mm.' },
-  shelfLeg: { value: 80, name: 'Shelf leg', description: 'Length of the leg under the shelf, in mm.' },
-  width: { value: 30, name: 'Width', description: 'Width of the bracket, in mm.' },
-  thick: { value: 5, name: 'Thickness', description: 'Thickness of both legs, in mm.' },
-  fillet: { value: 8, name: 'Fillet', description: 'Radius of the inside corner, in mm.' },
-  corner: { value: 2, name: 'Corner radius', description: 'Radius of the outer corners, in mm; keep it under half the thickness.' },
-
+export const params = [
+  {
+    name: 'Legs',
+    children: {
+      wallLeg: { value: 60, name: 'Wall leg', description: 'Length of the leg up the wall, in mm.' },
+      shelfLeg: { value: 80, name: 'Shelf leg', description: 'Length of the leg under the shelf, in mm.' },
+      width: { value: 30, name: 'Width', description: 'Width of the bracket, in mm.' },
+      thick: { value: 5, name: 'Thickness', description: 'Thickness of both legs, in mm.' },
+      fillet: { value: 8, name: 'Fillet', description: 'Radius of the inside corner, in mm.' },
+      corner: { value: 2, name: 'Corner radius', description: 'Radius of the outer corners, in mm; keep it under half the thickness.' },
+    },
+  },
   // Gusset in the middle of the width
-  gusset: { value: 4, name: 'Gusset', description: 'Thickness of the gusset, in mm.' },
-  gussetReach: { value: 0.7, name: 'Gusset reach', description: 'Fraction of each leg the gusset runs along.' },
-
+  {
+    name: 'Gusset',
+    children: {
+      gusset: { value: 4, name: 'Gusset', description: 'Thickness of the gusset, in mm.' },
+      gussetReach: { value: 0.7, name: 'Gusset reach', description: 'Fraction of each leg the gusset runs along.' },
+    },
+  },
   // 4 mm countersunk wood screws
-  hole: { value: 4.5, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-  head: { value: 8.6, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
-  holes: { value: 2, name: 'Holes', description: 'Screw holes per leg, across the width: 1 or 2.' },
-};
+  {
+    name: 'Screws',
+    children: {
+      hole: { value: 4.5, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
+      head: { value: 8.6, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
+      holes: { value: 2, name: 'Holes', description: 'Screw holes per leg, across the width: 1 or 2.' },
+    },
+  },
+];
 
 export default (p) => {
   // The L profile in the XZ plane: X runs along the shelf, Z up the wall.

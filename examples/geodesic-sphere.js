@@ -9,16 +9,21 @@ import { cube, hull, range, sphere, union } from 'cadcode';
 // a slightly bigger ball sits on each hub. The bottom is cut off flat so it stands and prints;
 // with an even frequency and `base: 0` the cut runs just under a ring of struts on the equator,
 // which then lie on the bed as a closed foot. Supports are needed only for a nearly full sphere.
-export const params = {
-  radius: { value: 50, name: 'Radius', description: 'Radius of the sphere to the hub centres, in mm.' },
-  // Struts grow as 30 * frequency^2 for the whole sphere: 4 is 480 and evaluates in
-  // about a second; 6 is 1080 and about two.
-  frequency: { value: 4, name: 'Frequency', description: 'Subdivisions of each icosahedron edge, 1 to 6.' },
-  strut: { value: 1.4, name: 'Strut radius', description: 'Radius of a strut, in mm.' },
-  hub: { value: 2.2, name: 'Hub radius', description: 'Radius of the ball on each hub, in mm.' },
-  base: { value: 0, name: 'Base cut', description: 'Height of the cut as a share of the radius: 0 is a dome, -0.8 nearly a whole sphere.' },
-  fn: { value: 10, name: 'Strut segments', description: 'Segments around a strut: more is smoother and slower.' },
-};
+export const params = [
+  {
+    name: 'Sphere',
+    children: {
+      radius: { value: 50, name: 'Radius', description: 'Radius of the sphere to the hub centres, in mm.' },
+      // Struts grow as 30 * frequency^2 for the whole sphere: 4 is 480 and evaluates in
+      // about a second; 6 is 1080 and about two.
+      frequency: { value: 4, name: 'Frequency', description: 'Subdivisions of each icosahedron edge, 1 to 6.' },
+      strut: { value: 1.4, name: 'Strut radius', description: 'Radius of a strut, in mm.' },
+      hub: { value: 2.2, name: 'Hub radius', description: 'Radius of the ball on each hub, in mm.' },
+      base: { value: 0, name: 'Base cut', description: 'Height of the cut as a share of the radius: 0 is a dome, -0.8 nearly a whole sphere.' },
+      fn: { value: 10, name: 'Strut segments', description: 'Segments around a strut: more is smoother and slower.' },
+    },
+  },
+];
 
 export default (p) => {
   const phi = (1 + Math.sqrt(5)) / 2;

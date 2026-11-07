@@ -9,25 +9,35 @@ setResolution({ fn: 48 });
 // A desk model of a spiral staircase: wedge treads around a central column, a baluster
 // at the end of each tread and a handrail that follows them up. Prints standing on its
 // base; the treads overhang, so print with supports (tree supports leave the cleanest underside).
-export const params = {
-  // Stair
-  steps: { value: 18, name: 'Steps', description: 'Number of treads.' },
-  turn: { value: 360, name: 'Turn', description: 'How far the stair turns from bottom to top, in degrees.' },
-  height: { value: 110, name: 'Height', description: 'Height from the bed to the top of the last tread, in mm.' },
-  radius: { value: 40, name: 'Radius', description: 'Radius of the outer edge of the treads, in mm.' },
-  tread: { value: 3, name: 'Tread thickness', description: 'Thickness of each tread, in mm.' },
-  overlap: { value: 4, name: 'Tread overlap', description: 'How far each tread runs under the next, in degrees.' },
-
-  // Column and base
-  columnD: { value: 12, name: 'Column diameter', description: 'Diameter of the central column, in mm.' },
-  baseD: { value: 100, name: 'Base diameter', description: 'Diameter of the base disc, in mm.' },
-  baseH: { value: 4, name: 'Base height', description: 'Thickness of the base disc, in mm.' },
-
-  // Railing
-  balusterD: { value: 1.6, name: 'Baluster diameter', description: 'Diameter of the balusters, in mm.' },
-  railHeight: { value: 22, name: 'Rail height', description: 'Height of the handrail above each tread, in mm.' },
-  railD: { value: 2.4, name: 'Rail diameter', description: 'Diameter of the handrail, in mm.' },
-};
+export const params = [
+  {
+    name: 'Stair',
+    children: {
+      steps: { value: 18, name: 'Steps', description: 'Number of treads.' },
+      turn: { value: 360, name: 'Turn', description: 'How far the stair turns from bottom to top, in degrees.' },
+      height: { value: 110, name: 'Height', description: 'Height from the bed to the top of the last tread, in mm.' },
+      radius: { value: 40, name: 'Radius', description: 'Radius of the outer edge of the treads, in mm.' },
+      tread: { value: 3, name: 'Tread thickness', description: 'Thickness of each tread, in mm.' },
+      overlap: { value: 4, name: 'Tread overlap', description: 'How far each tread runs under the next, in degrees.' },
+    },
+  },
+  {
+    name: 'Column and base',
+    children: {
+      columnD: { value: 12, name: 'Column diameter', description: 'Diameter of the central column, in mm.' },
+      baseD: { value: 100, name: 'Base diameter', description: 'Diameter of the base disc, in mm.' },
+      baseH: { value: 4, name: 'Base height', description: 'Thickness of the base disc, in mm.' },
+    },
+  },
+  {
+    name: 'Railing',
+    children: {
+      balusterD: { value: 1.6, name: 'Baluster diameter', description: 'Diameter of the balusters, in mm.' },
+      railHeight: { value: 22, name: 'Rail height', description: 'Height of the handrail above each tread, in mm.' },
+      railD: { value: 2.4, name: 'Rail diameter', description: 'Diameter of the handrail, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const step = p.turn / p.steps;

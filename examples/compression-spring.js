@@ -6,15 +6,20 @@ import { circle, cylinder, setResolution } from 'cadcode';
 
 setResolution({ fn: 24 });
 
-export const params = {
-  coilD: { value: 20, name: 'Coil diameter', description: 'Diameter of the coil measured to the centre of the wire, in mm.' },
-  wireD: { value: 2.4, name: 'Wire diameter', description: 'Diameter of the wire, in mm.' },
-  activeTurns: { value: 5, name: 'Active turns', description: 'Number of open, springing turns.' },
-  pitch: { value: 6, name: 'Pitch', description: 'Rise per active turn, in mm.' },
-  closedTurns: { value: 1, name: 'Closed turns', description: 'Turns at each end wound tight so the end sits flat, count.' },
-  gap: { value: 0.4, name: 'Closed gap', description: 'Gap between the tight turns in mm: a sweep must not run into itself, and touching turns would print fused.' },
-  perTurn: { value: 48, name: 'Points per turn', description: 'Points along the sweep path per turn: more is smoother and slower.' },
-};
+export const params = [
+  {
+    name: 'Spring',
+    children: {
+      coilD: { value: 20, name: 'Coil diameter', description: 'Diameter of the coil measured to the centre of the wire, in mm.' },
+      wireD: { value: 2.4, name: 'Wire diameter', description: 'Diameter of the wire, in mm.' },
+      activeTurns: { value: 5, name: 'Active turns', description: 'Number of open, springing turns.' },
+      pitch: { value: 6, name: 'Pitch', description: 'Rise per active turn, in mm.' },
+      closedTurns: { value: 1, name: 'Closed turns', description: 'Turns at each end wound tight so the end sits flat, count.' },
+      gap: { value: 0.4, name: 'Closed gap', description: 'Gap between the tight turns in mm: a sweep must not run into itself, and touching turns would print fused.' },
+      perTurn: { value: 48, name: 'Points per turn', description: 'Points along the sweep path per turn: more is smoother and slower.' },
+    },
+  },
+];
 
 export default (p) => {
   const r = p.coilD / 2;

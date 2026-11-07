@@ -12,22 +12,33 @@ import { circle, cube, cylinder, polygon, setResolution, square, union } from 'c
 
 setResolution({ fn: 64 });
 
-export const params = {
-  // Channels
-  cables: { value: [4, 6, 8], name: 'Cables', description: 'Diameter of each channel in mm, one per cable: USB, laptop charger, power lead.' },
-  wall: { value: 1.8, name: 'Wall', description: 'Ring thickness, and the web between neighbouring channels, in mm.' },
-  mouth: { value: 0.72, name: 'Mouth', description: "Opening as a share of the cable's diameter: under 1 is what makes it snap." },
-  width: { value: 12, name: 'Width', description: 'Length of the clip along the cables, in mm.' },
-
-  // Base
-  base: { value: 2.6, name: 'Base thickness', description: 'Thickness of the base plate under the channels, in mm.' },
-  tab: { value: 11, name: 'Screw tab', description: 'How far the base reaches beyond the channels at each end, for the screws, in mm.' },
-  r: { value: 3, name: 'Corner radius', description: 'Radius of the base corners in plan, in mm.' },
-
+export const params = [
+  {
+    name: 'Channels',
+    children: {
+      cables: { value: [4, 6, 8], name: 'Cables', description: 'Diameter of each channel in mm, one per cable: USB, laptop charger, power lead.' },
+      wall: { value: 1.8, name: 'Wall', description: 'Ring thickness, and the web between neighbouring channels, in mm.' },
+      mouth: { value: 0.72, name: 'Mouth', description: "Opening as a share of the cable's diameter: under 1 is what makes it snap." },
+      width: { value: 12, name: 'Width', description: 'Length of the clip along the cables, in mm.' },
+    },
+  },
+  {
+    name: 'Base',
+    children: {
+      base: { value: 2.6, name: 'Base thickness', description: 'Thickness of the base plate under the channels, in mm.' },
+      tab: { value: 11, name: 'Screw tab', description: 'How far the base reaches beyond the channels at each end, for the screws, in mm.' },
+      r: { value: 3, name: 'Corner radius', description: 'Radius of the base corners in plan, in mm.' },
+    },
+  },
   // Countersunk wood screw, 3.5 mm (#6)
-  screwD: { value: 3.8, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-  headD: { value: 7.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
-};
+  {
+    name: 'Screws',
+    children: {
+      screwD: { value: 3.8, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
+      headD: { value: 7.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   // Lay the channels out left to right; neighbouring rings share one wall.

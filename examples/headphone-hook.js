@@ -13,24 +13,36 @@ import { cube, cylinder, mirror, setResolution, square, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
-export const params = {
+export const params = [
   // Strap cross-section
-  width: { value: 30, name: 'Width', description: 'Width of the strap, in mm.' },
-  t: { value: 6, name: 'Thickness', description: 'Thickness of the strap, in mm.' },
-  edge: { value: 2.2, name: 'Edge radius', description: 'Radius of the strap edges, in mm.' },
-
-  // Path
-  plate: { value: 64, name: 'Plate length', description: 'Length of the plate along the desk, in mm.' },
-  bendR: { value: 8, name: 'Bend radius', description: "Radius inside the plate-to-stem bend, to the strap's centre line, in mm." },
-  drop: { value: 42, name: 'Drop', description: 'Length of the straight stem under the bend, in mm.' },
-  saddleR: { value: 26, name: 'Saddle radius', description: "Radius of the saddle the headphones hang on, to the strap's centre line, in mm." },
-  lip: { value: 12, name: 'Lip', description: 'Length of the straight end after the saddle, in mm.' },
-
+  {
+    name: 'Strap',
+    children: {
+      width: { value: 30, name: 'Width', description: 'Width of the strap, in mm.' },
+      t: { value: 6, name: 'Thickness', description: 'Thickness of the strap, in mm.' },
+      edge: { value: 2.2, name: 'Edge radius', description: 'Radius of the strap edges, in mm.' },
+    },
+  },
+  {
+    name: 'Path',
+    children: {
+      plate: { value: 64, name: 'Plate length', description: 'Length of the plate along the desk, in mm.' },
+      bendR: { value: 8, name: 'Bend radius', description: "Radius inside the plate-to-stem bend, to the strap's centre line, in mm." },
+      drop: { value: 42, name: 'Drop', description: 'Length of the straight stem under the bend, in mm.' },
+      saddleR: { value: 26, name: 'Saddle radius', description: "Radius of the saddle the headphones hang on, to the strap's centre line, in mm." },
+      lip: { value: 12, name: 'Lip', description: 'Length of the straight end after the saddle, in mm.' },
+    },
+  },
   // #8 countersunk wood screws, 4 mm
-  screwD: { value: 4.4, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-  headD: { value: 8.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
-  holeInset: { value: 12, name: 'Hole inset', description: "Distance of each hole from the ends of the plate's straight part, in mm." },
-};
+  {
+    name: 'Screws',
+    children: {
+      screwD: { value: 4.4, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
+      headD: { value: 8.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
+      holeInset: { value: 12, name: 'Hole inset', description: "Distance of each hole from the ends of the plate's straight part, in mm." },
+    },
+  },
+];
 
 export default (p) => {
   const deg = Math.PI / 180;

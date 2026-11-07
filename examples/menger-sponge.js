@@ -8,10 +8,15 @@ import { cube, range, square, union } from 'cadcode';
 // remaining sub-cube. Rather than building thousands of small cubes, each axis gets one cutter:
 // the holes of a Sierpinski carpet, extruded straight through the whole cube. Three cutters, one
 // boolean. Prints on a face; the holes bridge, so no supports.
-export const params = {
-  size: { value: 60, name: 'Size', description: 'Edge length of the cube, in mm.' },
-  level: { value: 3, name: 'Level', description: 'Recursion depth, 1 to 4; level 3 takes half a second, level 4 is 400k triangles and about 15 s.' },
-};
+export const params = [
+  {
+    name: 'Sponge',
+    children: {
+      size: { value: 60, name: 'Size', description: 'Edge length of the cube, in mm.' },
+      level: { value: 3, name: 'Level', description: 'Recursion depth, 1 to 4; level 3 takes half a second, level 4 is 400k triangles and about 15 s.' },
+    },
+  },
+];
 
 export default (p) => {
   // Every square hole of the carpet: at depth k the cells are size / 3^k, and the hole is the

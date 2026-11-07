@@ -12,30 +12,44 @@ import { circle, cube, polygon, product, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 64 });
 
-export const params = {
-  // How many
-  sd: { value: 6, name: 'SD slots', description: 'Number of SD card slots.' },
-  micro: { value: 10, name: 'MicroSD slots', description: 'Number of microSD slots, in two columns.' },
-
+export const params = [
+  {
+    name: 'Count',
+    children: {
+      sd: { value: 6, name: 'SD slots', description: 'Number of SD card slots.' },
+      micro: { value: 10, name: 'MicroSD slots', description: 'Number of microSD slots, in two columns.' },
+    },
+  },
   // Cards (SD 32 × 24 × 2.1, microSD 15 × 11 × 1) and their slots
-  slack: { value: 0.7, name: 'Slack', description: 'How much bigger a slot is than its card, in width and thickness, in mm.' },
-  sdDepth: { value: 17, name: 'SD depth', description: 'How deep an SD card sits, along the slot, in mm.' },
-  microDepth: { value: 8.5, name: 'MicroSD depth', description: 'How deep a microSD card sits, along the slot, in mm.' },
-  sdPitch: { value: 5.5, name: 'SD pitch', description: 'Distance between neighbouring SD slots, in mm.' },
-  microPitch: { value: 4.2, name: 'MicroSD pitch', description: 'Distance between neighbouring microSD rows, in mm.' },
-  lean: { value: 15, name: 'Lean', description: 'How far the slots lean back, in degrees.' },
-
-  // Block
-  sdH: { value: 24, name: 'SD block height', description: 'Height of the block with the SD slots, in mm.' },
-  microH: { value: 13, name: 'MicroSD block height', description: 'Height of the block with the microSD slots, in mm.' },
-  rim: { value: 4, name: 'Rim', description: 'Solid material round the slots, in mm.' },
-  chamfer: { value: 1.5, name: 'Chamfer', description: 'Chamfer on the top edges of the blocks, in mm.' },
-  corner: { value: 3, name: 'Corner radius', description: 'Radius of the vertical corners of the blocks, in mm.' },
-
-  // Finger notches
-  sdNotch: { value: 5, name: 'SD notch', description: 'Depth of the finger notch into the top of the SD block, in mm.' },
-  microNotch: { value: 3, name: 'MicroSD notch', description: 'Depth of the finger notches into the top of the microSD block, in mm.' },
-};
+  {
+    name: 'Slots',
+    children: {
+      slack: { value: 0.7, name: 'Slack', description: 'How much bigger a slot is than its card, in width and thickness, in mm.' },
+      sdDepth: { value: 17, name: 'SD depth', description: 'How deep an SD card sits, along the slot, in mm.' },
+      microDepth: { value: 8.5, name: 'MicroSD depth', description: 'How deep a microSD card sits, along the slot, in mm.' },
+      sdPitch: { value: 5.5, name: 'SD pitch', description: 'Distance between neighbouring SD slots, in mm.' },
+      microPitch: { value: 4.2, name: 'MicroSD pitch', description: 'Distance between neighbouring microSD rows, in mm.' },
+      lean: { value: 15, name: 'Lean', description: 'How far the slots lean back, in degrees.' },
+    },
+  },
+  {
+    name: 'Block',
+    children: {
+      sdH: { value: 24, name: 'SD block height', description: 'Height of the block with the SD slots, in mm.' },
+      microH: { value: 13, name: 'MicroSD block height', description: 'Height of the block with the microSD slots, in mm.' },
+      rim: { value: 4, name: 'Rim', description: 'Solid material round the slots, in mm.' },
+      chamfer: { value: 1.5, name: 'Chamfer', description: 'Chamfer on the top edges of the blocks, in mm.' },
+      corner: { value: 3, name: 'Corner radius', description: 'Radius of the vertical corners of the blocks, in mm.' },
+    },
+  },
+  {
+    name: 'Finger notches',
+    children: {
+      sdNotch: { value: 5, name: 'SD notch', description: 'Depth of the finger notch into the top of the SD block, in mm.' },
+      microNotch: { value: 3, name: 'MicroSD notch', description: 'Depth of the finger notches into the top of the microSD block, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const SD = { w: 24, h: 32, t: 2.1 };

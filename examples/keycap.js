@@ -13,27 +13,37 @@ import { cube, cylinder, hull, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Size
-  units: { value: 1, name: 'Units', description: 'Key length in units of 19.05 mm key pitch; from 2u a stabiliser stem is added each side.' },
-  base: { value: 18.1, name: 'Skirt', description: 'Width and depth of the skirt of a 1u cap, in mm.' },
-  topW: { value: 12.6, name: 'Top width', description: 'Width of the flat top of a 1u cap, left to right, in mm.' },
-  topD: { value: 14, name: 'Top depth', description: 'Depth of the flat top, front to back, in mm.' },
-  height: { value: 8, name: 'Height', description: 'Height to the middle of the top, in mm.' },
-  tilt: { value: 5, name: 'Tilt', description: 'How far the top leans towards the typist, in degrees.' },
-  dish: { value: 0.9, name: 'Dish depth', description: 'Depth of the cylindrical dish across the top, in mm.' },
-
-  // Shell
-  wall: { value: 1.3, name: 'Wall', description: 'Thickness of the side walls, in mm.' },
-  roof: { value: 1.6, name: 'Roof', description: 'Thickness of the roof under the deepest point of the dish, in mm.' },
-
-  // Cherry MX stem
-  stemD: { value: 5.5, name: 'Stem diameter', description: 'Outer diameter of the stem, in mm.' },
-  crossL: { value: 4.1, name: 'Cross length', description: 'Length of each arm of the + slot, in mm.' },
-  crossW: { value: 1.2, name: 'Cross width', description: 'Width of the + slot, in mm.' },
-  crossDepth: { value: 4, name: 'Cross depth', description: 'Depth of the + slot into the stem, in mm.' },
-  stemDrop: { value: 0.6, name: 'Stem drop', description: 'Height of the stem bottom above the skirt bottom, in mm.' },
-};
+export const params = [
+  {
+    name: 'Size',
+    children: {
+      units: { value: 1, name: 'Units', description: 'Key length in units of 19.05 mm key pitch; from 2u a stabiliser stem is added each side.' },
+      base: { value: 18.1, name: 'Skirt', description: 'Width and depth of the skirt of a 1u cap, in mm.' },
+      topW: { value: 12.6, name: 'Top width', description: 'Width of the flat top of a 1u cap, left to right, in mm.' },
+      topD: { value: 14, name: 'Top depth', description: 'Depth of the flat top, front to back, in mm.' },
+      height: { value: 8, name: 'Height', description: 'Height to the middle of the top, in mm.' },
+      tilt: { value: 5, name: 'Tilt', description: 'How far the top leans towards the typist, in degrees.' },
+      dish: { value: 0.9, name: 'Dish depth', description: 'Depth of the cylindrical dish across the top, in mm.' },
+    },
+  },
+  {
+    name: 'Shell',
+    children: {
+      wall: { value: 1.3, name: 'Wall', description: 'Thickness of the side walls, in mm.' },
+      roof: { value: 1.6, name: 'Roof', description: 'Thickness of the roof under the deepest point of the dish, in mm.' },
+    },
+  },
+  {
+    name: 'Cherry MX stem',
+    children: {
+      stemD: { value: 5.5, name: 'Stem diameter', description: 'Outer diameter of the stem, in mm.' },
+      crossL: { value: 4.1, name: 'Cross length', description: 'Length of each arm of the + slot, in mm.' },
+      crossW: { value: 1.2, name: 'Cross width', description: 'Width of the + slot, in mm.' },
+      crossDepth: { value: 4, name: 'Cross depth', description: 'Depth of the + slot into the stem, in mm.' },
+      stemDrop: { value: 0.6, name: 'Stem drop', description: 'Height of the stem bottom above the skirt bottom, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const extra = (p.units - 1) * 19.05; // longer caps grow along X

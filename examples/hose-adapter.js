@@ -13,25 +13,38 @@ import { circle, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });
 
-export const params = {
+export const params = [
   // Friction cone, into the vacuum cuff
-  bigOD: { value: 35, name: 'Cone diameter', description: 'Outside diameter of the cone at its root, in mm; 35 mm suits most 1.25" cuffs.' },
-  taper: { value: 1.2, name: 'Taper', description: 'Diameter the cone loses towards its tip, in mm.' },
-  coneLen: { value: 30, name: 'Cone length', description: 'Length of the friction cone, in mm.' },
-  wall: { value: 2.4, name: 'Cone wall', description: 'Wall thickness of the cone, in mm.' },
-
+  {
+    name: 'Cone',
+    children: {
+      bigOD: { value: 35, name: 'Cone diameter', description: 'Outside diameter of the cone at its root, in mm; 35 mm suits most 1.25" cuffs.' },
+      taper: { value: 1.2, name: 'Taper', description: 'Diameter the cone loses towards its tip, in mm.' },
+      coneLen: { value: 30, name: 'Cone length', description: 'Length of the friction cone, in mm.' },
+      wall: { value: 2.4, name: 'Cone wall', description: 'Wall thickness of the cone, in mm.' },
+    },
+  },
   // Barbed spigot, inside the hose
-  hoseID: { value: 19, name: 'Hose bore', description: 'Inside diameter of the hose in mm; 19 is a 3/4" hose.' },
-  barbs: { value: 4, name: 'Barbs', description: 'Number of barbs on the spigot.' },
-  barbLen: { value: 6, name: 'Barb length', description: 'Length of each barb, in mm.' },
-  barbOver: { value: 1.2, name: 'Barb overlap', description: "How far the barb crest stands over the hose's inside radius, in mm." },
-  spigotWall: { value: 2.2, name: 'Spigot wall', description: 'Wall thickness of the spigot, in mm.' },
-
+  {
+    name: 'Spigot',
+    children: {
+      hoseID: { value: 19, name: 'Hose bore', description: 'Inside diameter of the hose in mm; 19 is a 3/4" hose.' },
+      barbs: { value: 4, name: 'Barbs', description: 'Number of barbs on the spigot.' },
+      barbLen: { value: 6, name: 'Barb length', description: 'Length of each barb, in mm.' },
+      barbOver: { value: 1.2, name: 'Barb overlap', description: "How far the barb crest stands over the hose's inside radius, in mm." },
+      spigotWall: { value: 2.2, name: 'Spigot wall', description: 'Wall thickness of the spigot, in mm.' },
+    },
+  },
   // Collar between them
-  collarOD: { value: 44, name: 'Collar diameter', description: 'Outside diameter of the collar, in mm.' },
-  collarH: { value: 10, name: 'Collar height', description: 'Height of the collar, in mm.' },
-  ribs: { value: 24, name: 'Grip grooves', description: 'Number of finger grooves round the collar.' },
-};
+  {
+    name: 'Collar',
+    children: {
+      collarOD: { value: 44, name: 'Collar diameter', description: 'Outside diameter of the collar, in mm.' },
+      collarH: { value: 10, name: 'Collar height', description: 'Height of the collar, in mm.' },
+      ribs: { value: 24, name: 'Grip grooves', description: 'Number of finger grooves round the collar.' },
+    },
+  },
+];
 
 export default (p) => {
   const rTip = (p.bigOD - p.taper) / 2;

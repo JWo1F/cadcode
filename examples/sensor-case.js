@@ -12,50 +12,72 @@ import { cube, cylinder, square, union, difference, intersection, setResolution,
 
 setResolution({ fn: 40 });
 
-export const params = {
-  // Print
-  wall: { value: 2.0, name: 'Wall', description: 'Wall thickness, in mm.' },
-  floorT: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
-  lidT: { value: 1.6, name: 'Lid', description: 'Lid thickness, in mm.' },
-  fit: { value: 0.15, name: 'Lid fit', description: 'Gap between the lid skirt and the wall, per side, in mm.' },
-  cornerR: { value: 2.0, name: 'Corner radius', description: 'Outer corner radius of the case, in mm.' },
-
-  // Pro Micro board
-  boardL: { value: 34, name: 'Board length', description: 'Length of the Pro Micro board, in mm.' },
-  boardW: { value: 17, name: 'Board width', description: 'Width of the Pro Micro board, in mm.' },
-  boardT: { value: 1.6, name: 'Board thickness', description: 'Thickness of the Pro Micro board, in mm.' },
-  boardStandoff: { value: 2.0, name: 'Board standoff', description: 'Height of the rails the board sits on, leaving room for wires and pads underneath, in mm.' },
-  boardX0: { value: 0.3, name: 'USB wall gap', description: 'Gap between the board and the USB wall, in mm.' },
-  boardY0: { value: 0.5, name: 'Side wall gap', description: 'Gap between the board and the side wall, in mm.' },
-
-  // USB-C
-  usbW: { value: 9.0, name: 'USB width', description: 'Width of the USB-C connector body, in mm.' },
-  usbH: { value: 3.3, name: 'USB height', description: 'Height of the USB-C connector body, in mm.' },
-  usbSlotExtra: { value: 0.8, name: 'USB hole allowance', description: 'Added to the connector size for the USB-C window, in mm.' },
-  plugW: { value: 12.5, name: 'Plug recess width', description: 'Width of the outside recess for the plug overmold, in mm.' },
-  plugH: { value: 7.5, name: 'Plug recess height', description: 'Height of the outside recess for the plug overmold, in mm.' },
-  plugDepth: { value: 1.2, name: 'Plug recess depth', description: 'Depth of the plug recess into the wall, in mm.' },
-
-  // Battery
-  batD: { value: 12, name: 'Battery diameter', description: 'Diameter of the Li-ion cell, in mm.' },
-  batL: { value: 30, name: 'Battery length', description: 'Length of the Li-ion cell, in mm.' },
-  batClr: { value: 0.5, name: 'Battery clearance', description: 'Clearance added to the battery diameter in its cradles, in mm.' },
-
-  // Sensor
-  sensorS: { value: 15, name: 'Sensor size', description: 'Side of the square sensor board, in mm.' },
-  sensorPadH: { value: 3, name: 'Sensor pad', description: 'Height of the tape pad under the sensor, raised so air flows underneath, in mm.' },
-  sensL: { value: 17, name: 'Sensor compartment', description: 'Length of the sensor compartment along X, in mm.' },
-
-  // Snap fit
-  lipD: { value: 4.0, name: 'Skirt depth', description: 'Depth of the lid skirt, in mm.' },
-  lipT: { value: 1.2, name: 'Skirt thickness', description: 'Thickness of the lid skirt, in mm.' },
-  bumpR: { value: 0.6, name: 'Snap bump', description: 'Radius of the bump on the skirt and of the groove in the wall, in mm.' },
-  bumpLen: { value: 12, name: 'Snap length', description: 'Length of each snap bump, in mm.' },
-
-  // Pores
-  poreD: { value: 1.6, name: 'Pore diameter', description: 'Diameter of the vent pores round the sensor compartment, in mm.' },
-  porePitch: { value: 3.2, name: 'Pore pitch', description: 'Distance between neighbouring vent pores, in mm.' },
-};
+export const params = [
+  {
+    name: 'Print',
+    children: {
+      wall: { value: 2.0, name: 'Wall', description: 'Wall thickness, in mm.' },
+      floorT: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
+      lidT: { value: 1.6, name: 'Lid', description: 'Lid thickness, in mm.' },
+      fit: { value: 0.15, name: 'Lid fit', description: 'Gap between the lid skirt and the wall, per side, in mm.' },
+      cornerR: { value: 2.0, name: 'Corner radius', description: 'Outer corner radius of the case, in mm.' },
+    },
+  },
+  {
+    name: 'Pro Micro board',
+    children: {
+      boardL: { value: 34, name: 'Board length', description: 'Length of the Pro Micro board, in mm.' },
+      boardW: { value: 17, name: 'Board width', description: 'Width of the Pro Micro board, in mm.' },
+      boardT: { value: 1.6, name: 'Board thickness', description: 'Thickness of the Pro Micro board, in mm.' },
+      boardStandoff: { value: 2.0, name: 'Board standoff', description: 'Height of the rails the board sits on, leaving room for wires and pads underneath, in mm.' },
+      boardX0: { value: 0.3, name: 'USB wall gap', description: 'Gap between the board and the USB wall, in mm.' },
+      boardY0: { value: 0.5, name: 'Side wall gap', description: 'Gap between the board and the side wall, in mm.' },
+    },
+  },
+  {
+    name: 'USB-C',
+    children: {
+      usbW: { value: 9.0, name: 'USB width', description: 'Width of the USB-C connector body, in mm.' },
+      usbH: { value: 3.3, name: 'USB height', description: 'Height of the USB-C connector body, in mm.' },
+      usbSlotExtra: { value: 0.8, name: 'USB hole allowance', description: 'Added to the connector size for the USB-C window, in mm.' },
+      plugW: { value: 12.5, name: 'Plug recess width', description: 'Width of the outside recess for the plug overmold, in mm.' },
+      plugH: { value: 7.5, name: 'Plug recess height', description: 'Height of the outside recess for the plug overmold, in mm.' },
+      plugDepth: { value: 1.2, name: 'Plug recess depth', description: 'Depth of the plug recess into the wall, in mm.' },
+    },
+  },
+  {
+    name: 'Battery',
+    children: {
+      batD: { value: 12, name: 'Battery diameter', description: 'Diameter of the Li-ion cell, in mm.' },
+      batL: { value: 30, name: 'Battery length', description: 'Length of the Li-ion cell, in mm.' },
+      batClr: { value: 0.5, name: 'Battery clearance', description: 'Clearance added to the battery diameter in its cradles, in mm.' },
+    },
+  },
+  {
+    name: 'Sensor',
+    children: {
+      sensorS: { value: 15, name: 'Sensor size', description: 'Side of the square sensor board, in mm.' },
+      sensorPadH: { value: 3, name: 'Sensor pad', description: 'Height of the tape pad under the sensor, raised so air flows underneath, in mm.' },
+      sensL: { value: 17, name: 'Sensor compartment', description: 'Length of the sensor compartment along X, in mm.' },
+    },
+  },
+  {
+    name: 'Snap fit',
+    children: {
+      lipD: { value: 4.0, name: 'Skirt depth', description: 'Depth of the lid skirt, in mm.' },
+      lipT: { value: 1.2, name: 'Skirt thickness', description: 'Thickness of the lid skirt, in mm.' },
+      bumpR: { value: 0.6, name: 'Snap bump', description: 'Radius of the bump on the skirt and of the groove in the wall, in mm.' },
+      bumpLen: { value: 12, name: 'Snap length', description: 'Length of each snap bump, in mm.' },
+    },
+  },
+  {
+    name: 'Pores',
+    children: {
+      poreD: { value: 1.6, name: 'Pore diameter', description: 'Diameter of the vent pores round the sensor compartment, in mm.' },
+      porePitch: { value: 3.2, name: 'Pore pitch', description: 'Distance between neighbouring vent pores, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const { wall, floorT, lidT, fit, cornerR, boardL, boardW, boardT, boardStandoff, boardX0, boardY0 } = p;

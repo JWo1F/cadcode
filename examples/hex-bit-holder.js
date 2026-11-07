@@ -11,26 +11,37 @@ import { circle, cube, cylinder, polygon, product, range, setResolution, square,
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Layout
-  rows: { value: 3, name: 'Rows', description: 'Number of socket rows, front to back.' },
-  cols: { value: 8, name: 'Columns', description: 'Number of sockets in each row.' },
-  pitch: { value: 10.5, name: 'Pitch', description: 'Socket to socket distance, left to right, in mm.' },
-  rowDepth: { value: 13, name: 'Row depth', description: 'Depth of each row, front to back, in mm.' },
-  rowRise: { value: 7, name: 'Row rise', description: 'How much higher each row stands than the one in front, in mm.' },
-
+export const params = [
+  {
+    name: 'Layout',
+    children: {
+      rows: { value: 3, name: 'Rows', description: 'Number of socket rows, front to back.' },
+      cols: { value: 8, name: 'Columns', description: 'Number of sockets in each row.' },
+      pitch: { value: 10.5, name: 'Pitch', description: 'Socket to socket distance, left to right, in mm.' },
+      rowDepth: { value: 13, name: 'Row depth', description: 'Depth of each row, front to back, in mm.' },
+      rowRise: { value: 7, name: 'Row rise', description: 'How much higher each row stands than the one in front, in mm.' },
+    },
+  },
   // Sockets, for 1/4" hex shanks (6.35 mm across flats)
-  hexAF: { value: 6.35, name: 'Hex size', description: 'Bit shank across the flats, in mm.' },
-  fit: { value: 0.3, name: 'Fit', description: 'Clearance added across the flats, in mm.' },
-  socketDepth: { value: 10, name: 'Socket depth', description: 'Depth of each socket, in mm.' },
-  floor: { value: 2, name: 'Floor', description: "Thickness under the front row's sockets, in mm." },
-
-  // Body
-  margin: { value: 6, name: 'Side margin', description: 'Body beyond the outer sockets, left and right, in mm.' },
-  ledge: { value: 12, name: 'Label ledge', description: 'Depth of the sloped label strip in front of the first row, in mm.' },
-  ledgeH: { value: 5, name: 'Ledge height', description: "Height of the strip's front edge, in mm." },
-  r: { value: 3, name: 'Corner radius', description: 'Radius of the body corners in plan, in mm.' },
-};
+  {
+    name: 'Sockets',
+    children: {
+      hexAF: { value: 6.35, name: 'Hex size', description: 'Bit shank across the flats, in mm.' },
+      fit: { value: 0.3, name: 'Fit', description: 'Clearance added across the flats, in mm.' },
+      socketDepth: { value: 10, name: 'Socket depth', description: 'Depth of each socket, in mm.' },
+      floor: { value: 2, name: 'Floor', description: "Thickness under the front row's sockets, in mm." },
+    },
+  },
+  {
+    name: 'Body',
+    children: {
+      margin: { value: 6, name: 'Side margin', description: 'Body beyond the outer sockets, left and right, in mm.' },
+      ledge: { value: 12, name: 'Label ledge', description: 'Depth of the sloped label strip in front of the first row, in mm.' },
+      ledgeH: { value: 5, name: 'Ledge height', description: "Height of the strip's front edge, in mm." },
+      r: { value: 3, name: 'Corner radius', description: 'Radius of the body corners in plan, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const W = 2 * p.margin + (p.cols - 1) * p.pitch;

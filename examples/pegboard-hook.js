@@ -13,24 +13,31 @@ import { circle, cube, cylinder, linearExtrude, polygon, product, range, setReso
 
 setResolution({ fn: 48 });
 
-export const params = {
-  // Pegboard
-  pitch: { value: 25.4, name: 'Hole pitch', description: 'Distance between pegboard holes, in mm.' },
-  holeD: { value: 6.35, name: 'Hole diameter', description: 'Diameter of the pegboard holes, in mm.' },
-  boardT: { value: 6.35, name: 'Board thickness', description: 'Thickness of the board, in mm: 6.35 for 1/4" hardboard, 4.8 for 3/16" boards.' },
-
-  // Hook
-  t: { value: 6, name: 'Thickness', description: "Thickness of the hook, and the prongs' size across, in mm." },
-  prong: { value: 5.2, name: 'Prong height', description: 'Height of the prongs in the side profile, in mm.' },
-  roundTo: { value: 6.1, name: 'Prong diameter', description: 'Prongs are trimmed to this diameter so their corners pass the hole, in mm.' },
-  drop: { value: 9, name: 'Prong drop', description: 'How far the upper prong turns down behind the board, in mm.' },
-  plate: { value: 4, name: 'Plate', description: "Thickness of the plate against the board's face, in mm." },
-  reach: { value: 70, name: 'Reach', description: 'Length of the arm from the board, in mm.' },
-  rootH: { value: 13, name: 'Arm root', description: 'Height of the arm at the plate, in mm.' },
-  tipH: { value: 8, name: 'Arm tip', description: 'Height of the arm at the bend, in mm.' },
-  bendR: { value: 9, name: 'Bend radius', description: 'Inside radius of the J, in mm.' },
-  tipLen: { value: 10, name: 'Tip length', description: 'Length of the straight part after the bend, in mm.' },
-};
+export const params = [
+  {
+    name: 'Pegboard',
+    children: {
+      pitch: { value: 25.4, name: 'Hole pitch', description: 'Distance between pegboard holes, in mm.' },
+      holeD: { value: 6.35, name: 'Hole diameter', description: 'Diameter of the pegboard holes, in mm.' },
+      boardT: { value: 6.35, name: 'Board thickness', description: 'Thickness of the board, in mm: 6.35 for 1/4" hardboard, 4.8 for 3/16" boards.' },
+    },
+  },
+  {
+    name: 'Hook',
+    children: {
+      t: { value: 6, name: 'Thickness', description: "Thickness of the hook, and the prongs' size across, in mm." },
+      prong: { value: 5.2, name: 'Prong height', description: 'Height of the prongs in the side profile, in mm.' },
+      roundTo: { value: 6.1, name: 'Prong diameter', description: 'Prongs are trimmed to this diameter so their corners pass the hole, in mm.' },
+      drop: { value: 9, name: 'Prong drop', description: 'How far the upper prong turns down behind the board, in mm.' },
+      plate: { value: 4, name: 'Plate', description: "Thickness of the plate against the board's face, in mm." },
+      reach: { value: 70, name: 'Reach', description: 'Length of the arm from the board, in mm.' },
+      rootH: { value: 13, name: 'Arm root', description: 'Height of the arm at the plate, in mm.' },
+      tipH: { value: 8, name: 'Arm tip', description: 'Height of the arm at the bend, in mm.' },
+      bendR: { value: 9, name: 'Bend radius', description: 'Inside radius of the J, in mm.' },
+      tipLen: { value: 10, name: 'Tip length', description: 'Length of the straight part after the bend, in mm.' },
+    },
+  },
+];
 
 export default (p) => {
   const z0 = 0; // lower prong's centre line; the upper one is a pitch above

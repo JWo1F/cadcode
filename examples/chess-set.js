@@ -11,14 +11,22 @@ import { cube, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
-export const params = {
-  scale: { value: 1, name: 'Scale', description: 'Size of every piece: 1 makes a 75 mm king, a common club size for a 45 mm board.' },
-
-  // Display
-  square: { value: 34, name: 'Display square', description: 'Spacing of the pieces in the display layout, in mm before scaling.' },
-  light: { value: '#f3e9d2', name: 'Light colour', description: "Colour of the light side's pieces in the display." },
-  dark: { value: '#2f2a28', name: 'Dark colour', description: "Colour of the dark side's pieces in the display." },
-};
+export const params = [
+  {
+    name: 'Pieces',
+    children: {
+      scale: { value: 1, name: 'Scale', description: 'Size of every piece: 1 makes a 75 mm king, a common club size for a 45 mm board.' },
+    },
+  },
+  {
+    name: 'Display',
+    children: {
+      square: { value: 34, name: 'Display square', description: 'Spacing of the pieces in the display layout, in mm before scaling.' },
+      light: { value: '#f3e9d2', name: 'Light colour', description: "Colour of the light side's pieces in the display." },
+      dark: { value: '#2f2a28', name: 'Dark colour', description: "Colour of the dark side's pieces in the display." },
+    },
+  },
+];
 
 export default (p) => {
   // Profile helpers, in [radius, z] points.
