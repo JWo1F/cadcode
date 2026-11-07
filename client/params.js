@@ -1,6 +1,7 @@
 // The parameters panel: one row per entry of the program's `export const params`,
 // labelled with its `name` and `description`, each with a control that fits its value — a number field, a switch, a colour, a
-// text field, or JSON for arrays and objects. Changing one sends the whole set of
+// text field, or JSON for arrays and objects. A program that groups its params in
+// sections gets a collapsible heading per section. Changing one sends the whole set of
 // values that differ from the code (the overrides) through onChange.
 //
 // The server is the truth: every model frame carries the declared params ({ value, name, description }) and the
@@ -30,11 +31,19 @@ function stepOf(value) {
 }
 
 /**
- * @param {{ form: HTMLFormElement, resetAll: HTMLButtonElement, onChange: (overrides: Record<string, unknown>) => void }} options
- * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string }>, overrides: Record<string, unknown>) => void }}
+ * @typedef {{ name: string | null, keys: string[] }} Section a run of params; one with no name gets no heading
+ * @param {{
+ *   form: HTMLFormElement,
+ *   resetAll: HTMLButtonElement,
+ *   onChange: (overrides: Record<string, unknown>) => void,
+ *   collapsed: { get: () => string[], set: (names: string[]) => void },
+ * }} options `collapsed` keeps the names of the sections folded away
+ * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string }>, overrides: Record<string, unknown>, sections: Section[]) => void }}
  */
-export function createParamsPanel({ form, resetAll, onChange }) {
+export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   let specs = {};
+  let sections = [];
+  const headings = new Map(); // section name → { section, keys }
   let declared = {}; // name → the value in the code
   let overrides = {};
   let shape = ''; // the keys, kinds and labels the rows were built for
@@ -56,6 +65,8 @@ export function createParamsPanel({ form, resetAll, onChange }) {
 
   function markChanged() {
     for (const [name, { row }] of rows) row.toggleAttribute('data-changed', name in overrides);
+    // A folded section still shows that something in it was changed.
+    for (const { section, keys } of headings.values()) section.toggleAttribute('data-changed', keys.some((key) => key in overrides));
     resetAll.hidden = Object.keys(overrides).length === 0;
   }
 
@@ -175,30 +186,56 @@ export function createParamsPanel({ form, resetAll, onChange }) {
 
   const CONTROLS = { number: numberControl, boolean: booleanControl, color: colorControl, text: textControl, json: jsonControl };
 
+  function buildRow(name) {
+    const row = Object.assign(document.createElement('div'), { className: 'param' });
+    row.dataset.kind = kindOf(declared[name]);
+    const label = Object.assign(document.createElement('label'), { htmlFor: `param-${name}`, textContent: specs[name].name });
+    row.append(label);
+    const control = CONTROLS[row.dataset.kind](name, row, label);
+    const reset = Object.assign(document.createElement('button'), { type: 'button', className: 'reset', title: 'Back to the value in the code' });
+    reset.setAttribute('aria-label', `Reset ${specs[name].name}`);
+    reset.innerHTML =
+      '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.4-3.3M3.5 2.5v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    reset.addEventListener('click', () => {
+      control.set(declared[name]);
+      change(name, declared[name]);
+    });
+    const description = Object.assign(document.createElement('p'), { className: 'description', textContent: specs[name].description });
+    row.append(reset, description);
+    rows.set(name, { row, ...control });
+    return row;
+  }
+
+  /** A section with a heading that folds it away; which ones are folded is remembered through `collapsed`. */
+  function buildSection({ name, keys }) {
+    const section = Object.assign(document.createElement('section'), { className: 'param-section' });
+    const heading = Object.assign(document.createElement('button'), { type: 'button', className: 'section-head' });
+    heading.innerHTML =
+      '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    heading.append(name);
+    const body = Object.assign(document.createElement('div'), { className: 'section-body' });
+    body.append(...keys.map(buildRow));
+    const fold = (folded) => {
+      heading.setAttribute('aria-expanded', String(!folded));
+      body.hidden = folded;
+    };
+    fold(collapsed.get().includes(name));
+    heading.addEventListener('click', () => {
+      const folded = !body.hidden;
+      fold(folded);
+      const others = collapsed.get().filter((n) => n !== name);
+      collapsed.set(folded ? [...others, name] : others);
+    });
+    section.append(heading, body);
+    headings.set(name, { section, keys });
+    return section;
+  }
+
   function build() {
     const focused = document.activeElement?.id;
     rows.clear();
-    form.replaceChildren(
-      ...Object.keys(declared).map((name) => {
-        const row = Object.assign(document.createElement('div'), { className: 'param' });
-        row.dataset.kind = kindOf(declared[name]);
-        const label = Object.assign(document.createElement('label'), { htmlFor: `param-${name}`, textContent: specs[name].name });
-        row.append(label);
-        const control = CONTROLS[row.dataset.kind](name, row, label);
-        const reset = Object.assign(document.createElement('button'), { type: 'button', className: 'reset', title: 'Back to the value in the code' });
-        reset.setAttribute('aria-label', `Reset ${name}`);
-        reset.innerHTML =
-          '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.4-3.3M3.5 2.5v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        reset.addEventListener('click', () => {
-          control.set(declared[name]);
-          change(name, declared[name]);
-        });
-        const description = Object.assign(document.createElement('p'), { className: 'description', textContent: specs[name].description });
-        row.append(reset, description);
-        rows.set(name, { row, ...control });
-        return row;
-      }),
-    );
+    headings.clear();
+    form.replaceChildren(...sections.flatMap((section) => (section.name === null ? section.keys.map(buildRow) : [buildSection(section)])));
     if (focused) document.getElementById(focused)?.focus();
   }
 
@@ -220,10 +257,11 @@ export function createParamsPanel({ form, resetAll, onChange }) {
   form.addEventListener('submit', (event) => event.preventDefault());
 
   return {
-    show(nextSpecs, serverOverrides) {
+    show(nextSpecs, serverOverrides, nextSections) {
       specs = nextSpecs;
+      sections = nextSections;
       declared = Object.fromEntries(Object.entries(specs).map(([name, spec]) => [name, spec.value]));
-      const nextShape = stable(Object.entries(specs).map(([name, spec]) => [name, kindOf(spec.value), spec.name, spec.description]));
+      const nextShape = stable([sections, Object.entries(specs).map(([name, spec]) => [name, kindOf(spec.value), spec.name, spec.description])]);
       // Until the server has run with what was sent, its overrides are older than the panel's.
       if (sent) {
         const pending = Object.fromEntries(Object.entries(sent).filter(([name]) => name in declared));

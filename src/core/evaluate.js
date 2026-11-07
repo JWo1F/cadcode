@@ -21,17 +21,9 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
-/**
- * Checks `export const params`: every entry is `{ value, name, description }`, with
- * `name` and `description` for the Parameters panel. Throws on the first one that is not.
- *
- * @param {unknown} params
- * @returns {Record<string, { value: unknown, name: string, description: string }>}
- */
-function readParams(params) {
-  if (params === undefined) return {};
-  if (!isPlainObject(params)) throw new Error('`export const params` must be an object of { value, name, description } entries');
-  for (const [key, spec] of Object.entries(params)) {
+/** Throws unless every entry of an object of params is `{ value, name, description }`. */
+function checkSpecs(specs, where) {
+  for (const [key, spec] of Object.entries(specs)) {
     const missing = !isPlainObject(spec)
       ? ['value', 'name', 'description']
       : [
@@ -40,10 +32,40 @@ function readParams(params) {
           ...(typeof spec.description === 'string' && spec.description.trim() ? [] : ['description']),
         ];
     if (missing.length) {
-      throw new Error(`Parameter "${key}" must be { value, name, description }; ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} missing`);
+      throw new Error(`Parameter "${key}"${where} must be { value, name, description }; ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} missing`);
     }
   }
-  return /** @type {any} */ (params);
+}
+
+/**
+ * Reads `export const params`: either an object of `{ value, name, description }` entries, or an
+ * array of sections `{ name, children }` whose children are such objects. Keys are unique across
+ * sections, since the program gets one flat object of values. Throws on the first entry that is wrong.
+ *
+ * @param {unknown} params
+ * @returns {{ declared: Record<string, { value: unknown, name: string, description: string }>, sections: { name: string | null, keys: string[] }[] }}
+ *   every entry by key, and the sections in order; an object of params is one section with no name
+ */
+function readParams(params) {
+  if (params === undefined) return { declared: {}, sections: [] };
+  if (isPlainObject(params)) {
+    checkSpecs(params, '');
+    return { declared: /** @type {any} */ (params), sections: [{ name: null, keys: Object.keys(params) }] };
+  }
+  if (!Array.isArray(params)) throw new Error('`export const params` must be an object of { value, name, description } entries, or an array of { name, children } sections');
+  const declared = {};
+  const sections = params.map((section, index) => {
+    if (!isPlainObject(section) || typeof section.name !== 'string' || !section.name.trim() || !isPlainObject(section.children)) {
+      throw new Error(`Params section ${index + 1} must be { name, children }, with a name and an object of parameters`);
+    }
+    checkSpecs(section.children, ` in section "${section.name}"`);
+    for (const key of Object.keys(section.children)) {
+      if (key in declared) throw new Error(`Parameter "${key}" is declared twice; keys must be unique across sections`);
+      declared[key] = section.children[key];
+    }
+    return { name: section.name, keys: Object.keys(section.children) };
+  });
+  return { declared, sections };
 }
 
 /**
@@ -53,7 +75,8 @@ function readParams(params) {
  * object of named parts whose values are models or functions returning models, or a
  * function of `params` returning either, or returning a function that returns a model
  * (one part, built lazily). Any of these functions may be async. `export const params = {...}` declares the
- * parameters that `overrides` may change, each as `{ value, name, description }`; the functions get the values.
+ * parameters that `overrides` may change, each as `{ value, name, description }`, flat or in an array of
+ * `{ name, children }` sections; the functions get one flat object of values.
  *
  * `fallbackToFirst` shows the first part instead of failing when `part` no longer
  * exists — the dev server uses it so renaming a part doesn't blank the preview.
@@ -63,12 +86,12 @@ function readParams(params) {
  * @param {{ default?: unknown, params?: unknown }} mod
  * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
  * @returns the part's solids and 2D shapes, the part names, the param values it ran with (`params`) and the
- *   declared `{ value, name, description }` entries (`declared`)
+ *   declared `{ value, name, description }` entries by key (`declared`) and their `sections`
  */
 export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false, ignoreUnknown = false } = {}) {
   if (mod.default === undefined) throw new Error('The program has no `export default`');
 
-  const declared = readParams(mod.params);
+  const { declared, sections } = readParams(mod.params);
   const known = {};
   for (const [key, value] of Object.entries(overrides)) {
     if (key in declared) known[key] = value;
@@ -88,5 +111,5 @@ export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirs
 
   const entry = parts[name];
   const model = typeof entry === 'function' ? await entry(params) : entry;
-  return { partNames, part: name, params, declared, ...flattenModel(model, name) };
+  return { partNames, part: name, params, declared, sections, ...flattenModel(model, name) };
 }

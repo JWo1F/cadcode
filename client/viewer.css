@@ -518,6 +518,52 @@ button.pill:hover {
   color: var(--ink-soft);
 }
 
+/* A section of params: a heading that folds its rows away. */
+.param-section + .param-section {
+  margin-top: 4px;
+}
+
+.section-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 10px 6px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.section-head:hover {
+  color: var(--ink);
+}
+
+.section-head svg {
+  flex: none;
+  transition: rotate 0.15s ease;
+}
+
+.section-head[aria-expanded='true'] svg {
+  rotate: 90deg;
+}
+
+/* A changed value inside a folded section: the filament dot after its name. */
+.param-section[data-changed] .section-head[aria-expanded='false']::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--filament-deep);
+}
+
 /* The parameter's description, under its name and control. */
 .param .description {
   grid-column: 1 / -1;

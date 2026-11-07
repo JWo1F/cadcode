@@ -41,6 +41,7 @@ try {
         part: result.part,
         // Plain data only: the browser edits these as numbers, strings, booleans and JSON.
         declared: JSON.parse(JSON.stringify(result.declared)),
+        sections: result.sections,
         groups,
         logs,
         ms: Math.round(performance.now() - started),

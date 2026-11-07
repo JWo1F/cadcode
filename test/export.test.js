@@ -176,6 +176,25 @@ test('every param needs a value, a name and a description', async () => {
   await assert.rejects(run({ size: { value: 10, name: 'Size' } }), /Parameter "size" .*; description is missing/);
   await assert.rejects(run({ size: { name: 'Size', description: 'Edge.' } }), /Parameter "size" .*; value is missing/);
   await assert.rejects(run({ size: { value: 10, name: ' ', description: 'Edge.' } }), /; name is missing/);
-  await assert.rejects(run([1]), /must be an object/);
+  await assert.rejects(run('size'), /must be an object .* or an array of \{ name, children \} sections/);
   assert.equal((await run({ on: { value: false, name: 'On', description: 'A switch.' } })).params.on, false);
+});
+
+test('params may come in sections, and the program gets one flat object of values', async () => {
+  const { evaluateModule } = await import('../src/core/evaluate.js');
+  const spec = (value) => ({ value, name: 'N', description: 'D.' });
+  const run = (params) => evaluateModule({ params, default: () => cube(1) });
+  const result = await evaluateModule(
+    { params: [{ name: 'Body', children: { a: spec(1), b: spec(2) } }, { name: 'Lid', children: { c: spec(3) } }], default: (p) => cube(p.a + p.b + p.c) },
+    { overrides: { c: 5 } },
+  );
+  assert.deepEqual(result.params, { a: 1, b: 2, c: 5 });
+  assert.deepEqual(Object.keys(result.declared), ['a', 'b', 'c']);
+  assert.deepEqual(result.sections, [{ name: 'Body', keys: ['a', 'b'] }, { name: 'Lid', keys: ['c'] }]);
+  assert.equal(Math.round(result.solids[0].volume()), 512);
+  assert.deepEqual((await run({ a: spec(1) })).sections, [{ name: null, keys: ['a'] }]);
+  await assert.rejects(run([{ name: 'A', children: { a: spec(1) } }, { name: 'B', children: { a: spec(2) } }]), /Parameter "a" is declared twice/);
+  await assert.rejects(run([{ children: { a: spec(1) } }]), /Params section 1 must be \{ name, children \}/);
+  await assert.rejects(run([{ name: 'A', children: [] }]), /Params section 1 must be/);
+  await assert.rejects(run([{ name: 'A', children: { a: 1 } }]), /Parameter "a" in section "A" must be/);
 });

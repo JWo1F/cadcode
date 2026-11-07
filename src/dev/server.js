@@ -40,6 +40,7 @@ function encodeModel(result, file, { overrides, restored }) {
     part: result.part,
     partNames: result.partNames,
     params: result.declared,
+    sections: result.sections,
     overrides,
     restored,
     logs: result.logs,

@@ -320,6 +320,11 @@ const paramsPanel = createParamsPanel({
   onChange(overrides) {
     if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'params', overrides }));
   },
+  // The sections folded away, per file.
+  collapsed: {
+    get: () => storage.get(`cadcode:params-collapsed:${fileKey}`) ?? [],
+    set: (names) => storage.set(`cadcode:params-collapsed:${fileKey}`, names),
+  },
 });
 
 let restoreSent = false; // per connection: the server takes the first browser's values only once
@@ -334,7 +339,7 @@ function showParams(header) {
   const hasParams = Object.keys(header.params).length > 0;
   paramsButton.hidden = !hasParams;
   panel.hidden = !hasParams;
-  paramsPanel.show(header.params, header.overrides);
+  paramsPanel.show(header.params, header.overrides, header.sections);
   measurePanel();
 }
 
