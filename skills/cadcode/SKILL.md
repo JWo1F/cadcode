@@ -38,12 +38,14 @@ import { cube, cylinder, square, union, difference, hull, product, range, setRes
 
 setResolution({ fn: 48 }); // like $fn = 48; top level, before building anything
 
-// Everything a user might tune. `--set key=value` can only override names declared here.
+// Everything a user might tune, each as { value, name, description }: all three are required,
+// and name and description label it in the Parameters panel. The functions below get the values
+// alone (p.width is 40). `--set key=value` can only override keys declared here.
 export const params = {
-  width: 40,
-  depth: 30,
-  height: 12,
-  wall: 2,
+  width: { value: 40, name: 'Width', description: 'Outside, along X, in mm.' },
+  depth: { value: 30, name: 'Depth', description: 'Outside, along Y, in mm.' },
+  height: { value: 12, name: 'Height', description: 'Outside, floor included, in mm.' },
+  wall: { value: 2, name: 'Wall', description: 'Thickness of the walls and the floor, in mm.' },
 };
 
 export default (p) => {

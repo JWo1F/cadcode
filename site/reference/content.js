@@ -50,13 +50,19 @@ export const sections = [
       {
         id: 'export-params',
         name: 'export const params',
-        signature: 'export const params = { name: value, ... }',
-        summary: 'The parameters a program declares. They reach the default export and its part functions; `--set` may override them, and so may the Parameters panel of `cadcode dev`.',
+        signature: 'export const params = { key: { value, name, description }, ... }',
+        summary: 'The parameters a program declares. Their values reach the default export and its part functions; `--set` may override them, and so may the Parameters panel of `cadcode dev`.',
         params: [
-          { name: 'name', type: 'string', text: 'A parameter name. `--set` only accepts names declared here, so a typo is an error instead of being silently ignored.' },
-          { name: 'value', type: 'any', text: 'The default value. Overrides from `--set` are parsed as JSON, and kept as strings when they are not valid JSON.' },
+          { name: 'key', type: 'string', text: 'The parameter\'s key, as the program reads it (`p.width`). `--set` only accepts keys declared here, so a typo is an error instead of being silently ignored.' },
+          { name: 'value', type: 'any', text: 'The default value; the program\'s functions get it in place of the whole entry. Overrides from `--set` are parsed as JSON, and kept as strings when they are not valid JSON.' },
+          { name: 'name', type: 'string', text: 'The label of the parameter in the Parameters panel.' },
+          { name: 'description', type: 'string', text: 'What the parameter does, shown under its name in the Parameters panel.' },
         ],
-        example: `export const params = { width: 60, depth: 40, wall: 2 };`,
+        notes: ['`value`, `name` and `description` are all required: a program missing one fails at start, naming the parameter.'],
+        example: `export const params = {
+  width: { value: 60, name: 'Width', description: 'Outside, along X, in mm.' },
+  wall: { value: 2, name: 'Wall', description: 'Thickness of the walls, in mm.' },
+};`,
       },
       {
         id: 'console-log',

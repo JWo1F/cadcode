@@ -68,10 +68,10 @@
         <pre class="code"><code><span class="k">import</span> { cube } <span class="k">from</span> <span class="s">'cadcode'</span>;
 
 <span class="k">export const</span> params = {
-  width: <span class="n">60</span>,
-  depth: <span class="n">40</span>,
-  height: <span class="n">25</span>,
-  wall: <span class="n">2</span>,
+  width: { value: <span class="n">60</span>, name: <span class="s">'Width'</span>, description: <span class="s">'Outside, in mm.'</span> },
+  depth: { value: <span class="n">40</span>, name: <span class="s">'Depth'</span>, description: <span class="s">'Outside, in mm.'</span> },
+  height: { value: <span class="n">25</span>, name: <span class="s">'Height'</span>, description: <span class="s">'Outside, in mm.'</span> },
+  wall: { value: <span class="n">2</span>, name: <span class="s">'Wall'</span>, description: <span class="s">'Thickness, in mm.'</span> },
 };
 
 <span class="k">export default</span> (p) =&gt;

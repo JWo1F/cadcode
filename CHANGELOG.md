@@ -14,6 +14,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ### Changed
 
+- Every entry of `export const params` is `{ value, name, description }` instead of a bare value. `name` and `description` label it in the Parameters panel; all three are required, and a program missing one fails at start. The program's functions still get plain values.
 - Node 22 or newer is required, because Node 20 has reached end of life. CI runs on Node 22 and 24.
 
 ## [0.8.0] - 2026-11-07
