@@ -18,7 +18,7 @@ const program = path.join(dir, 'model.js');
 fs.writeFileSync(
   program,
   `import { cube, sphere, square, circle, point } from 'cadcode';
-export const params = { size: 10 };
+export const params = { size: { value: 10, name: 'Size', description: 'Edge of the cube.' } };
 export default (p) => ({
   pair: () => [cube(p.size).color('red'), sphere(3).translate([20, 0, 0])],
   single: cube(1),
@@ -57,6 +57,8 @@ test('parts, params and overrides', async () => {
   assert.equal(lenient.params.size, 4);
   assert.equal('sise' in lenient.params, false);
   assert.deepEqual(Object.keys(lenient.declared), Object.keys(lenient.params));
+  assert.deepEqual(lenient.declared.size, { value: 10, name: 'Size', description: 'Edge of the cube.' });
+  assert.equal((await evaluateProgram(bundle)).params.size, 10);
   await assert.rejects(evaluateProgram(bundle, { part: 'nope' }), /No part "nope"/);
   assert.equal((await evaluateProgram(bundle, { part: 'nope', fallbackToFirst: true })).part, 'pair');
   await assert.rejects(evaluateProgram(bundle, { part: 'withPoint' }), /Part "withPoint" contains a point\. A point has no geometry/);
@@ -159,10 +161,21 @@ test('overrides parse JSON values and fall back to strings', () => {
 
 test('a program may be async, and may return a function that builds its one part', async () => {
   const { evaluateModule } = await import('../src/core/evaluate.js');
-  const params = { size: 2 };
+  const params = { size: { value: 2, name: 'Size', description: 'Edge of the cube.' } };
   const lazy = await evaluateModule({ params, default: async (p) => async (q) => cube(p.size + q.size) });
   assert.deepEqual(lazy.partNames, ['default']);
   assert.equal(Math.round(lazy.solids[0].volume()), 64);
   const parts = await evaluateModule({ params, default: async () => ({ a: async (p) => cube(p.size) }) }, { overrides: { size: 3 } });
   assert.equal(Math.round(parts.solids[0].volume()), 27);
+});
+
+test('every param needs a value, a name and a description', async () => {
+  const { evaluateModule } = await import('../src/core/evaluate.js');
+  const run = (params) => evaluateModule({ params, default: () => cube(1) });
+  await assert.rejects(run({ size: 10 }), /Parameter "size" must be \{ value, name, description \}; value, name, description are missing/);
+  await assert.rejects(run({ size: { value: 10, name: 'Size' } }), /Parameter "size" .*; description is missing/);
+  await assert.rejects(run({ size: { name: 'Size', description: 'Edge.' } }), /Parameter "size" .*; value is missing/);
+  await assert.rejects(run({ size: { value: 10, name: ' ', description: 'Edge.' } }), /; name is missing/);
+  await assert.rejects(run([1]), /must be an object/);
+  assert.equal((await run({ on: { value: false, name: 'On', description: 'A switch.' } })).params.on, false);
 });

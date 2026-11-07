@@ -12,18 +12,18 @@ import { circle, cylinder, hull, polygon, range, setResolution, union } from 'ca
 setResolution({ fn: 64 });
 
 export const params = {
-  shape: 'heart', // or 'star'
-  size: 70, // across the widest part of the outline
+  shape: { value: 'heart', name: 'Shape', description: "Outline to cut: 'heart' or 'star'." },
+  size: { value: 70, name: 'Size', description: 'Width across the widest part of the outline, in mm.' },
 
   // Blade
-  height: 16, // dough is rarely thicker than 8 mm
-  wall: 1.2, // upper part of the blade, for stiffness
-  edge: 0.6, // the cutting edge, two layers of a 0.3 mm nozzle
-  edgeH: 5, // how far the thin edge reaches up
+  height: { value: 16, name: 'Height', description: 'Total height of the blade in mm; dough is rarely thicker than 8 mm.' },
+  wall: { value: 1.2, name: 'Wall', description: 'Thickness of the upper part of the blade, for stiffness, in mm.' },
+  edge: { value: 0.6, name: 'Cutting edge', description: 'Thickness of the cutting edge in mm: two layers of a 0.3 mm nozzle.' },
+  edgeH: { value: 5, name: 'Edge height', description: 'How far the thin edge reaches up from the cutting end, in mm.' },
 
   // Rim
-  rim: 5, // how far it sticks out from the blade
-  rimT: 2,
+  rim: { value: 5, name: 'Rim width', description: 'How far the rim sticks out from the blade, in mm.' },
+  rimT: { value: 2, name: 'Rim thickness', description: 'Thickness of the rim, in mm.' },
 };
 
 export default (p) => {

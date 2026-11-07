@@ -14,24 +14,24 @@ import { circle, cube, polygon, setResolution, square, union } from 'cadcode';
 setResolution({ fn: 48 });
 
 export const params = {
-  width: 76,
-  angle: 65, // of the back plate, from the desk
-  back: 100, // length of the back plate, from the seat up
-  plate: 5, // its thickness
-  foot: 92, // front to back, on the desk
-  base: 5, // thickness of the bottom bar
+  width: { value: 76, name: 'Width', description: 'Width of the stand, side to side, in mm.' },
+  angle: { value: 65, name: 'Angle', description: 'Angle of the back plate from the desk, in degrees.' },
+  back: { value: 100, name: 'Back length', description: 'Length of the back plate from the seat up, in mm.' },
+  plate: { value: 5, name: 'Plate', description: 'Thickness of the back plate, in mm.' },
+  foot: { value: 92, name: 'Foot', description: 'Depth of the stand on the desk, front to back, in mm.' },
+  base: { value: 5, name: 'Base', description: 'Thickness of the bottom bar, in mm.' },
 
   // Where the phone stands
-  seatZ: 20, // height of the seat: room for a USB-C plug under the phone
-  seatDepth: 13, // phone plus case
-  lip: 9, // above the seat
-  lipT: 5,
+  seatZ: { value: 20, name: 'Seat height', description: 'Height of the seat, room for a USB-C plug under the phone, in mm.' },
+  seatDepth: { value: 13, name: 'Seat depth', description: 'Depth of the seat, for the phone plus case, in mm.' },
+  lip: { value: 9, name: 'Lip', description: 'Height of the front lip above the seat, in mm.' },
+  lipT: { value: 5, name: 'Lip thickness', description: 'Thickness of the front lip, in mm.' },
 
   // Cable slot through the seat and lip
-  slotW: 14, // a USB-C plug is about 12 × 6.5 mm
-  slotFloor: 3,
+  slotW: { value: 14, name: 'Slot width', description: 'Width of the cable slot, in mm; a USB-C plug is about 12 × 6.5 mm.' },
+  slotFloor: { value: 3, name: 'Slot floor', description: 'Material left under the cable slot, in mm.' },
 
-  r: 6, // corner radius in plan
+  r: { value: 6, name: 'Corner radius', description: 'Radius of the corners in plan, in mm.' },
 };
 
 export default (p) => {

@@ -14,25 +14,25 @@ setResolution({ fn: 72 });
 
 export const params = {
   // Dish
-  r: 40, // half the short side; the long side is `oval` times longer
-  oval: 1.45,
-  height: 22,
-  wall: 2.4,
-  round: 10, // radius where the floor turns into the wall
-  flare: 7, // how much wider the rim is than the floor's edge
+  r: { value: 40, name: 'Half width', description: 'Half the short side of the dish, in mm; the long side is Oval times longer.' },
+  oval: { value: 1.45, name: 'Oval', description: 'How many times longer the long side is than the short one.' },
+  height: { value: 22, name: 'Height', description: 'Height of the dish, in mm.' },
+  wall: { value: 2.4, name: 'Wall', description: 'Wall thickness of the dish and the tray, in mm.' },
+  round: { value: 10, name: 'Floor rounding', description: 'Radius where the floor turns into the wall, in mm.' },
+  flare: { value: 7, name: 'Flare', description: 'How much wider the rim is than the edge of the floor, in mm.' },
 
   // Ribs and drain slots
-  ribs: 6,
-  ribH: 2.4, // above the floor
-  ribW: 2.4,
-  slotW: 3,
-  slotLen: 10,
+  ribs: { value: 6, name: 'Ribs', description: 'Number of ribs running the long way across the floor.' },
+  ribH: { value: 2.4, name: 'Rib height', description: 'Height of the ribs above the floor, in mm.' },
+  ribW: { value: 2.4, name: 'Rib width', description: 'Width of the ribs at their base, in mm.' },
+  slotW: { value: 3, name: 'Slot width', description: 'Width of the drain slots, in mm.' },
+  slotLen: { value: 10, name: 'Slot length', description: 'Length of the drain slots, in mm.' },
 
   // Tray
-  tray: true,
-  trayGap: 3, // between the dish and the tray, all round
-  trayH: 10,
-  post: 3, // the dish stands this high above the tray's floor
+  tray: { value: true, name: 'Tray', description: 'Make the drip tray the dish stands in.' },
+  trayGap: { value: 3, name: 'Tray gap', description: 'Gap between the dish and the tray, all round, in mm.' },
+  trayH: { value: 10, name: 'Tray height', description: 'Height of the tray, in mm.' },
+  post: { value: 3, name: 'Post height', description: "How high the dish stands above the tray's floor, in mm." },
 };
 
 export default (p) => {

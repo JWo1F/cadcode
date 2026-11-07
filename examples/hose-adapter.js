@@ -15,22 +15,22 @@ setResolution({ fn: 96 });
 
 export const params = {
   // Friction cone, into the vacuum cuff
-  bigOD: 35, // at its root; 35 mm suits most 1.25" cuffs
-  taper: 1.2, // diameter lost towards the tip
-  coneLen: 30,
-  wall: 2.4,
+  bigOD: { value: 35, name: 'Cone diameter', description: 'Outside diameter of the cone at its root, in mm; 35 mm suits most 1.25" cuffs.' },
+  taper: { value: 1.2, name: 'Taper', description: 'Diameter the cone loses towards its tip, in mm.' },
+  coneLen: { value: 30, name: 'Cone length', description: 'Length of the friction cone, in mm.' },
+  wall: { value: 2.4, name: 'Cone wall', description: 'Wall thickness of the cone, in mm.' },
 
   // Barbed spigot, inside the hose
-  hoseID: 19, // 3/4" hose
-  barbs: 4,
-  barbLen: 6,
-  barbOver: 1.2, // barb crest over the hose's inside radius
-  spigotWall: 2.2,
+  hoseID: { value: 19, name: 'Hose bore', description: 'Inside diameter of the hose in mm; 19 is a 3/4" hose.' },
+  barbs: { value: 4, name: 'Barbs', description: 'Number of barbs on the spigot.' },
+  barbLen: { value: 6, name: 'Barb length', description: 'Length of each barb, in mm.' },
+  barbOver: { value: 1.2, name: 'Barb overlap', description: "How far the barb crest stands over the hose's inside radius, in mm." },
+  spigotWall: { value: 2.2, name: 'Spigot wall', description: 'Wall thickness of the spigot, in mm.' },
 
   // Collar between them
-  collarOD: 44,
-  collarH: 10,
-  ribs: 24, // finger grooves round the collar
+  collarOD: { value: 44, name: 'Collar diameter', description: 'Outside diameter of the collar, in mm.' },
+  collarH: { value: 10, name: 'Collar height', description: 'Height of the collar, in mm.' },
+  ribs: { value: 24, name: 'Grip grooves', description: 'Number of finger grooves round the collar.' },
 };
 
 export default (p) => {

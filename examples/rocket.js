@@ -14,19 +14,19 @@ setResolution({ fn: 72 });
 
 export const params = {
   // Body
-  radius: 17, // widest part of the body tube
-  tail: 10, // nozzle height; the boat tail starts here
-  tubeTop: 80, // where the nose cone begins
-  noseLength: 50,
+  radius: { value: 17, name: 'Body radius', description: 'Radius of the body tube at its widest, in mm.' },
+  tail: { value: 10, name: 'Nozzle height', description: 'Height of the nozzle, where the boat tail starts, in mm.' },
+  tubeTop: { value: 80, name: 'Tube top', description: 'Height where the nose cone begins, in mm.' },
+  noseLength: { value: 50, name: 'Nose length', description: 'Length of the ogive nose cone, in mm.' },
 
   // Fins
-  fins: 4, // in mirrored pairs, so keep it even
-  finT: 3,
-  finSpan: 33, // from the axis out to the fin tip
+  fins: { value: 4, name: 'Fins', description: 'Number of fins; they come in mirrored pairs, so keep it even.' },
+  finT: { value: 3, name: 'Fin thickness', description: 'Thickness of each fin, in mm.' },
+  finSpan: { value: 33, name: 'Fin span', description: 'From the axis out to the fin tip, in mm.' },
 
   // Portholes
-  portD: 9,
-  rim: 1.5, // how far the rim stands proud
+  portD: { value: 9, name: 'Porthole', description: 'Diameter of the upper porthole, in mm; the lower one is 0.7 of it.' },
+  rim: { value: 1.5, name: 'Porthole rim', description: 'How far the porthole rim stands proud of the body, in mm.' },
 };
 
 export default (p) => {

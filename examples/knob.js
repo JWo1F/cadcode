@@ -8,21 +8,21 @@ setResolution({ fn: 96 });
 
 export const params = {
   // Grip
-  d: 24,
-  height: 16,
-  chamfer: 1.5,
-  knurls: 18,
-  knurlD: 2,
+  d: { value: 24, name: 'Diameter', description: 'Diameter of the grip, in mm.' },
+  height: { value: 16, name: 'Height', description: 'Overall height of the knob, in mm.' },
+  chamfer: { value: 1.5, name: 'Chamfer', description: 'Chamfer on the top edge of the grip, in mm.' },
+  knurls: { value: 18, name: 'Knurls', description: 'Number of grooves around the grip.' },
+  knurlD: { value: 2, name: 'Knurl diameter', description: 'Diameter of each groove, in mm.' },
 
   // Skirt with the pointer
-  skirtD: 30,
-  skirtH: 3,
+  skirtD: { value: 30, name: 'Skirt diameter', description: 'Diameter of the skirt that carries the pointer, in mm.' },
+  skirtH: { value: 3, name: 'Skirt height', description: 'Height of the skirt, in mm.' },
 
   // D-shaft of a 6 mm potentiometer
-  shaftD: 6,
-  shaftFlat: 4.5, // across the flat
-  shaftDepth: 11,
-  fit: 0.2, // added to the hole
+  shaftD: { value: 6, name: 'Shaft diameter', description: 'Diameter of the potentiometer shaft, in mm.' },
+  shaftFlat: { value: 4.5, name: 'Shaft flat', description: 'Width of the shaft across the flat, in mm.' },
+  shaftDepth: { value: 11, name: 'Shaft depth', description: 'Depth of the D-hole, in mm.' },
+  fit: { value: 0.2, name: 'Fit', description: 'Clearance added to the hole, across the round and the flat, in mm.' },
 };
 
 export default (p) => {

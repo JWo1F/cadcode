@@ -9,9 +9,8 @@ import { cube, range, square, union } from 'cadcode';
 // the holes of a Sierpinski carpet, extruded straight through the whole cube. Three cutters, one
 // boolean. Prints on a face; the holes bridge, so no supports.
 export const params = {
-  size: 60,
-  // 1 to 4. Level 3 takes half a second; level 4 is 400k triangles and about 15 s.
-  level: 3,
+  size: { value: 60, name: 'Size', description: 'Edge length of the cube, in mm.' },
+  level: { value: 3, name: 'Level', description: 'Recursion depth, 1 to 4; level 3 takes half a second, level 4 is 400k triangles and about 15 s.' },
 };
 
 export default (p) => {

@@ -10,11 +10,11 @@ import { polyhedron, union } from 'cadcode';
 // stands, on its base, without supports: the sides lean in at about 20 degrees off vertical, and
 // every flat underside is one small piece wide, a short bridge between three corners.
 export const params = {
-  edge: 100,
-  // 0 to 6. Each level is four times as many pieces; 6 is 4096 of them, 1.6 mm each, and still
-  // evaluates in a second, but that is about as fine as a 0.4 mm nozzle can draw.
-  level: 5,
-  overlap: 0.6, // how far each piece's corners reach past the shared point, in mm
+  edge: { value: 100, name: 'Edge', description: 'Edge length of the whole pyramid, in mm.' },
+  // Each level is four times as many pieces; 6 is 4096 of them, 1.6 mm each, and still evaluates
+  // in a second, but that is about as fine as a 0.4 mm nozzle can draw.
+  level: { value: 5, name: 'Level', description: 'How many times the tetrahedron is split, 0 to 6.' },
+  overlap: { value: 0.6, name: 'Overlap', description: "How far each piece's corners reach past the shared point, in mm." },
 };
 
 export default (p) => {

@@ -13,34 +13,34 @@ setResolution({ fn: 48 });
 
 export const params = {
   // Print
-  wall: 2,
-  floor: 1.6,
-  corner: 3,
-  gap: 0.5, // board to wall
+  wall: { value: 2, name: 'Wall', description: 'Wall thickness, in mm.' },
+  floor: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
+  corner: { value: 3, name: 'Corner radius', description: 'Radius of the case corners in plan, in mm.' },
+  gap: { value: 0.5, name: 'Gap', description: 'Clearance from the board to the wall, in mm.' },
 
   // Board
-  boardL: 65,
-  boardW: 30,
-  boardT: 1.4,
-  holeInset: 3.5,
-  standoff: 3,
-  screwHole: 2.2, // M2.5 self-tapping
-  headroom: 6, // above the board, under the lid; keeps the plug recesses below the lid groove
+  boardL: { value: 65, name: 'Board length', description: 'Length of the board, in mm.' },
+  boardW: { value: 30, name: 'Board width', description: 'Width of the board, in mm.' },
+  boardT: { value: 1.4, name: 'Board thickness', description: 'Thickness of the board, in mm.' },
+  holeInset: { value: 3.5, name: 'Hole inset', description: 'Distance of the mounting holes from the board edges, in mm.' },
+  standoff: { value: 3, name: 'Standoff', description: 'Height of the standoffs under the board, in mm.' },
+  screwHole: { value: 2.2, name: 'Screw hole', description: 'Hole in the standoffs for M2.5 self-tapping screws, in mm.' },
+  headroom: { value: 6, name: 'Headroom', description: 'Space above the board, under the lid, in mm; keeps the plug recesses below the lid groove.' },
 
   // Ports on the long side, centres from the board's left edge
-  hdmiX: 12.4,
-  otgX: 41.4,
-  pwrX: 54,
-  sdY: 16.9, // SD card centre from the port side
-  cameraSlot: true,
-  gpioSlot: true,
+  hdmiX: { value: 12.4, name: 'HDMI port', description: "Centre of the mini HDMI port from the board's left edge, in mm." },
+  otgX: { value: 41.4, name: 'USB port', description: "Centre of the USB OTG port from the board's left edge, in mm." },
+  pwrX: { value: 54, name: 'Power port', description: "Centre of the power port from the board's left edge, in mm." },
+  sdY: { value: 16.9, name: 'SD card', description: 'SD card centre from the port side, in mm.' },
+  cameraSlot: { value: true, name: 'Camera slot', description: 'Cut a slot in the right end for the camera ribbon cable.' },
+  gpioSlot: { value: true, name: 'GPIO slot', description: 'Cut a slot in the lid over the GPIO header.' },
 
   // Sliding lid
-  lidT: 3, // flush with the walls
-  tongueT: 1.2, // the part that runs in the grooves
-  groove: 1, // groove depth in the walls
-  slide: 0.2, // clearance in the grooves
-  detent: 0.5, // how far the click bumps stand out of the tongue's edges
+  lidT: { value: 3, name: 'Lid thickness', description: 'Thickness of the lid, flush with the walls, in mm.' },
+  tongueT: { value: 1.2, name: 'Tongue', description: 'Thickness of the tongue that runs in the grooves, in mm.' },
+  groove: { value: 1, name: 'Groove depth', description: 'Depth of the lid grooves in the walls, in mm.' },
+  slide: { value: 0.2, name: 'Slide clearance', description: 'Clearance for the lid in the grooves, in mm.' },
+  detent: { value: 0.5, name: 'Click bumps', description: "How far the click bumps stand out of the tongue's edges, in mm." },
 };
 
 export default (p) => {

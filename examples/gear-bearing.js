@@ -9,17 +9,17 @@ setResolution({ fn: 96 });
 // A planetary gear bearing that prints in one piece and turns straight off the bed.
 // Herringbone teeth hold the sun and planets in the ring, so nothing falls out.
 export const params = {
-  module: 2,
-  sunTeeth: 15,
-  planetTeeth: 9,
-  planets: 4, // (sun + ring) teeth must divide evenly by this
-  pressureAngle: 20,
-  addendum: 0.85, // tooth height above the pitch circle, in modules; short to keep small planets clear
-  helix: 30, // degrees
-  height: 15,
-  rim: 5, // ring wall behind the tooth roots
-  clearance: 0.15, // per flank, for printing in place
-  hex: 7, // across the flats, for a key in the sun
+  module: { value: 2, name: 'Module', description: 'Gear module: pitch diameter per tooth, in mm.' },
+  sunTeeth: { value: 15, name: 'Sun teeth', description: 'Number of teeth on the sun gear.' },
+  planetTeeth: { value: 9, name: 'Planet teeth', description: 'Number of teeth on each planet gear.' },
+  planets: { value: 4, name: 'Planets', description: 'Number of planet gears; (sun + ring) teeth must divide evenly by this.' },
+  pressureAngle: { value: 20, name: 'Pressure angle', description: 'Tooth pressure angle, in degrees.' },
+  addendum: { value: 0.85, name: 'Addendum', description: 'Tooth height above the pitch circle, in modules; short to keep small planets clear.' },
+  helix: { value: 30, name: 'Helix angle', description: 'Helix angle of the herringbone teeth, in degrees.' },
+  height: { value: 15, name: 'Height', description: 'Height of the bearing, in mm.' },
+  rim: { value: 5, name: 'Ring rim', description: 'Ring wall behind the tooth roots, in mm.' },
+  clearance: { value: 0.15, name: 'Clearance', description: 'Clearance per flank for printing in place, in mm.' },
+  hex: { value: 7, name: 'Hex key', description: 'Hex hole in the sun for a key, across the flats, in mm.' },
 };
 
 export default (p) => {

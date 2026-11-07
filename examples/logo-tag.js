@@ -27,13 +27,13 @@ const logo = `<svg xmlns="http://www.w3.org/2000/svg" width="100mm" height="80mm
 </svg>`;
 
 export const params = {
-  diameter: 40,
-  thick: 3,
-  logoSize: 26, // width of the logo
-  raised: true, // false engraves the logo instead
-  depth: 0.8, // logo above the face, or into it
-  hole: 5, // keyring hole
-  rim: 2.5, // material around the hole
+  diameter: { value: 40, name: 'Diameter', description: 'Diameter of the round tag, in mm.' },
+  thick: { value: 3, name: 'Thickness', description: 'Thickness of the tag, in mm.' },
+  logoSize: { value: 26, name: 'Logo size', description: 'Width the logo is scaled to, in mm.' },
+  raised: { value: true, name: 'Raised', description: 'Raise the logo above the face; false engraves it instead.' },
+  depth: { value: 0.8, name: 'Logo depth', description: 'How far the logo stands above the face, or goes into it, in mm.' },
+  hole: { value: 5, name: 'Keyring hole', description: 'Diameter of the keyring hole, in mm.' },
+  rim: { value: 2.5, name: 'Rim', description: 'Material around the keyring hole, in mm.' },
 };
 
 export default (p) => {

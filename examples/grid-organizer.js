@@ -8,15 +8,15 @@ setResolution({ fn: 48 });
 
 // Any size from the command line: npx cadcode stl grid-organizer.js --set cols=4 --set rows=2
 export const params = {
-  cols: 3,
-  rows: 2,
-  cell: 40, // inside of one pocket
-  height: 30,
-  wall: 1.6,
-  floor: 1.2,
-  corner: 4, // outer corner radius
-  pocketCorner: 3,
-  scoop: 6, // fillet where the pocket floor meets the front wall, for fingers
+  cols: { value: 3, name: 'Columns', description: 'Number of pockets left to right.' },
+  rows: { value: 2, name: 'Rows', description: 'Number of pockets front to back.' },
+  cell: { value: 40, name: 'Pocket size', description: 'Inside width of one square pocket, in mm.' },
+  height: { value: 30, name: 'Height', description: 'Overall height of the organizer, in mm.' },
+  wall: { value: 1.6, name: 'Wall', description: 'Thickness of the outer and dividing walls, in mm.' },
+  floor: { value: 1.2, name: 'Floor', description: 'Thickness of the floor under the pockets, in mm.' },
+  corner: { value: 4, name: 'Corner radius', description: 'Outer corner radius, in mm.' },
+  pocketCorner: { value: 3, name: 'Pocket corner', description: 'Corner radius inside each pocket, in mm.' },
+  scoop: { value: 6, name: 'Scoop', description: 'Radius of the fillet where the pocket floor meets the front wall, for fingers, in mm.' },
 };
 
 export default (p) => {

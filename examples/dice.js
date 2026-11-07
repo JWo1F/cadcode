@@ -13,13 +13,13 @@ setResolution({ fn: 64 });
 
 export const params = {
   // Body
-  size: 16, // edge of a standard large die
-  round: 1.5, // sphere diameter as a share of the edge: 1.0 is a ball, √3 a sharp cube
+  size: { value: 16, name: 'Size', description: 'Edge of the die in mm; 16 is a standard large die.' },
+  round: { value: 1.5, name: 'Roundness', description: 'Diameter of the rounding sphere as a share of the edge: 1.0 is a ball, √3 a sharp cube.' },
 
   // Pips
-  pipD: 3.6,
-  pipDepth: 1.3, // depth of each dimple
-  pipSpread: 0.27, // pip offset from the face centre, as a share of the edge
+  pipD: { value: 3.6, name: 'Pip diameter', description: 'Diameter of the sphere that cuts each pip, in mm.' },
+  pipDepth: { value: 1.3, name: 'Pip depth', description: 'Depth of each dimple, in mm.' },
+  pipSpread: { value: 0.27, name: 'Pip spread', description: 'Pip offset from the face centre, as a share of the edge.' },
 };
 
 export default (p) => {

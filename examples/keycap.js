@@ -15,24 +15,24 @@ setResolution({ fn: 48 });
 
 export const params = {
   // Size
-  units: 1, // 1u = 19.05 mm key pitch
-  base: 18.1, // skirt of a 1u cap
-  topW: 12.6, // flat top, left to right
-  topD: 14, // flat top, front to back
-  height: 8, // to the middle of the top
-  tilt: 5, // top leans towards the typist, degrees
-  dish: 0.9, // depth of the cylindrical dish
+  units: { value: 1, name: 'Units', description: 'Key length in units of 19.05 mm key pitch; from 2u a stabiliser stem is added each side.' },
+  base: { value: 18.1, name: 'Skirt', description: 'Width and depth of the skirt of a 1u cap, in mm.' },
+  topW: { value: 12.6, name: 'Top width', description: 'Width of the flat top of a 1u cap, left to right, in mm.' },
+  topD: { value: 14, name: 'Top depth', description: 'Depth of the flat top, front to back, in mm.' },
+  height: { value: 8, name: 'Height', description: 'Height to the middle of the top, in mm.' },
+  tilt: { value: 5, name: 'Tilt', description: 'How far the top leans towards the typist, in degrees.' },
+  dish: { value: 0.9, name: 'Dish depth', description: 'Depth of the cylindrical dish across the top, in mm.' },
 
   // Shell
-  wall: 1.3,
-  roof: 1.6, // under the deepest point of the dish
+  wall: { value: 1.3, name: 'Wall', description: 'Thickness of the side walls, in mm.' },
+  roof: { value: 1.6, name: 'Roof', description: 'Thickness of the roof under the deepest point of the dish, in mm.' },
 
   // Cherry MX stem
-  stemD: 5.5,
-  crossL: 4.1, // each arm of the + slot
-  crossW: 1.2,
-  crossDepth: 4,
-  stemDrop: 0.6, // stem bottom above the skirt bottom
+  stemD: { value: 5.5, name: 'Stem diameter', description: 'Outer diameter of the stem, in mm.' },
+  crossL: { value: 4.1, name: 'Cross length', description: 'Length of each arm of the + slot, in mm.' },
+  crossW: { value: 1.2, name: 'Cross width', description: 'Width of the + slot, in mm.' },
+  crossDepth: { value: 4, name: 'Cross depth', description: 'Depth of the + slot into the stem, in mm.' },
+  stemDrop: { value: 0.6, name: 'Stem drop', description: 'Height of the stem bottom above the skirt bottom, in mm.' },
 };
 
 export default (p) => {

@@ -11,22 +11,22 @@ setResolution({ fn: 48 });
 // base; the treads overhang, so print with supports (tree supports leave the cleanest underside).
 export const params = {
   // Stair
-  steps: 18,
-  turn: 360, // degrees the stair turns from bottom to top
-  height: 110,
-  radius: 40, // outer edge of the treads
-  tread: 3, // thickness
-  overlap: 4, // degrees each tread runs under the next
+  steps: { value: 18, name: 'Steps', description: 'Number of treads.' },
+  turn: { value: 360, name: 'Turn', description: 'How far the stair turns from bottom to top, in degrees.' },
+  height: { value: 110, name: 'Height', description: 'Height from the bed to the top of the last tread, in mm.' },
+  radius: { value: 40, name: 'Radius', description: 'Radius of the outer edge of the treads, in mm.' },
+  tread: { value: 3, name: 'Tread thickness', description: 'Thickness of each tread, in mm.' },
+  overlap: { value: 4, name: 'Tread overlap', description: 'How far each tread runs under the next, in degrees.' },
 
   // Column and base
-  columnD: 12,
-  baseD: 100,
-  baseH: 4,
+  columnD: { value: 12, name: 'Column diameter', description: 'Diameter of the central column, in mm.' },
+  baseD: { value: 100, name: 'Base diameter', description: 'Diameter of the base disc, in mm.' },
+  baseH: { value: 4, name: 'Base height', description: 'Thickness of the base disc, in mm.' },
 
   // Railing
-  balusterD: 1.6,
-  railHeight: 22, // above each tread
-  railD: 2.4,
+  balusterD: { value: 1.6, name: 'Baluster diameter', description: 'Diameter of the balusters, in mm.' },
+  railHeight: { value: 22, name: 'Rail height', description: 'Height of the handrail above each tread, in mm.' },
+  railD: { value: 2.4, name: 'Rail diameter', description: 'Diameter of the handrail, in mm.' },
 };
 
 export default (p) => {

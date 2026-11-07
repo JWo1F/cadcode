@@ -15,23 +15,23 @@ setResolution({ fn: 48 });
 
 export const params = {
   // Outside of the closed box
-  length: 70,
-  depth: 50,
-  boxH: 26,
-  lidH: 10,
-  wall: 2,
-  floor: 1.6,
-  corner: 5,
+  length: { value: 70, name: 'Length', description: 'Outside length of the closed box, along the hinge, in mm.' },
+  depth: { value: 50, name: 'Depth', description: 'Outside depth of the closed box, front to back, in mm.' },
+  boxH: { value: 26, name: 'Box height', description: 'Outside height of the bottom part, in mm.' },
+  lidH: { value: 10, name: 'Lid height', description: 'Outside height of the lid, in mm.' },
+  wall: { value: 2, name: 'Wall', description: 'Thickness of the side walls, in mm.' },
+  floor: { value: 1.6, name: 'Floor', description: 'Thickness of the box floor and the lid top, in mm.' },
+  corner: { value: 5, name: 'Corner radius', description: 'Outer corner radius in plan, in mm.' },
 
   // Hinge
-  knuckles: 5, // odd: the box has the two ends
-  knuckleD: 8,
-  pinD: 3.4,
-  margin: 6, // from each end of the box to the hinge
-  gap: 0.4, // clearance between moving parts, radial and axial
+  knuckles: { value: 5, name: 'Knuckles', description: 'Number of hinge knuckles; odd, so the box has the two ends.' },
+  knuckleD: { value: 8, name: 'Knuckle diameter', description: 'Outside diameter of the hinge knuckles, in mm.' },
+  pinD: { value: 3.4, name: 'Pin diameter', description: 'Diameter of the hinge pin, in mm.' },
+  margin: { value: 6, name: 'Hinge margin', description: 'Distance from each end of the box to the hinge, in mm.' },
+  gap: { value: 0.4, name: 'Gap', description: 'Clearance between moving parts, radial and axial, in mm.' },
 
   // Assembly view
-  open: 105, // degrees
+  open: { value: 105, name: 'Open angle', description: 'How far the lid is opened in the assembly view, in degrees.' },
 };
 
 export default (p) => {

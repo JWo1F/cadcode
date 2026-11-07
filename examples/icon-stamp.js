@@ -18,17 +18,17 @@ import { cylinder, importSVG, setResolution } from 'cadcode';
 setResolution({ fa: 4, fs: 0.4 });
 
 export const params = {
-  icon: 'paw', // or 'leaf', 'cat', 'heart', 'star', 'rocket-launch'…
-  size: 36, // the icon's longer side
-  relief: 2, // how deep it presses
+  icon: { value: 'paw', name: 'Icon', description: "Material Design icon name, e.g. 'paw', 'leaf', 'cat', 'heart', 'star', 'rocket-launch'." },
+  size: { value: 36, name: 'Icon size', description: "The icon's longer side, in mm." },
+  relief: { value: 2, name: 'Relief', description: 'How deep the stamp presses: height of the raised icon, in mm.' },
 
   // Plate
-  margin: 3, // around the icon
-  thick: 3,
+  margin: { value: 3, name: 'Margin', description: 'Plate border around the icon, in mm.' },
+  thick: { value: 3, name: 'Plate thickness', description: 'Thickness of the plate, in mm.' },
 
   // Handle
-  knobD: 18,
-  knobH: 22,
+  knobD: { value: 18, name: 'Knob diameter', description: 'Diameter of the handle knob, in mm.' },
+  knobH: { value: 22, name: 'Knob height', description: 'Height of the handle knob, in mm.' },
 };
 
 // A pinned version: a stamp should not change because the icon set did.

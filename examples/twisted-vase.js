@@ -7,15 +7,15 @@ import { cube, polygon, range, setResolution } from 'cadcode';
 setResolution({ fn: 64 });
 
 export const params = {
-  height: 120,
-  radius: 35, // tips of the lobes
-  valley: 0.8, // radius between lobes, as a share of `radius`
-  lobes: 7,
-  round: 4, // fillet on both tips and valleys
-  twist: 90,
-  topScale: 1.3,
-  wall: 1.6,
-  bottom: 2,
+  height: { value: 120, name: 'Height', description: 'Height of the vase, in mm.' },
+  radius: { value: 35, name: 'Radius', description: 'Radius at the tips of the lobes, in mm.' },
+  valley: { value: 0.8, name: 'Valley', description: 'Radius between the lobes, as a share of the tip radius.' },
+  lobes: { value: 7, name: 'Lobes', description: 'Number of lobes round the vase.' },
+  round: { value: 4, name: 'Rounding', description: 'Fillet radius on both tips and valleys, in mm.' },
+  twist: { value: 90, name: 'Twist', description: 'How far the profile turns from bottom to top, in degrees.' },
+  topScale: { value: 1.3, name: 'Top scale', description: 'Size of the top as a share of the bottom.' },
+  wall: { value: 1.6, name: 'Wall', description: 'Wall thickness, in mm.' },
+  bottom: { value: 2, name: 'Bottom', description: 'Floor thickness, in mm.' },
 };
 
 export default (p) => {

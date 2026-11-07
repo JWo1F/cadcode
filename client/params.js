@@ -1,9 +1,9 @@
 // The parameters panel: one row per entry of the program's `export const params`,
-// each with a control that fits its value — a number field, a switch, a colour, a
+// labelled with its `name` and `description`, each with a control that fits its value — a number field, a switch, a colour, a
 // text field, or JSON for arrays and objects. Changing one sends the whole set of
 // values that differ from the code (the overrides) through onChange.
 //
-// The server is the truth: every model frame carries the declared params and the
+// The server is the truth: every model frame carries the declared params ({ value, name, description }) and the
 // overrides it ran with, and the panel follows them, except for the field being
 // typed in and while its own change is still on the way.
 
@@ -31,12 +31,13 @@ function stepOf(value) {
 
 /**
  * @param {{ form: HTMLFormElement, resetAll: HTMLButtonElement, onChange: (overrides: Record<string, unknown>) => void }} options
- * @returns {{ show: (declared: Record<string, unknown>, overrides: Record<string, unknown>) => void }}
+ * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string }>, overrides: Record<string, unknown>) => void }}
  */
 export function createParamsPanel({ form, resetAll, onChange }) {
-  let declared = {};
+  let specs = {};
+  let declared = {}; // name → the value in the code
   let overrides = {};
-  let shape = ''; // the names and kinds the rows were built for
+  let shape = ''; // the keys, kinds and labels the rows were built for
   let sent = null; // overrides sent and not yet seen back in a frame
   const rows = new Map(); // name → { row, set(value), get() → { ok, value } }
 
@@ -181,7 +182,7 @@ export function createParamsPanel({ form, resetAll, onChange }) {
       ...Object.keys(declared).map((name) => {
         const row = Object.assign(document.createElement('div'), { className: 'param' });
         row.dataset.kind = kindOf(declared[name]);
-        const label = Object.assign(document.createElement('label'), { htmlFor: `param-${name}`, textContent: name });
+        const label = Object.assign(document.createElement('label'), { htmlFor: `param-${name}`, textContent: specs[name].name });
         row.append(label);
         const control = CONTROLS[row.dataset.kind](name, row, label);
         const reset = Object.assign(document.createElement('button'), { type: 'button', className: 'reset', title: 'Back to the value in the code' });
@@ -192,7 +193,8 @@ export function createParamsPanel({ form, resetAll, onChange }) {
           control.set(declared[name]);
           change(name, declared[name]);
         });
-        row.append(reset);
+        const description = Object.assign(document.createElement('p'), { className: 'description', textContent: specs[name].description });
+        row.append(reset, description);
         rows.set(name, { row, ...control });
         return row;
       }),
@@ -218,9 +220,10 @@ export function createParamsPanel({ form, resetAll, onChange }) {
   form.addEventListener('submit', (event) => event.preventDefault());
 
   return {
-    show(nextDeclared, serverOverrides) {
-      declared = nextDeclared;
-      const nextShape = stable(Object.entries(declared).map(([name, value]) => [name, kindOf(value)]));
+    show(nextSpecs, serverOverrides) {
+      specs = nextSpecs;
+      declared = Object.fromEntries(Object.entries(specs).map(([name, spec]) => [name, spec.value]));
+      const nextShape = stable(Object.entries(specs).map(([name, spec]) => [name, kindOf(spec.value), spec.name, spec.description]));
       // Until the server has run with what was sent, its overrides are older than the panel's.
       if (sent) {
         const pending = Object.fromEntries(Object.entries(sent).filter(([name]) => name in declared));

@@ -8,24 +8,24 @@ import { circle, polygon, range, union } from 'cadcode';
 // and twigs on the longer branches — mirrored about its own axis, repeated around the centre and
 // extruded. The top arm ends in a loop for a thread. Prints flat, no supports.
 export const params = {
-  arms: 6,
-  radius: 45, // centre to the tip of an arm
-  thickness: 2.4,
-  spine: 3.2, // width of an arm at the centre; it tapers to half at the tip
+  arms: { value: 6, name: 'Arms', description: 'Number of arms round the centre.' },
+  radius: { value: 45, name: 'Radius', description: 'From the centre to the tip of an arm, in mm.' },
+  thickness: { value: 2.4, name: 'Thickness', description: 'Thickness of the ornament, in mm.' },
+  spine: { value: 3.2, name: 'Spine width', description: 'Width of an arm at the centre, in mm; it tapers to half at the tip.' },
 
   // Side branches, from the inner one outwards; each is shorter than the one before it.
-  branches: 4,
-  branchLength: 15,
-  branchAngle: 55, // off the spine, towards the tip
-  branchWidth: 2,
-  shrink: 0.65, // length of the last branch as a share of the first
+  branches: { value: 4, name: 'Branches', description: 'Number of side branches on each side of an arm.' },
+  branchLength: { value: 15, name: 'Branch length', description: 'Length of the innermost branch, in mm.' },
+  branchAngle: { value: 55, name: 'Branch angle', description: 'Angle of the branches off the spine, towards the tip, in degrees.' },
+  branchWidth: { value: 2, name: 'Branch width', description: 'Width of a branch at its root, in mm.' },
+  shrink: { value: 0.65, name: 'Shrink', description: 'Length of the last branch as a share of the first.' },
 
   // Twigs on each branch, turned back by the branch angle so they run alongside the spine.
-  twigs: 2,
-  twigLength: 5,
+  twigs: { value: 2, name: 'Twigs', description: 'Number of twigs on each branch.' },
+  twigLength: { value: 5, name: 'Twig length', description: 'Length of the innermost twig on a branch, in mm; the ones further out are shorter.' },
 
-  hub: 9, // radius of the hexagonal plate in the middle
-  loop: 4, // hole of the hanging loop, diameter
+  hub: { value: 9, name: 'Hub', description: 'Radius of the hexagonal plate in the middle, in mm.' },
+  loop: { value: 4, name: 'Loop hole', description: 'Diameter of the hole in the hanging loop, in mm.' },
 };
 
 export default (p) => {

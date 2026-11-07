@@ -11,24 +11,24 @@ setResolution({ fn: 64 });
 // airfoil section extruded along the blade with twist and scale. Prints hub-down; the blades
 // overhang, so give them supports (tree supports come off cleanly).
 export const params = {
-  diameter: 127, // 5 inch
-  blades: 3,
+  diameter: { value: 127, name: 'Diameter', description: 'Tip-to-tip diameter of the propeller, in mm (5 inch).' },
+  blades: { value: 3, name: 'Blades', description: 'Number of blades, spaced evenly round the hub.' },
 
   // Blade section: a NACA four-digit airfoil, e.g. 4412 is 4 % camber at 40 % chord, 12 % thick.
-  chord: 24, // at the root
-  taper: 0.5, // tip chord as a share of the root chord
-  camber: 0.04,
-  camberAt: 0.4,
-  thickness: 0.12,
-  rootPitch: 38, // degrees from the plane of rotation
-  tipPitch: 14,
+  chord: { value: 24, name: 'Root chord', description: 'Width of the blade section at the root, in mm.' },
+  taper: { value: 0.5, name: 'Taper', description: 'Tip chord as a share of the root chord.' },
+  camber: { value: 0.04, name: 'Camber', description: 'Maximum camber of the airfoil, as a share of the chord.' },
+  camberAt: { value: 0.4, name: 'Camber position', description: 'Where the maximum camber sits, as a share of the chord from the leading edge.' },
+  thickness: { value: 0.12, name: 'Thickness', description: 'Maximum thickness of the airfoil, as a share of the chord.' },
+  rootPitch: { value: 38, name: 'Root pitch', description: 'Blade angle at the hub, in degrees from the plane of rotation.' },
+  tipPitch: { value: 14, name: 'Tip pitch', description: 'Blade angle at the tip, in degrees from the plane of rotation.' },
 
   // Hub
-  hubD: 20,
-  hubH: 14,
-  spinner: 9, // height of the dome on top
-  shaftD: 5,
-  fit: 0.15, // added to the bore
+  hubD: { value: 20, name: 'Hub diameter', description: 'Diameter of the hub, in mm.' },
+  hubH: { value: 14, name: 'Hub height', description: 'Height of the hub under the spinner, in mm.' },
+  spinner: { value: 9, name: 'Spinner height', description: 'Height of the dome on top of the hub, in mm.' },
+  shaftD: { value: 5, name: 'Shaft diameter', description: 'Diameter of the motor shaft the bore fits, in mm.' },
+  fit: { value: 0.15, name: 'Bore fit', description: 'Clearance added to the bore diameter, in mm.' },
 };
 
 export default (p) => {

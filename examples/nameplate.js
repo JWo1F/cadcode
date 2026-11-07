@@ -13,19 +13,19 @@ description: A desk or door sign with a name and a second line, engraved or rais
 import { cube, text } from 'cadcode';
 
 export const params = {
-  name: 'Grace Hopper',
-  subtitle: 'Rear Admiral',
-  raised: true, // false engraves the text instead
+  name: { value: 'Grace Hopper', name: 'Name', description: 'First line of text; the plate grows to fit it.' },
+  subtitle: { value: 'Rear Admiral', name: 'Subtitle', description: 'Second, smaller line of text; empty for none.' },
+  raised: { value: true, name: 'Raised', description: 'Raise the text above the face; false engraves it instead.' },
 
-  nameSize: 9, // height of a capital letter
-  subtitleSize: 4.5,
-  gap: 4, // between the lines
-  margin: 8, // from the text to the border
+  nameSize: { value: 9, name: 'Name size', description: 'Height of a capital letter in the name, in mm.' },
+  subtitleSize: { value: 4.5, name: 'Subtitle size', description: 'Height of a capital letter in the subtitle, in mm.' },
+  gap: { value: 4, name: 'Line gap', description: 'Space between the two lines, in mm.' },
+  margin: { value: 8, name: 'Margin', description: 'Space from the text to the border, in mm.' },
 
-  thick: 3, // the plate
-  depth: 0.8, // letters above the face, or into it
-  border: 1.6, // width of the frame around the edge; 0 for none
-  round: 3, // corner radius
+  thick: { value: 3, name: 'Thickness', description: 'Thickness of the plate, in mm.' },
+  depth: { value: 0.8, name: 'Letter depth', description: 'How far the letters stand above the face, or go into it, in mm.' },
+  border: { value: 1.6, name: 'Border', description: 'Width of the frame around the edge, in mm; 0 for none.' },
+  round: { value: 3, name: 'Corner radius', description: 'Radius of the plate corners, in mm.' },
 };
 
 export default (p) => {

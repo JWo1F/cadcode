@@ -13,29 +13,29 @@ setResolution({ fn: 64 });
 // on a short bridge across the chimney.
 export const params = {
   // Shell
-  radius: 42, // centre to a corner of the hexagon; also the width of each face
-  height: 100,
-  wall: 2.4,
-  floor: 3,
+  radius: { value: 42, name: 'Radius', description: 'Centre to a corner of the hexagon, which is also the width of each face, in mm.' },
+  height: { value: 100, name: 'Height', description: 'Height of the shell, in mm.' },
+  wall: { value: 2.4, name: 'Wall', description: 'Wall thickness of the shell, in mm.' },
+  floor: { value: 3, name: 'Floor', description: 'Floor thickness, in mm.' },
 
   // Windows
-  cell: 4, // centre to corner of a window
-  strut: 1.8, // between windows
-  margin: 4, // solid post at each corner of the hexagon, from the edge of the face
-  below: 10, // solid band at the bottom, above the floor
-  above: 10, // solid band at the top, under the roof
+  cell: { value: 4, name: 'Window size', description: 'Centre to corner of each hexagonal window, in mm.' },
+  strut: { value: 1.8, name: 'Strut', description: 'Width of the struts between windows, in mm.' },
+  margin: { value: 4, name: 'Corner post', description: 'Solid post at each corner of the hexagon, from the edge of the face, in mm.' },
+  below: { value: 10, name: 'Bottom band', description: 'Solid band at the bottom of each face, above the floor, in mm.' },
+  above: { value: 10, name: 'Top band', description: 'Solid band at the top of each face, under the roof, in mm.' },
 
   // Tealight
-  tealight: 38, // diameter
-  tealightH: 16,
-  fit: 0.6, // around the tealight and around the roof's lip
+  tealight: { value: 38, name: 'Tealight diameter', description: 'Diameter of the tealight the floor ring centres, in mm.' },
+  tealightH: { value: 16, name: 'Tealight height', description: 'Height of the tealight in the assembly view, in mm.' },
+  fit: { value: 0.6, name: 'Fit', description: "Clearance around the tealight and around the roof's lip, in mm." },
 
   // Roof
-  lip: 6, // drops into the shell
-  eave: 4, // overhang past the shell
-  chimney: 9, // radius
-  chimneyH: 8,
-  roofWall: 2,
+  lip: { value: 6, name: 'Lip', description: "How far the roof's lip drops into the shell, in mm." },
+  eave: { value: 4, name: 'Eave', description: 'Overhang of the roof past the shell, in mm.' },
+  chimney: { value: 9, name: 'Chimney radius', description: 'Radius of the chimney, in mm.' },
+  chimneyH: { value: 8, name: 'Chimney height', description: 'Height of the chimney, in mm.' },
+  roofWall: { value: 2, name: 'Roof wall', description: 'Wall thickness of the roof, in mm.' },
 };
 
 export default (p) => {

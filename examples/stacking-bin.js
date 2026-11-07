@@ -14,23 +14,23 @@ setResolution({ fn: 64 });
 
 export const params = {
   // Outside
-  width: 70,
-  depth: 110, // front to back
-  height: 55,
-  corner: 6,
-  wall: 1.6,
-  floor: 1.2,
+  width: { value: 70, name: 'Width', description: 'Outside width of the bin, in mm.' },
+  depth: { value: 110, name: 'Depth', description: 'Outside depth of the bin, front to back, in mm.' },
+  height: { value: 55, name: 'Height', description: 'Outside height of the bin, in mm.' },
+  corner: { value: 6, name: 'Corner radius', description: 'Radius of the outside vertical corners, in mm.' },
+  wall: { value: 1.6, name: 'Wall', description: 'Wall thickness, in mm.' },
+  floor: { value: 1.2, name: 'Floor', description: 'Floor thickness, in mm.' },
 
   // Base that nests into the bin below
-  step: 4, // how far it drops in
-  fit: 0.3, // per side, between the step and the walls it drops between
+  step: { value: 4, name: 'Step', description: 'How far the base drops into the bin below, in mm.' },
+  fit: { value: 0.3, name: 'Stacking fit', description: 'Gap per side between the step and the walls it drops between, in mm.' },
 
   // Inside
-  scoop: 18, // radius of the curve from the floor up the front wall
+  scoop: { value: 18, name: 'Scoop radius', description: 'Radius of the curve from the floor up the front wall, in mm.' },
 
   // Label shelf
-  shelfOut: 7, // how far it stands off the front
-  shelfH: 14, // height of the label face
+  shelfOut: { value: 7, name: 'Shelf depth', description: 'How far the label shelf stands off the front, in mm.' },
+  shelfH: { value: 14, name: 'Label height', description: 'Height of the label face, in mm.' },
 };
 
 export default (p) => {

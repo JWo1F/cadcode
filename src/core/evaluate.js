@@ -19,6 +19,33 @@ function flattenModel(model, partName) {
 
 const isModel = (value) => value instanceof Solid || value instanceof Shape2 || Array.isArray(value);
 
+const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * Checks `export const params`: every entry is `{ value, name, description }`, with
+ * `name` and `description` for the Parameters panel. Throws on the first one that is not.
+ *
+ * @param {unknown} params
+ * @returns {Record<string, { value: unknown, name: string, description: string }>}
+ */
+function readParams(params) {
+  if (params === undefined) return {};
+  if (!isPlainObject(params)) throw new Error('`export const params` must be an object of { value, name, description } entries');
+  for (const [key, spec] of Object.entries(params)) {
+    const missing = !isPlainObject(spec)
+      ? ['value', 'name', 'description']
+      : [
+          ...(spec.value === undefined ? ['value'] : []),
+          ...(typeof spec.name === 'string' && spec.name.trim() ? [] : ['name']),
+          ...(typeof spec.description === 'string' && spec.description.trim() ? [] : ['description']),
+        ];
+    if (missing.length) {
+      throw new Error(`Parameter "${key}" must be { value, name, description }; ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} missing`);
+    }
+  }
+  return /** @type {any} */ (params);
+}
+
 /**
  * Evaluates one part of a program module.
  *
@@ -26,27 +53,28 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
  * object of named parts whose values are models or functions returning models, or a
  * function of `params` returning either, or returning a function that returns a model
  * (one part, built lazily). Any of these functions may be async. `export const params = {...}` declares the
- * parameters that `overrides` may change.
+ * parameters that `overrides` may change, each as `{ value, name, description }`; the functions get the values.
  *
  * `fallbackToFirst` shows the first part instead of failing when `part` no longer
  * exists — the dev server uses it so renaming a part doesn't blank the preview.
  * `ignoreUnknown` skips overrides of parameters the program no longer declares,
  * instead of failing — the dev server keeps the browser's values across edits.
  *
- * @param {{ default?: unknown, params?: Record<string, unknown> }} mod
+ * @param {{ default?: unknown, params?: unknown }} mod
  * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
- * @returns the part's solids and 2D shapes, the part names, the params it ran with and the declared ones (`declared`)
+ * @returns the part's solids and 2D shapes, the part names, the param values it ran with (`params`) and the
+ *   declared `{ value, name, description }` entries (`declared`)
  */
 export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false, ignoreUnknown = false } = {}) {
   if (mod.default === undefined) throw new Error('The program has no `export default`');
 
-  const declared = mod.params ?? {};
+  const declared = readParams(mod.params);
   const known = {};
   for (const [key, value] of Object.entries(overrides)) {
     if (key in declared) known[key] = value;
     else if (!ignoreUnknown) throw new Error(`Unknown parameter "${key}". Declared: ${Object.keys(declared).join(', ') || 'none'}`);
   }
-  const params = { ...declared, ...known };
+  const params = { ...Object.fromEntries(Object.entries(declared).map(([key, spec]) => [key, spec.value])), ...known };
 
   const value = typeof mod.default === 'function' ? await mod.default(params) : mod.default;
   // A returned function is one part, called with params like a part's function.

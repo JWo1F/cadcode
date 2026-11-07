@@ -14,47 +14,47 @@ setResolution({ fn: 40 });
 
 export const params = {
   // Print
-  wall: 2.0, // wall thickness
-  floorT: 1.6, // floor
-  lidT: 1.6, // lid
-  fit: 0.15, // gap between the lid skirt and the wall, per side
-  cornerR: 2.0, // outer corner radius
+  wall: { value: 2.0, name: 'Wall', description: 'Wall thickness, in mm.' },
+  floorT: { value: 1.6, name: 'Floor', description: 'Floor thickness, in mm.' },
+  lidT: { value: 1.6, name: 'Lid', description: 'Lid thickness, in mm.' },
+  fit: { value: 0.15, name: 'Lid fit', description: 'Gap between the lid skirt and the wall, per side, in mm.' },
+  cornerR: { value: 2.0, name: 'Corner radius', description: 'Outer corner radius of the case, in mm.' },
 
   // Pro Micro board
-  boardL: 34,
-  boardW: 17,
-  boardT: 1.6,
-  boardStandoff: 2.0, // board sits on rails, room for wires/pads underneath
-  boardX0: 0.3, // gap from the USB wall
-  boardY0: 0.5,
+  boardL: { value: 34, name: 'Board length', description: 'Length of the Pro Micro board, in mm.' },
+  boardW: { value: 17, name: 'Board width', description: 'Width of the Pro Micro board, in mm.' },
+  boardT: { value: 1.6, name: 'Board thickness', description: 'Thickness of the Pro Micro board, in mm.' },
+  boardStandoff: { value: 2.0, name: 'Board standoff', description: 'Height of the rails the board sits on, leaving room for wires and pads underneath, in mm.' },
+  boardX0: { value: 0.3, name: 'USB wall gap', description: 'Gap between the board and the USB wall, in mm.' },
+  boardY0: { value: 0.5, name: 'Side wall gap', description: 'Gap between the board and the side wall, in mm.' },
 
   // USB-C
-  usbW: 9.0, // connector body
-  usbH: 3.3,
-  usbSlotExtra: 0.8, // hole allowance
-  plugW: 12.5, // recess for the plug overmold
-  plugH: 7.5,
-  plugDepth: 1.2,
+  usbW: { value: 9.0, name: 'USB width', description: 'Width of the USB-C connector body, in mm.' },
+  usbH: { value: 3.3, name: 'USB height', description: 'Height of the USB-C connector body, in mm.' },
+  usbSlotExtra: { value: 0.8, name: 'USB hole allowance', description: 'Added to the connector size for the USB-C window, in mm.' },
+  plugW: { value: 12.5, name: 'Plug recess width', description: 'Width of the outside recess for the plug overmold, in mm.' },
+  plugH: { value: 7.5, name: 'Plug recess height', description: 'Height of the outside recess for the plug overmold, in mm.' },
+  plugDepth: { value: 1.2, name: 'Plug recess depth', description: 'Depth of the plug recess into the wall, in mm.' },
 
   // Battery
-  batD: 12,
-  batL: 30,
-  batClr: 0.5,
+  batD: { value: 12, name: 'Battery diameter', description: 'Diameter of the Li-ion cell, in mm.' },
+  batL: { value: 30, name: 'Battery length', description: 'Length of the Li-ion cell, in mm.' },
+  batClr: { value: 0.5, name: 'Battery clearance', description: 'Clearance added to the battery diameter in its cradles, in mm.' },
 
   // Sensor
-  sensorS: 15,
-  sensorPadH: 3, // tape pad, raised so air flows underneath
-  sensL: 17, // sensor compartment length along X
+  sensorS: { value: 15, name: 'Sensor size', description: 'Side of the square sensor board, in mm.' },
+  sensorPadH: { value: 3, name: 'Sensor pad', description: 'Height of the tape pad under the sensor, raised so air flows underneath, in mm.' },
+  sensL: { value: 17, name: 'Sensor compartment', description: 'Length of the sensor compartment along X, in mm.' },
 
   // Snap fit
-  lipD: 4.0, // lid skirt depth
-  lipT: 1.2, // skirt thickness
-  bumpR: 0.6, // bump on the skirt / groove in the wall
-  bumpLen: 12,
+  lipD: { value: 4.0, name: 'Skirt depth', description: 'Depth of the lid skirt, in mm.' },
+  lipT: { value: 1.2, name: 'Skirt thickness', description: 'Thickness of the lid skirt, in mm.' },
+  bumpR: { value: 0.6, name: 'Snap bump', description: 'Radius of the bump on the skirt and of the groove in the wall, in mm.' },
+  bumpLen: { value: 12, name: 'Snap length', description: 'Length of each snap bump, in mm.' },
 
   // Pores
-  poreD: 1.6,
-  porePitch: 3.2,
+  poreD: { value: 1.6, name: 'Pore diameter', description: 'Diameter of the vent pores round the sensor compartment, in mm.' },
+  porePitch: { value: 3.2, name: 'Pore pitch', description: 'Distance between neighbouring vent pores, in mm.' },
 };
 
 export default (p) => {
