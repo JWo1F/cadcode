@@ -4,6 +4,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Changed
+
+- A param with `options` opens a menu styled like the Part menu instead of the browser's own select, and works from the keyboard.
+
 ## [0.11.0] - 2026-11-11
 
 ### Added
