@@ -21,7 +21,9 @@ const isModel = (value) => value instanceof Solid || value instanceof Shape2 || 
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
-/** Throws unless every entry of an object of params is `{ value, name, description }`. */
+const isOption = (value) => typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+
+/** Throws unless every entry of an object of params is `{ value, name, description }`, with `options` that hold `value` if it has them. */
 function checkSpecs(specs, where) {
   for (const [key, spec] of Object.entries(specs)) {
     const missing = !isPlainObject(spec)
@@ -34,8 +36,17 @@ function checkSpecs(specs, where) {
     if (missing.length) {
       throw new Error(`Parameter "${key}"${where} must be { value, name, description }; ${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} missing`);
     }
+    if (spec.options === undefined) continue;
+    const { options } = spec;
+    if (!Array.isArray(options) || options.length === 0 || !options.every(isOption) || new Set(options).size !== options.length) {
+      throw new Error(`Parameter "${key}"${where} has options that are not a list of distinct strings, numbers or booleans`);
+    }
+    if (!options.includes(spec.value)) throw new Error(`Parameter "${key}"${where} has value ${JSON.stringify(spec.value)}, which is not one of its options`);
   }
 }
+
+/** Whether a value is allowed for a param: any value, or one of its options when it has them. */
+const allowed = (spec, value) => spec.options === undefined || spec.options.includes(value);
 
 /**
  * Reads `export const params`: either an object of `{ value, name, description }` entries, or an
@@ -43,7 +54,7 @@ function checkSpecs(specs, where) {
  * sections, since the program gets one flat object of values. Throws on the first entry that is wrong.
  *
  * @param {unknown} params
- * @returns {{ declared: Record<string, { value: unknown, name: string, description: string }>, sections: { name: string | null, keys: string[] }[] }}
+ * @returns {{ declared: Record<string, { value: unknown, name: string, description: string, options?: unknown[] }>, sections: { name: string | null, keys: string[] }[] }}
  *   every entry by key, and the sections in order; an object of params is one section with no name
  */
 function readParams(params) {
@@ -75,13 +86,14 @@ function readParams(params) {
  * object of named parts whose values are models or functions returning models, or a
  * function of `params` returning either, or returning a function that returns a model
  * (one part, built lazily). Any of these functions may be async. `export const params = {...}` declares the
- * parameters that `overrides` may change, each as `{ value, name, description }`, flat or in an array of
- * `{ name, children }` sections; the functions get one flat object of values.
+ * parameters that `overrides` may change, each as `{ value, name, description }` and optionally `options`,
+ * the list of values it may take; flat or in an array of `{ name, children }` sections. The functions get
+ * one flat object of values.
  *
  * `fallbackToFirst` shows the first part instead of failing when `part` no longer
  * exists — the dev server uses it so renaming a part doesn't blank the preview.
- * `ignoreUnknown` skips overrides of parameters the program no longer declares,
- * instead of failing — the dev server keeps the browser's values across edits.
+ * `ignoreUnknown` skips overrides of parameters the program no longer declares, or values no longer
+ * among a param's options, instead of failing — the dev server keeps the browser's values across edits.
  *
  * @param {{ default?: unknown, params?: unknown }} mod
  * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
@@ -94,8 +106,10 @@ export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirs
   const { declared, sections } = readParams(mod.params);
   const known = {};
   for (const [key, value] of Object.entries(overrides)) {
-    if (key in declared) known[key] = value;
-    else if (!ignoreUnknown) throw new Error(`Unknown parameter "${key}". Declared: ${Object.keys(declared).join(', ') || 'none'}`);
+    if (key in declared && allowed(declared[key], value)) known[key] = value;
+    else if (key in declared) {
+      if (!ignoreUnknown) throw new Error(`Parameter "${key}" must be one of ${declared[key].options.map((o) => JSON.stringify(o)).join(', ')}, not ${JSON.stringify(value)}`);
+    } else if (!ignoreUnknown) throw new Error(`Unknown parameter "${key}". Declared: ${Object.keys(declared).join(', ') || 'none'}`);
   }
   const params = { ...Object.fromEntries(Object.entries(declared).map(([key, spec]) => [key, spec.value])), ...known };
 

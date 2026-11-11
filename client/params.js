@@ -1,6 +1,6 @@
 // The parameters panel: one row per entry of the program's `export const params`,
 // labelled with its `name` and `description`, each with a control that fits its value — a number field, a switch, a colour, a
-// text field, or JSON for arrays and objects. A program that groups its params in
+// text field, JSON for arrays and objects, or a list to pick from for a param with `options`. A program that groups its params in
 // sections gets a collapsible heading per section. Changing one sends the whole set of
 // values that differ from the code (the overrides) through onChange.
 //
@@ -16,8 +16,9 @@ const stable = (value) =>
 
 const same = (a, b) => stable(a) === stable(b);
 
-/** What a value is edited as. */
-function kindOf(value) {
+/** What a param is edited as: its options, or by the kind of its value. */
+function kindOf({ value, options }) {
+  if (options) return 'choice';
   if (typeof value === 'number') return 'number';
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'string') return HEX.test(value) ? 'color' : 'text';
@@ -38,7 +39,7 @@ function stepOf(value) {
  *   onChange: (overrides: Record<string, unknown>) => void,
  *   collapsed: { get: () => string[], set: (names: string[]) => void },
  * }} options `collapsed` keeps the names of the sections folded away
- * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string }>, overrides: Record<string, unknown>, sections: Section[]) => void }}
+ * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string, options?: unknown[] }>, overrides: Record<string, unknown>, sections: Section[]) => void }}
  */
 export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   let specs = {};
@@ -164,6 +165,16 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
     return { set: (v) => (input.value = v) };
   }
 
+  // One of the param's options. Picking one sends the option itself, so a number stays a number.
+  function choiceControl(name, row) {
+    const select = Object.assign(document.createElement('select'), { id: `param-${name}` });
+    const options = specs[name].options;
+    select.append(...options.map((option, index) => Object.assign(document.createElement('option'), { value: String(index), textContent: String(option) })));
+    select.addEventListener('change', () => change(name, options[Number(select.value)]));
+    row.append(select);
+    return { set: (v) => (select.value = String(options.indexOf(v))) };
+  }
+
   // Arrays and objects as JSON; text that does not parse is marked and not sent.
   function jsonControl(name, row) {
     const input = Object.assign(document.createElement('input'), { type: 'text', id: `param-${name}`, spellcheck: false, className: 'json' });
@@ -184,11 +195,11 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
     return { set: (v) => (input.value = format(v), input.removeAttribute('aria-invalid')) };
   }
 
-  const CONTROLS = { number: numberControl, boolean: booleanControl, color: colorControl, text: textControl, json: jsonControl };
+  const CONTROLS = { number: numberControl, boolean: booleanControl, color: colorControl, text: textControl, json: jsonControl, choice: choiceControl };
 
   function buildRow(name) {
     const row = Object.assign(document.createElement('div'), { className: 'param' });
-    row.dataset.kind = kindOf(declared[name]);
+    row.dataset.kind = kindOf(specs[name]);
     const label = Object.assign(document.createElement('label'), { htmlFor: `param-${name}`, textContent: specs[name].name });
     row.append(label);
     const control = CONTROLS[row.dataset.kind](name, row, label);
@@ -242,7 +253,7 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   /** Puts the values on screen, leaving alone the field being typed in. */
   function fill() {
     for (const [name, { set, row }] of rows) {
-      if (row.contains(document.activeElement) && row.dataset.kind !== 'boolean') continue;
+      if (row.contains(document.activeElement) && row.dataset.kind !== 'boolean' && row.dataset.kind !== 'choice') continue;
       set(name in overrides ? overrides[name] : declared[name]);
     }
     markChanged();
@@ -261,7 +272,7 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
       specs = nextSpecs;
       sections = nextSections;
       declared = Object.fromEntries(Object.entries(specs).map(([name, spec]) => [name, spec.value]));
-      const nextShape = stable([sections, Object.entries(specs).map(([name, spec]) => [name, kindOf(spec.value), spec.name, spec.description])]);
+      const nextShape = stable([sections, Object.entries(specs).map(([name, spec]) => [name, kindOf(spec), spec.name, spec.description, spec.options])]);
       // Until the server has run with what was sent, its overrides are older than the panel's.
       if (sent) {
         const pending = Object.fromEntries(Object.entries(sent).filter(([name]) => name in declared));

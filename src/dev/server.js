@@ -115,7 +115,11 @@ export async function startDevServer({ file, port, host, part, overrides, open }
       state.lastError = null;
       // memo() results this run used or made; the next run reuses them. A failed run leaves the old ones.
       state.memo = result.memo;
-      for (const key of Object.keys(state.overrides)) if (!(key in result.declared)) delete state.overrides[key];
+      // Drop overrides the program no longer takes: an undeclared param, or a value gone from its options.
+      for (const [key, value] of Object.entries(state.overrides)) {
+        const spec = result.declared[key];
+        if (!spec || (spec.options && !spec.options.includes(value))) delete state.overrides[key];
+      }
       state.lastFrame = encodeModel(result, displayName, state);
       broadcast(state.lastFrame);
       const triangles = result.groups.reduce((n, g) => n + g.indices.length / 3, 0);

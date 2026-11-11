@@ -198,3 +198,20 @@ test('params may come in sections, and the program gets one flat object of value
   await assert.rejects(run([{ name: 'A', children: [] }]), /Params section 1 must be/);
   await assert.rejects(run([{ name: 'A', children: { a: 1 } }]), /Parameter "a" in section "A" must be/);
 });
+
+test('a param with options takes one of them', async () => {
+  const { evaluateModule } = await import('../src/core/evaluate.js');
+  const shape = (value, options) => ({ shape: { value, name: 'Shape', description: 'Which body.', options } });
+  const run = (params, options) => evaluateModule({ params, default: (p) => cube(p.shape === 'tall' ? [1, 1, 3] : 1) }, options);
+  assert.equal((await run(shape('cube', ['cube', 'tall']))).params.shape, 'cube');
+  const tall = await run(shape('cube', ['cube', 'tall']), { overrides: { shape: 'tall' } });
+  assert.equal(Math.round(tall.solids[0].volume()), 3);
+  assert.deepEqual(tall.declared.shape.options, ['cube', 'tall']);
+  await assert.rejects(run(shape('cube', ['cube', 'tall']), { overrides: { shape: 'wide' } }), /Parameter "shape" must be one of "cube", "tall", not "wide"/);
+  // A value dropped from the options, remembered by the dev server, falls back to the code's.
+  assert.equal((await run(shape('cube', ['cube', 'tall']), { overrides: { shape: 'wide' }, ignoreUnknown: true })).params.shape, 'cube');
+  await assert.rejects(run(shape('ball', ['cube', 'tall'])), /Parameter "shape" has value "ball", which is not one of its options/);
+  await assert.rejects(run(shape('cube', [])), /Parameter "shape" has options that are not a list/);
+  await assert.rejects(run(shape('cube', ['cube', 'cube'])), /options that are not a list of distinct/);
+  await assert.rejects(run(shape('cube', 'cube')), /options that are not a list/);
+});

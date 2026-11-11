@@ -586,7 +586,8 @@ button.pill:hover {
   touch-action: none;
 }
 
-.param input[type='text'] {
+.param input[type='text'],
+.param select {
   width: 100%;
   min-width: 0;
   height: 30px;
@@ -603,7 +604,12 @@ button.pill:hover {
   text-align: right;
 }
 
-.param input:focus {
+.param select {
+  cursor: pointer;
+}
+
+.param input:focus,
+.param select:focus {
   outline: none;
   background: #fff;
   border-color: var(--hairline);
