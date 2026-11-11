@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-11
+
 ### Added
 
 - A param may list `options`, the values it takes. The Parameters panel shows it as a list to pick from, and `--set` takes only one of them.
@@ -106,7 +108,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/89058c4...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/599b817...HEAD
+[0.11.0]: https://github.com/JWo1F/cadcode/compare/89058c4...599b817
 [0.10.0]: https://github.com/JWo1F/cadcode/compare/a2de021...89058c4
 [0.9.0]: https://github.com/JWo1F/cadcode/compare/139761d...a2de021
 [0.8.0]: https://github.com/JWo1F/cadcode/compare/923cfa8...139761d
