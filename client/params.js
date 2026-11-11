@@ -165,14 +165,78 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
     return { set: (v) => (input.value = v) };
   }
 
-  // One of the param's options. Picking one sends the option itself, so a number stays a number.
+  // One of the param's options, picked from a menu like the Part menu: the field shows the value,
+  // and the menu marks it with the filament dot. Picking one sends the option itself, so a number stays a number.
   function choiceControl(name, row) {
-    const select = Object.assign(document.createElement('select'), { id: `param-${name}` });
     const options = specs[name].options;
-    select.append(...options.map((option, index) => Object.assign(document.createElement('option'), { value: String(index), textContent: String(option) })));
-    select.addEventListener('change', () => change(name, options[Number(select.value)]));
-    row.append(select);
-    return { set: (v) => (select.value = String(options.indexOf(v))) };
+    const trigger = Object.assign(document.createElement('button'), { type: 'button', id: `param-${name}`, className: 'choice' });
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-expanded', 'false');
+    const shown = Object.assign(document.createElement('span'), { className: 'choice-value' });
+    trigger.append(shown);
+    trigger.insertAdjacentHTML(
+      'beforeend',
+      '<svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    );
+
+    const menu = Object.assign(document.createElement('div'), { className: 'menu choice-menu' });
+    menu.popover = 'auto';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', specs[name].name);
+    trigger.popoverTargetElement = menu;
+
+    let current;
+    const items = options.map((option) => {
+      const item = Object.assign(document.createElement('button'), { type: 'button', textContent: String(option) });
+      item.setAttribute('role', 'menuitemradio');
+      item.addEventListener('click', () => {
+        menu.hidePopover();
+        if (option === current) return;
+        set(option);
+        change(name, option);
+      });
+      return item;
+    });
+    menu.append(...items);
+
+    function set(value) {
+      current = value;
+      shown.textContent = String(value);
+      items.forEach((item, index) => item.setAttribute('aria-checked', String(options[index] === value)));
+    }
+
+    // Under the field and at least as wide, or over it when the window has no room below.
+    menu.addEventListener('toggle', (event) => {
+      const open = event.newState === 'open';
+      trigger.setAttribute('aria-expanded', String(open));
+      if (!open) {
+        if (!document.activeElement || document.activeElement === document.body) trigger.focus();
+        return;
+      }
+      const box = trigger.getBoundingClientRect();
+      menu.style.minWidth = `${box.width}px`;
+      menu.style.left = `${box.left}px`;
+      const below = box.bottom + 6 + menu.offsetHeight <= window.innerHeight - 8;
+      menu.style.top = `${below ? box.bottom + 6 : Math.max(8, box.top - 6 - menu.offsetHeight)}px`;
+      (items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0]).focus();
+    });
+
+    // Arrows on the field open the menu; in the menu they move, Home and End jump, Escape closes (the popover's own).
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      event.preventDefault();
+      menu.showPopover();
+    });
+    menu.addEventListener('keydown', (event) => {
+      const at = items.indexOf(/** @type {HTMLButtonElement} */ (document.activeElement));
+      const next = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: items.length - 1 }[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      items[(next + items.length) % items.length].focus();
+    });
+
+    row.append(trigger, menu);
+    return { set };
   }
 
   // Arrays and objects as JSON; text that does not parse is marked and not sent.
@@ -266,6 +330,11 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   });
 
   form.addEventListener('submit', (event) => event.preventDefault());
+
+  // An open choice menu is fixed to the window, so it closes rather than drift when the panel scrolls.
+  document.addEventListener('scroll', (event) => {
+    if (event.target instanceof Node && event.target.contains(form)) form.querySelector('.choice-menu:popover-open')?.hidePopover();
+  }, true);
 
   return {
     show(nextSpecs, serverOverrides, nextSections) {

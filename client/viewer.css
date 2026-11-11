@@ -586,8 +586,7 @@ button.pill:hover {
   touch-action: none;
 }
 
-.param input[type='text'],
-.param select {
+.param input[type='text'] {
   width: 100%;
   min-width: 0;
   height: 30px;
@@ -604,12 +603,7 @@ button.pill:hover {
   text-align: right;
 }
 
-.param select {
-  cursor: pointer;
-}
-
-.param input:focus,
-.param select:focus {
+.param input:focus {
   outline: none;
   background: #fff;
   border-color: var(--hairline);
@@ -804,6 +798,57 @@ button.pill:hover {
   font-weight: 600;
 }
 
+/* A param with options: a field like the text ones that opens a menu like the Part menu. */
+.param .choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  font: 13px var(--mono);
+  text-align: left;
+  background: var(--stage-mid);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.param .choice:hover {
+  background: #eaecef;
+}
+
+.param .choice:focus-visible,
+.param .choice[aria-expanded='true'] {
+  outline: none;
+  background: #fff;
+  border-color: var(--hairline);
+  box-shadow: 0 0 0 3px rgba(242, 193, 78, 0.35);
+}
+
+.choice-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.param .choice svg {
+  flex: none;
+  color: var(--ink-soft);
+  transition: rotate 0.15s ease;
+}
+
+.param .choice[aria-expanded='true'] svg {
+  rotate: 180deg;
+}
+
+.choice-menu button {
+  font: 13px var(--mono);
+}
+
 .menu button[aria-checked='true']::after {
   content: '';
   width: 7px;
@@ -822,6 +867,8 @@ button.pill:hover {
   .progress,
   .empty,
   .param::before,
+  .param .choice,
+  .param .choice svg,
   .switch,
   .switch::after {
     transition: none !important;

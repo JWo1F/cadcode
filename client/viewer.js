@@ -82,7 +82,7 @@ function fitView() {
 
 document.getElementById('fit').addEventListener('click', fitView);
 bindDisplayButtons(view, [...document.querySelectorAll('[data-display]')]);
-const isTyping = (event) => !!event.target.closest?.('#part-menu, #download-menu, input, textarea');
+const isTyping = (event) => !!event.target.closest?.('#part-menu, #download-menu, .choice-menu, input, textarea');
 // The section is remembered per file, like the camera.
 bindViewTools(view, { stage, storageKey: () => fileKey && `cadcode:section:${fileKey}`, ignoreKey: isTyping });
 window.addEventListener('keydown', (event) => {
