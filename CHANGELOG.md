@@ -4,6 +4,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- A param may list `options`, the values it takes. The Parameters panel shows it as a list to pick from, and `--set` takes only one of them.
+
 ## [0.10.0] - 2026-11-07
 
 ### Added

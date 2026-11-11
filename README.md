@@ -81,7 +81,7 @@ cadcode png case.js --part assembly --view sheet --size 1600x1200
 - **Cut the model open**: S, or the Section button. The model is cut across Z (X and Y keys, or the buttons in the card, switch the axis) and the cut faces are filled in a darker shade of their solid. Move the plane with the slider, or drag the plane's frame in the view; the flip button keeps the other side. The section is remembered per file, and the PNG shows it.
 - **Measure**: M, or the Measure button, then click two points on the model. A point near a corner lands on it, and a point on a cut face counts too. The label gives the distance and how far apart the points are along each axis. A third click starts over, Esc clears. A rebuilt model drops the measurement.
 - **Switch parts**: the Part menu, shown when the program has more than one part
-- **Change parameters**: the Parameters panel, shown when the program has `export const params`. Each row is labelled with the parameter's `name`, with its `description` under it, and params declared in sections are grouped under headings that fold away (remembered per file; a dot marks a folded section with a changed value). Numbers, switches, colours, text, and JSON for arrays and objects; drag a number's name sideways to scrub it (shift for ten times the step). A changed value is marked and has its own reset. The values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. `--set` wins over a remembered value. Downloads use them too.
+- **Change parameters**: the Parameters panel, shown when the program has `export const params`. Each row is labelled with the parameter's `name`, with its `description` under it, and params declared in sections are grouped under headings that fold away (remembered per file; a dot marks a folded section with a changed value). Numbers, switches, colours, text, JSON for arrays and objects, and a list for a param with `options`; drag a number's name sideways to scrub it (shift for ten times the step). A changed value is marked and has its own reset. The values outlive edits to the code and restarts of the server, and one the program stops declaring is dropped. `--set` wins over a remembered value. Downloads use them too.
 - **Download**: the Download button saves in the format picked last, and its arrow opens the list of formats; picking one saves in it and makes it the button's. The choice is remembered.
   - **STL** and **3MF**: the part, the same files `cadcode stl` and `cadcode 3mf` write.
   - **PNG**: the view as it is, with the section if there is one, without the grid, the axes, the section's frame and the measurement.
@@ -108,6 +108,14 @@ export default async (p) => {
 [`examples/icon-stamp.js`](examples/icon-stamp.js) awaits `fetch()` of an SVG icon by name and builds a stamp from it.
 
 Parameters you might want to change from the command line go in `export const params`. Each one is `{ value, name, description }`: `value` is the default, and `name` and `description` label it in the Parameters panel. All three are required, and a program missing one fails at start. The program's functions get the values alone, so `p.width` is a number.
+
+A parameter that takes one of a few values lists them in `options`, and the panel shows it as a list to pick from. The value must be one of them, and so must `--set`:
+
+```js
+export const params = {
+  battery: { value: 'round', name: 'Battery', description: 'Which cell the case is sized to.', options: ['round', 'flat'] },
+};
+```
 
 To group them in the Parameters panel, `params` may instead be an array of sections, each `{ name, children }` with `children` an object of such entries. Keys must be unique across sections, since the program still gets one flat object:
 
