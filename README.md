@@ -329,6 +329,31 @@ const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: 
 | `spline(points, { closed, start, end, fn })` | A centripetal Catmull-Rom spline through points: closed, a `Shape2`; open, a path. `start` and `end` set the directions at the ends in degrees. |
 | `s.path(...)`, `s.spline(...)` | In a sketch: the viewer draws the curve, its points and its Bézier handles. |
 
+### Hardware
+
+Sizes M2, M2.5, M3, M4, M5, M6, M8. Cutters are drawn at a surface at z = 0 going down along -Z and reach 1 above it; put one on a face with `box.face('+Z').place(cutter)`. A hole's polygon is drawn round its diameter, so even a coarse one takes its screw.
+
+| Function | Notes |
+| --- | --- |
+| `screw(size)` | The numbers for a size: `{ d, clearance, tap, capHead: { d, h }, countersunk: { d }, nut: { s, h }, insert: { d, depth } }`. Heat-set inserts vary by brand: check yours. |
+| `fit(kind)` / `setFit({ press, slide, loose })` | Clearance per side: `press` 0.1, `slide` 0.2, `loose` 0.4. `setFit` changes them for everything after it. |
+| `screwHole(size, { length, head, hole, headDepth, fn })` | Cutter for a screw: `hole` is `'clearance'`, `'tap'` or `'insert'`; `head` is `'none'`, `'cap'` (counterbore a slide fit bigger, head height deep) or `'countersunk'` (90° cone, head diameter at z = 0). |
+| `boss(size, { h, d, hole, fn })` | A cylinder on z = 0 with the screw's hole from the top; `'tap'` and `'insert'` leave a 1 floor, `'clearance'` goes through. |
+| `nutTrap(size, { depth, fit })` | Cutter for a hex nut pocket, a slide fit bigger across the flats. |
+
+### Components
+
+Common parts as a `Component`: a colored `body`, the `cutout` to subtract from the enclosure, and named `points`, moved together by `translate`, `rotate`, `mirror`, `transform`, `place(frame)` and `align(target, options)`. Dimensions are nominal: measure yours. Each takes `clearance` (default `fit('slide')`) and `fn`.
+
+| Function | Notes |
+| --- | --- |
+| `usbC()` | Receptacle with its mouth at x = 0 facing -X; the cutout runs out to x = -12. Point `mouth`. |
+| `proMicro()` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X. Cutout: the connector only. Point `usb`. |
+| `oled091()` | 0.91" OLED, board on z = 0, centered, seen from +Z. Cutout: pocket and window. |
+| `ec11({ shaft })` | Rotary encoder, mounting face at z = 0, shaft up. Cutout: the bushing's hole. Point `face`. |
+| `led5()` | 5 mm LED on z = 0. Cutout: the hole from the flange up. |
+| `cell({ d, l })` | Cylindrical cell along +X resting on z = 0, an 18650 by default. Cutout: a cradle. |
+
 ### Lofts and threads
 
 | Function | Notes |

@@ -6,6 +6,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ### Added
 
+- Hardware: `screw('M3')` gives a metric size's clearance and tap holes, cap and countersunk heads, nut and heat-set insert; `screwHole()`, `boss()` and `nutTrap()` make the solids for them, drawn at z = 0 going down, to place on a face with a frame. `fit('slide')` is the clearance per side for a kind of fit, and `setFit()` changes it everywhere.
+- Components: `usbC()`, `proMicro()`, `oled091()`, `ec11()`, `led5()` and `cell()` are common parts as a body to see them in place and the cutout to subtract from an enclosure, with named points, which move together.
 - `shape.ring(t)` is a wall along an outline, `cylinder({ axis: 'x' })` lies along an axis, and `.clip({ x, y, z })` keeps what lies within ranges, instead of intersecting with big cubes.
 - `path.stroke(width)` and `stroke(points, width)` draw a line of a width, and `polarPoint(r, degrees)` finds a point on a circle or an ellipse.
 

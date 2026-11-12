@@ -40,4 +40,6 @@ export { importSVG } from './import/svg.js';
 export { importDXF } from './import/dxf.js';
 export { parseColor } from './colors.js';
 export { range, product, polarPoint } from './util.js';
+export { screw, fit, setFit, screwHole, boss, nutTrap } from './hardware.js';
+export { Component, usbC, proMicro, oled091, ec11, led5, cell } from './components.js';
 export { memo } from './memo.js';

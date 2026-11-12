@@ -8,7 +8,7 @@
 
 /**
  * @typedef {{ name: string, type: string, default?: string, text: string }} Param
- * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2' | 'Frame' | 'Sketch' | 'Line' | 'Circle' | 'Path', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
+ * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2' | 'Frame' | 'Sketch' | 'Line' | 'Circle' | 'Path' | 'Component', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
  * @typedef {{ id: string, title: string, intro?: string, entries: Entry[] }} Section
  */
 
@@ -1044,6 +1044,266 @@ const nut = cylinder({ d: 17, h: 8, fn: 6 })
   .subtract(thread({ d: 10, pitch: 1.5, length: 8, internal: true, taper: 1, fn: 48 }))
   .translate([20, 0, 0]);
 export default [bolt, nut];`,
+      },
+    ],
+  },
+  {
+    id: 'hardware',
+    title: 'Hardware',
+    intro:
+      'Metric screws, nuts and heat-set inserts: their sizes as data, and the solids to subtract for their holes. Every cutter is drawn at a surface at z = 0 going down into the part along -Z, and reaches 1 above z = 0 so it cuts cleanly through the face. Put one on a face with `frame.place()`, which turns local Z into the face\'s outward normal, so the cutter goes into the part on whichever side it is. Sizes: M2, M2.5, M3, M4, M5, M6, M8.',
+    entries: [
+      {
+        id: 'screw',
+        name: 'screw',
+        signature: 'screw(size)',
+        summary: 'The numbers for a metric screw size, in mm: `{ d, clearance, tap, capHead: { d, h }, countersunk: { d }, nut: { s, h }, insert: { d, depth } }`. A fresh object each call.',
+        params: [{ name: 'size', type: "'M2' | 'M2.5' | 'M3' | 'M4' | 'M5' | 'M6' | 'M8'", text: 'The size. Any other throws, listing these.' }],
+        returns: '{ d, clearance, tap, capHead, countersunk, nut, insert }',
+        notes: [
+          '`clearance` is the normal-fit hole the screw passes through (ISO 273). `tap` is the pilot hole for a screw that cuts its own thread into printed plastic.',
+          '`capHead` is a socket cap head (ISO 4762), as tall as the screw is thick. `countersunk` is the head of an ISO 10642 screw, 90°. `nut` is a hex nut (ISO 4032): `s` across the flats, `h` thick.',
+          '`insert` is the hole for a typical brass heat-set insert. Inserts vary by brand: check the datasheet of yours.',
+        ],
+        example: `const m3 = screw('M3')
+cylinder({ d: m3.capHead.d + 1, h: 4 })`,
+      },
+      {
+        id: 'fit',
+        name: 'fit',
+        signature: 'fit(kind)',
+        summary: 'The clearance per side for a kind of fit, in mm. The cutters below and the components use it; use it for your own holes too.',
+        params: [{ name: 'kind', type: "'press' | 'slide' | 'loose'", text: '`press` (0.1) for parts pressed in to stay, `slide` (0.2) for parts that go in by hand, `loose` (0.4) for parts that move freely.' }],
+        returns: 'number',
+        example: `circle({ d: 5 + 2 * fit('slide') })`,
+      },
+      {
+        id: 'setFit',
+        name: 'setFit',
+        signature: 'setFit(options)',
+        summary: 'Changes the clearance of one or more fits for everything built after it, as `setResolution` does for curves. Kinds left out keep their value.',
+        params: [
+          { name: 'options.press', type: 'number', text: 'Clearance per side, 0 or more.' },
+          { name: 'options.slide', type: 'number', text: 'Clearance per side, 0 or more.' },
+          { name: 'options.loose', type: 'number', text: 'Clearance per side, 0 or more.' },
+        ],
+        example: `setFit({ slide: 0.25 })   // a printer that prints holes small`,
+      },
+      {
+        id: 'screwHole',
+        name: 'screwHole',
+        signature: 'screwHole(size, options)',
+        summary: 'The solid to subtract for a screw\'s hole: from z = 0 down `length`, with a recess for the head at the top, and 1 above z = 0.',
+        params: [
+          { name: 'size', type: "'M2' … 'M8'", text: 'As for `screw`.' },
+          { name: 'options.length', type: 'number', text: 'How deep below z = 0, head recess included. Needed except for `insert`, where it defaults to the insert\'s depth.' },
+          { name: 'options.head', type: "'none' | 'cap' | 'countersunk'", default: "'none'", text: '`cap`: a counterbore `fit(\'slide\')` bigger than the head all round. `countersunk`: a 90° cone, the head\'s diameter at z = 0.' },
+          { name: 'options.hole', type: "'clearance' | 'tap' | 'insert'", default: "'clearance'", text: 'The hole below the head: the screw passes through, cuts its own thread, or goes into a heat-set insert.' },
+          { name: 'options.headDepth', type: 'number', text: 'For `cap`, how deep the counterbore is; the head\'s height by default, so it sits flush. For `countersunk`, how far below the surface the cone starts; 0 by default.' },
+          fn,
+        ],
+        returns: 'Solid',
+        example: `const box = cube([30, 30, 12])
+box.subtract(box.face('+Z').place(screwHole('M3', { length: 12, head: 'cap' }).translate([5, 5, 0])))`,
+      },
+      {
+        id: 'boss',
+        name: 'boss',
+        signature: 'boss(size, options)',
+        summary: 'A screw boss: a cylinder standing on z = 0, `h` tall, with the screw\'s hole from its top down. Union it onto a floor.',
+        params: [
+          { name: 'size', type: "'M2' … 'M8'", text: 'As for `screw`.' },
+          { name: 'options.h', type: 'number', text: 'Height.' },
+          { name: 'options.d', type: 'number', text: 'Outer diameter. By default the larger of 2.2 × the screw\'s diameter and the hole with 1.6 of wall each side, rounded up to 0.1.' },
+          { name: 'options.hole', type: "'tap' | 'insert' | 'clearance'", default: "'tap'", text: '`tap` and `insert` stop 1 above the bottom; an insert needs `h` of at least its depth + 1. `clearance` goes right through.' },
+          fn,
+        ],
+        returns: 'Solid',
+        example: `floor.union(boss('M3', { h: 6, hole: 'insert' }).translate([5, 5, 2]))`,
+      },
+      {
+        id: 'nutTrap',
+        name: 'nutTrap',
+        signature: 'nutTrap(size, options)',
+        summary: 'The solid to subtract for a hexagonal pocket a nut drops into: from z = 0 down, and 1 above. Corners point along ±X, flats face ±Y.',
+        params: [
+          { name: 'size', type: "'M2' … 'M8'", text: 'As for `screw`.' },
+          { name: 'options.depth', type: 'number', text: 'How deep. The nut\'s thickness + 0.2 by default.' },
+          { name: 'options.fit', type: 'number', text: 'Clearance per side across the flats. `fit(\'slide\')` by default.' },
+        ],
+        returns: 'Solid',
+        example: `const under = part.face('-Z')
+part.subtract(under.place(nutTrap('M3')), under.place(screwHole('M3', { length: 10 })))`,
+      },
+    ],
+  },
+  {
+    id: 'components',
+    title: 'Components',
+    intro:
+      'Common parts to build an enclosure around. Each is a `Component`: a colored `body` to see the part in place, a `cutout` to subtract from the enclosure so the part fits and can be reached, and named points on it. They move together. Dimensions are nominal, from parts already modelled: measure yours. Each takes `clearance`, `fit(\'slide\')` by default, and `fn`.',
+    entries: [
+      {
+        id: 'usbC',
+        name: 'usbC',
+        signature: 'usbC(options)',
+        summary: 'A USB-C receptacle, 8.94 × 3.26 with round ends and 7.35 long. Its mouth is at x = 0 facing -X and it runs along +X, centered on y = 0 and z = 0. The cutout is the mouth grown by `clearance`, from x = 0.5 out to x = -12, through any wall at -X. Point `mouth` is the mouth\'s center.',
+        params: [
+          { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the cutout is on every side.' },
+          fn,
+        ],
+        returns: 'Component',
+        example: `const port = usbC().translate([0, 20, 6])
+box.subtract(port.cutout)`,
+      },
+      {
+        id: 'proMicro',
+        name: 'proMicro',
+        signature: 'proMicro(options)',
+        summary: 'An nRF52840 Pro Micro: a 34 × 17 × 1.6 board on z = 0 from x = 0 to 34, centered on y = 0, with a mid-mount USB-C at the -X edge, its mouth at x = -0.5. The cutout is the connector\'s only; the board sits inside. Point `usb` is the connector\'s mouth.',
+        params: [
+          { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the connector\'s cutout is on every side.' },
+          fn,
+        ],
+        returns: 'Component',
+        example: `const mcu = proMicro().align(box, { x: 'min', y: 'center', z: 'min', gap: wall })`,
+      },
+      {
+        id: 'oled091',
+        name: 'oled091',
+        signature: 'oled091(options)',
+        summary: 'A 0.91" 128×32 OLED module: a 38 × 12 × 1.2 board on z = 0, centered on the origin, with 30 × 11.5 × 1.4 of glass on top, seen from +Z. The cutout is a pocket for board and glass, `clearance` bigger, and a window over the 22.4 × 5.6 active area, 0.6 bigger each side, reaching 10 up from the glass.',
+        params: [{ name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the pocket is on every side.' }],
+        returns: 'Component',
+        notes: ['On many modules the glass and the active area are off center: check yours.'],
+      },
+      {
+        id: 'ec11',
+        name: 'ec11',
+        signature: 'ec11(options)',
+        summary: 'An EC11 rotary encoder: its mounting face at z = 0, the 12 × 12 × 6.5 body below, the M7 bushing (7 across) from 0 to 7, and the 6 D-shaft up to `shaft`. The cutout is the bushing\'s hole, from z = -1 to 12. Point `face` is the mounting face\'s center.',
+        params: [
+          { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the bushing\'s hole is on every side.' },
+          { name: 'options.shaft', type: 'number', default: '20', text: 'How far the shaft\'s top is above the mounting face; more than 7.' },
+          fn,
+        ],
+        returns: 'Component',
+        example: `const knob = lid.face('+Z').offset(-wall).place(ec11())
+lid.subtract(knob.cutout)`,
+      },
+      {
+        id: 'led5',
+        name: 'led5',
+        signature: 'led5(options)',
+        summary: 'A 5 mm LED on z = 0: a 5.8 × 1 flange and a round-topped body, 8.6 tall. The cutout is a hole `clearance` bigger from the flange\'s top at z = 1 up 20, so the flange stops against the inside of the wall.',
+        params: [
+          { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the hole is on every side.' },
+          fn,
+        ],
+        returns: 'Component',
+      },
+      {
+        id: 'cell',
+        name: 'cell',
+        signature: 'cell(options)',
+        summary: 'A cylindrical cell lying along +X from x = 0 to `l`, its axis on y = 0 at z = d / 2, so it rests on z = 0. The cutout is the cell grown by `clearance` all round, for a cradle.',
+        params: [
+          { name: 'options.d', type: 'number', default: '18.4', text: 'Diameter. The defaults are an 18650.' },
+          { name: 'options.l', type: 'number', default: '65.2', text: 'Length.' },
+          { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the cutout is on every side.' },
+          fn,
+        ],
+        returns: 'Component',
+        example: `cell({ d: 12, l: 30 })   // a 12 × 30 Li-ion`,
+      },
+      {
+        id: 'Component',
+        name: 'Component',
+        signature: 'new Component({ body, cutout, points })',
+        summary: 'A part as a body, the cutout it needs, and named points, which always move together: every method moves all of them and returns a new component, so the cutout cannot be left behind. The factories above make them; make your own with `new`.',
+        params: [
+          { name: 'body', type: 'Solid', text: 'The part itself, to see it in place. Do not subtract it.' },
+          { name: 'cutout', type: 'Solid', text: 'What to subtract from the enclosure.' },
+          { name: 'points', type: '{ [name]: Point }', default: '{}', text: 'Named points on the part.' },
+        ],
+        returns: 'Component',
+        example: `const fan = new Component({ body: cube([30, 30, 8]), cutout: cylinder({ d: 28, h: 20 }).translate([15, 15, -6]) })`,
+      },
+      { id: 'component-body', name: 'body', owner: 'Component', signature: '.body', summary: 'The part, colored, for an assembly view.', returns: 'Solid' },
+      { id: 'component-cutout', name: 'cutout', owner: 'Component', signature: '.cutout', summary: 'What to subtract from the enclosure so the part fits and can be reached.', returns: 'Solid' },
+      { id: 'component-points', name: 'points', owner: 'Component', signature: '.points', summary: 'The named points, such as `usb` on `proMicro`.', returns: '{ [name]: Point }' },
+      {
+        id: 'component-transform',
+        name: 'transform',
+        owner: 'Component',
+        signature: '.transform(matrix)',
+        summary: 'Applies a column-major 4×4 matrix to the body, the cutout and the points.',
+        params: [{ name: 'matrix', type: 'number[16]', text: 'Column-major.' }],
+        returns: 'Component',
+      },
+      {
+        id: 'component-translate',
+        name: 'translate',
+        owner: 'Component',
+        signature: '.translate(v)',
+        summary: 'Moves everything by `[x, y, z]`.',
+        params: [{ name: 'v', type: '[x, y, z]', text: 'Missing components are 0.' }],
+        returns: 'Component',
+      },
+      {
+        id: 'component-rotate',
+        name: 'rotate',
+        owner: 'Component',
+        signature: '.rotate(angles, axis, options)',
+        summary: 'Rotates everything, with the same arguments as `Solid.rotate`.',
+        params: [
+          { name: 'angles', type: 'number | [x, y, z]', text: 'Degrees.' },
+          { name: 'axis', type: '[x, y, z]', text: 'Turn around this axis instead.' },
+          { name: 'options.around', type: 'Point | Solid | Shape2 | [x, y, z]', text: 'The pivot, instead of the origin.' },
+        ],
+        returns: 'Component',
+        example: `usbC().rotate(180)   // the mouth facing +X`,
+      },
+      {
+        id: 'component-mirror',
+        name: 'mirror',
+        owner: 'Component',
+        signature: '.mirror(normal)',
+        summary: 'Mirrors everything across the plane through the origin with this normal.',
+        params: [{ name: 'normal', type: '[x, y, z]', text: 'The plane\'s normal.' }],
+        returns: 'Component',
+      },
+      {
+        id: 'component-place',
+        name: 'place',
+        owner: 'Component',
+        signature: '.place(frame)',
+        summary: 'Moves everything onto a frame, as `frame.place` does: X and Y to the frame\'s u and v, Z along its normal.',
+        params: [{ name: 'frame', type: 'Frame', text: 'Where to put it.' }],
+        returns: 'Component',
+        example: `lid.face('+Z').offset(-wall).place(ec11())`,
+      },
+      {
+        id: 'component-align',
+        name: 'align',
+        owner: 'Component',
+        signature: '.align(target, options)',
+        summary: 'Moves everything so the body\'s bounding box lines up with a target, as `Solid.align`. The cutout and the points go along by the same amount.',
+        params: [
+          { name: 'target', type: 'Solid | Shape2 | Point | [x, y, z]', text: 'What to line up with.' },
+          { name: 'options', type: '{ x, y, z, gap }', text: 'As for `Solid.align`.' },
+        ],
+        returns: 'Component',
+        example: `proMicro().align(floor, { x: 'min', y: 'center', z: 'after' })`,
+      },
+      {
+        id: 'component-at',
+        name: 'at',
+        owner: 'Component',
+        signature: '.at(side)',
+        summary: 'A point on the body\'s bounding box: its center, or the center of a side.',
+        params: [{ name: 'side', type: "'center' | '+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", default: "'center'", text: 'Which.' }],
+        returns: 'Point',
       },
     ],
   },

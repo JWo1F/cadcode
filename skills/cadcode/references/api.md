@@ -13,6 +13,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 - Frames
 - Sketches
 - Paths
+- Hardware and components
 - Lofts and threads
 - Helpers
 
@@ -175,6 +176,27 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 | `s.path(...)` / `s.spline(...)` | Same, in a sketch: viewer shows trace (dashed), piece ends, Bézier handles, and the closed outline. |
 
 Use paths for revolve profiles and organic outlines instead of hand-computed `cos`/`sin` arcs or hulls of circles.
+
+## Hardware and components
+
+Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'`; others throw. Cutters start at z = 0, go down along -Z, and reach 1 above z = 0 — place them with `face.place(cutter)` (local -Z goes into the part on any face), never a hand-written `+1`.
+
+| API | Notes |
+| --- | --- |
+| `screw(size)` | `{ d, clearance, tap, capHead: { d, h }, countersunk: { d }, nut: { s, h }, insert: { d, depth } }` in mm. `tap` = pilot for self-tapping into plastic. Insert holes vary by brand. |
+| `fit('press' \| 'slide' \| 'loose')` | Clearance per side: 0.1 / 0.2 / 0.4. `setFit({ press, slide, loose })` changes them globally. Use `2 * fit('slide')` instead of a hand-picked `+0.4`. |
+| `screwHole(size, { length, head = 'none' \| 'cap' \| 'countersunk', hole = 'clearance' \| 'tap' \| 'insert', headDepth, fn })` | Cap: counterbore head d + 2·fit('slide'), `headDepth` (default head height) deep. Countersunk: 90° cone, head d at z = 0 (`headDepth` sinks it). `insert`: `length` defaults to the insert depth. |
+| `boss(size, { h, d, hole = 'tap', fn })` | Cylinder z 0..h with the hole from the top; tap/insert leave a 1 floor (insert needs h ≥ depth + 1), clearance goes through. Default d = max(2.2·d, hole + 3.2), rounded up to 0.1. |
+| `nutTrap(size, { depth, fit })` | Hex pocket cutter, across flats s + 2·fit (default slide), depth nut h + 0.2. Corners on ±X. |
+| `Component` | `{ body, cutout, points }`; `translate`, `rotate`, `mirror`, `transform`, `place(frame)`, `align(target, opts)` (by the body's bbox) move all three and return a new one; `at(side)` from the body. `new Component({ body, cutout, points })` for your own. |
+| `usbC({ clearance, fn })` | Mouth at x = 0 facing -X, body along +X, centered y = z = 0, 8.94 × 3.26 × 7.35. Cutout from x = 0.5 to -12. Point `mouth`. |
+| `proMicro({ clearance, fn })` | PCB 34 × 17 × 1.6, x 0..34, y centered, z 0..1.6; USB-C mouth at x = -0.5, center z = 2.23. Cutout: connector only. Point `usb`. |
+| `oled091({ clearance })` | Board 38 × 12 × 1.2 on z = 0 centered, glass 30 × 11.5 × 1.4 on top, view +Z. Cutout: pocket + window (active 22.4 × 5.6 + 0.6) up 10 from the glass. |
+| `ec11({ clearance, shaft = 20, fn })` | Mounting face z = 0, body 12 × 12 below, bushing d 7 to z 7, D-shaft d 6 to `shaft`. Cutout: d 7 + 2·clearance, z -1..12. Point `face`. |
+| `led5({ clearance, fn })` | Flange 5.8 × 1 on z = 0, 8.6 tall. Cutout: d 5 + 2·clearance from z 1 up 20. |
+| `cell({ d = 18.4, l = 65.2, clearance, fn })` | Along +X from 0 to l, axis y = 0, z = d/2. Cutout: grown by clearance all round. |
+
+Component dimensions are nominal — tell the user to measure their part.
 
 ## Lofts and threads
 
