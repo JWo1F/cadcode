@@ -100,6 +100,11 @@ const DEFAULT_FITS = Object.freeze({ press: 0.1, slide: 0.2, loose: 0.4 });
 /** The fits in force; `setFit()` changes them, as `setResolution()` does the curve defaults. */
 const fits = { ...DEFAULT_FITS };
 
+/** @internal The fits in force, for memo()'s key. @returns {Readonly<Record<string, number>>} */
+export function currentFits() {
+  return { ...fits };
+}
+
 /**
  * The clearance per side for a kind of fit, in mm: `'press'` (0.1 by default) for parts pressed
  * in to stay, `'slide'` (0.2) for parts that go in by hand, `'loose'` (0.4) for parts that move

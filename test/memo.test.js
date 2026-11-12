@@ -97,3 +97,18 @@ test('arguments must be plain data and results must be shapes', () => {
   assert.throws(() => memo(() => 42)(), /returned number/);
   assert.throws(() => memo(5), /takes a function/);
 });
+
+test('a change of setFit() builds again, as a change of resolution does', async () => {
+  const { setFit, fit } = await import('../src/lib/index.js');
+  newRun();
+  let calls = 0;
+  const hole = memo(() => (calls++, cylinder({ d: 3 + 2 * fit('slide'), h: 1 })));
+  hole();
+  setFit({ slide: 0.3 });
+  try {
+    hole();
+  } finally {
+    setFit({ slide: 0.2 });
+  }
+  assert.equal(calls, 2);
+});

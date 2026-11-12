@@ -42,3 +42,32 @@ test('3mf exports like stl, one file per part', () => {
 test('parts lists the part names', () => {
   assert.equal(cadcode('parts', 'parts.js'), 'box\nlid\n');
 });
+
+test('--all builds each part afresh, so one part setting the resolution leaves the next alone', () => {
+  fs.writeFileSync(
+    path.join(dir, 'leaky.js'),
+    `import { cylinder, setResolution } from 'cadcode';\nexport default {\n  coarse: () => (setResolution({ fn: 6 }), cylinder({ r: 5, h: 1 })),\n  fine: () => cylinder({ r: 5, h: 1 }),\n};\n`,
+  );
+  cadcode('stl', 'leaky.js', '--all', '-o', 'leaky');
+  cadcode('stl', 'leaky.js', '--part', 'fine', '-o', 'fine.stl');
+  const triangles = (...file) => fs.readFileSync(path.join(dir, ...file)).readUInt32LE(80);
+  assert.equal(triangles('leaky', 'leaky-fine.stl'), triangles('fine.stl'));
+  assert.ok(triangles('leaky', 'leaky-coarse.stl') < triangles('fine.stl'));
+});
+
+test('an unknown command is named before the program is built', () => {
+  fs.writeFileSync(path.join(dir, 'broken.js'), `throw new Error('built');\n`);
+  assert.throws(() => execFileSync(process.execPath, [CLI, 'stp', 'broken.js'], { cwd: dir, stdio: 'pipe' }), (error) => {
+    assert.match(String(error.stderr), /Unknown command "stp"/);
+    return true;
+  });
+});
+
+test('an error in a part points at the program', () => {
+  fs.writeFileSync(path.join(dir, 'fails.js'), `export default { bad: () => { throw new Error('no such hole'); } };\n`);
+  assert.throws(() => execFileSync(process.execPath, [CLI, 'stl', 'fails.js'], { cwd: dir, stdio: 'pipe' }), (error) => {
+    assert.match(String(error.stderr), /cadcode: no such hole/);
+    assert.match(String(error.stderr), /fails\.js:1/);
+    return true;
+  });
+});

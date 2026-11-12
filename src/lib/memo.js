@@ -7,6 +7,7 @@
 // An entry holds plain data — meshes as typed arrays and colors as RGBA — that
 // survives a structured clone between threads.
 import { CrossSection, Manifold, Mesh, Shape2, Solid, colorOfId, reserveColorIds, resolution } from './shapes.js';
+import { currentFits } from './hardware.js';
 
 /**
  * A stored value; `async` marks the result of a function that returned a promise, so a hit returns one too.
@@ -57,7 +58,7 @@ export function memoEntries() {
  * In `cadcode dev` and in the playground the results also outlive the run: a save
  * that leaves the function's code and arguments as they were reuses them instead
  * of building again. The key is the function's source, its arguments and the
- * resolution set with `setResolution`. A change in a helper the function calls, or
+ * resolution set with `setResolution` and the fits set with `setFit`. A change in a helper the function calls, or
  * in a variable it reads from outside, is not seen, so pass everything the function
  * depends on as arguments.
  *
@@ -75,7 +76,7 @@ export function memo(fn) {
   return /** @type {F} */ (
     (...args) => {
       args.forEach((arg, i) => checkArgument(arg, `argument ${i + 1}`));
-      const key = JSON.stringify([source, args, [resolution.fn, resolution.fa, resolution.fs]]);
+      const key = JSON.stringify([source, args, [resolution.fn, resolution.fa, resolution.fs], currentFits()]);
       if (built.has(key)) return built.get(key).value;
       if (given.has(key)) {
         const stored = /** @type {MemoValue} */ (given.get(key));

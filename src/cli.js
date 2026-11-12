@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { Worker } from 'node:worker_threads';
 import { bundleProgram, evaluateProgram, parseOverrides, removeBundle } from './core/program.js';
 
 process.setSourceMapsEnabled(true);
@@ -56,43 +57,60 @@ async function main() {
     return startDevServer({ file, port: Number(values.port), host: values.host, part: values.part, overrides, open: values.open });
   }
 
+  if (!['parts', 'stl', '3mf', 'png'].includes(command)) throw new Error(`Unknown command "${command}"\n\n${USAGE}`);
+  const png = command === 'png' ? pngOptions() : undefined;
   const bundle = await bundleProgram(file);
   try {
-    await exportParts(command, bundle, overrides);
+    if (command === 'parts') return void console.log((await evaluateProgram(bundle, { part: values.part, overrides })).partNames.join('\n'));
+    await exportParts(command, bundle, overrides, png);
   } finally {
     removeBundle(bundle);
   }
 }
 
-async function exportParts(command, bundle, overrides) {
-  const first = await evaluateProgram(bundle, { part: values.part, overrides });
+function pngOptions() {
+  const [width, height] = values.size.split('x').map(Number);
+  if (!width || !height) throw new Error(`--size must look like 800x600, got "${values.size}"`);
+  return { width, height, view: values.view };
+}
 
-  if (command === 'parts') return void console.log(first.partNames.join('\n'));
-  if (!['stl', '3mf', 'png'].includes(command)) throw new Error(`Unknown command "${command}"\n\n${USAGE}`);
+/**
+ * Evaluates one part and exports it in a worker of its own, so a part that calls setResolution() or
+ * setFit() cannot change the parts exported after it.
+ * @returns {Promise<{ part: string, partNames: string[], bytes: Uint8Array }>}
+ */
+function exportInWorker(bundle, part, overrides, format, png) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./core/export-worker.js', import.meta.url), { workerData: { bundle, part, overrides, format, png } });
+    worker.once('message', (message) => {
+      if (message.ok) return resolve(message);
+      const error = new Error(message.message);
+      error.stack = message.stack;
+      reject(error);
+    });
+    worker.once('error', reject);
+    worker.once('exit', (code) => reject(new Error(`the export worker stopped (exit code ${code})`)));
+  });
+}
 
-  const ext = command;
+async function exportParts(format, bundle, overrides, png) {
   const base = path.basename(file).replace(/\.[^.]+$/, '');
-  const parts = values.all ? first.partNames : [first.part];
-  for (const part of parts) {
-    const result = part === first.part ? first : await evaluateProgram(bundle, { part, overrides });
-    const name = parts.length > 1 || first.partNames.length > 1 ? `${base}-${part}.${ext}` : `${base}.${ext}`;
+  const write = (result) => {
+    const name = result.partNames.length > 1 ? `${base}-${result.part}.${format}` : `${base}.${format}`;
     const out = values.all ? path.join(values.out ?? '.', name) : (values.out ?? name);
     fs.mkdirSync(path.dirname(out), { recursive: true });
+    fs.writeFileSync(out, result.bytes);
+    return out;
+  };
 
-    const started = performance.now();
-    if (ext === 'stl') {
-      const { toSTL } = await import('./export/stl.js');
-      fs.writeFileSync(out, toSTL(result.solids));
-    } else if (ext === '3mf') {
-      const { to3MF } = await import('./export/3mf.js');
-      fs.writeFileSync(out, to3MF(result.solids, { name: part }));
-    } else {
-      const { toPNG } = await import('./export/png.js');
-      const [width, height] = values.size.split('x').map(Number);
-      if (!width || !height) throw new Error(`--size must look like 800x600, got "${values.size}"`);
-      fs.writeFileSync(out, toPNG(result, { width, height, view: values.view }));
-    }
-    console.log(`${part} → ${out} (${Math.round(performance.now() - started)} ms)`);
+  let started = performance.now();
+  const first = await exportInWorker(bundle, values.part, overrides, format, png);
+  console.log(`${first.part} → ${write(first)} (${Math.round(performance.now() - started)} ms)`);
+  if (!values.all) return;
+  for (const part of first.partNames.filter((name) => name !== first.part)) {
+    started = performance.now();
+    const result = await exportInWorker(bundle, part, overrides, format, png);
+    console.log(`${part} → ${write(result)} (${Math.round(performance.now() - started)} ms)`);
   }
 }
 
