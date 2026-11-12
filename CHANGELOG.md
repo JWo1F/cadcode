@@ -10,15 +10,30 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `clip(ranges, { outside: true })` keeps what lies outside the ranges, for a notch without a big cube.
 - `proMicro()`, `oled091()` and `led5()` take their sizes as options, so a model's own params can drive them; `oled091()` shifts an off-center glass or active area. `frame.place()` takes a component.
 - `frame.flip()` turns a frame to face the other way, for a cutter on a plane whose normal points into the part, and `boss()` takes a `floor`.
+- `rotate([0, 0, z], shape2)` and `shape2.rotate([0, 0, z])` turn a 2D shape as OpenSCAD does, and `linearExtrude(h, shape)` needs no options.
+- The functional forms and `spline()` are typed by what they are given: `union(square(1), square(2))` is a `Shape2` and `spline(points, { closed: true })` a `Shape2`, with no cast.
 
 ### Changed
 
+- **Breaking:** every frame is a rotation, so nothing placed on one is mirrored. `face('-X')`, `face('+Y')` and `face('-Z')` run u against its world axis (u = -y on `-X`), so a drawing there reads right from outside; `plane.XZ` faces -Y, as OpenSCAD's `rotate([90, 0, 0])` does, so a positive depth grows towards -Y; `flip()` turns half a turn about v. A thread or a chiral part placed on those faces was mirrored before.
+- **Breaking:** `nutTrap()` takes `clearance` instead of `fit`, and `cell()` takes `length` instead of `l`, as the other parts do.
+- `cadcode stl --all` (and `3mf`, `png`) builds each part in a fresh worker, as `-p` does, so a part that calls `setResolution()` or `setFit()` no longer changes the parts after it. An unknown command is reported before the program is built.
+- A threaded hole (`thread({ internal: true })`) is grown so its facets clear a round screw; at the default resolution an M3 hole bound.
+- Lengths in the viewer and playground show up to 2 decimals, the same in the readout and the measure label.
+- `startDevServer()` returns `{ url, close }` and takes `port: 0`.
 - `ec11().cutout` reaches down to the body's bottom, so it cuts the panel whichever side of it the mounting face is put.
 - The examples take holes, standoffs and fits from the hardware library and use `clip`, `ring`, `polarPoint` and cylinder axes. The bracket and hook's M4 countersinks are 8.96 across, and the sensor case's battery rests 0.25 lower.
 
 ### Fixed
 
 - `cell().cutout` stops at z = 0 instead of digging `clearance` into the floor the cell rests on.
+- `cadcode dev`: after a syntax error, a params or part change kept running the last good code and showed it as ready; the error now stays until the file builds, and downloads report it. A download the browser abandons stops its worker.
+- `cadcode dev`: an edit made while the server restarts reaches the model after the reconnect, a colour change is not dropped by a quick edit of another field, and restarting on another file restores that file's camera.
+- The viewer and the playground show an error instead of staying on "Building" when the browser cannot render (no WebGL), and the playground says when copying a share link fails.
+- `memo()` builds again after `setFit()`, as it does after `setResolution()`.
+- `rotate([x, y, z], shape2)` gave a shape of infinite size, and `color()`, `offset()` and `linearExtrude()` failed with a TypeError on 2D input or none; they now work or name the mistake.
+- Sweeping a profile that came out empty gives an empty solid instead of crashing, and `polyhedron()` refuses inside-out faces with a readable message.
+- The playground rewrites a bare `import 'cadcode'`.
 
 ## [0.15.0] - 2026-11-12
 
