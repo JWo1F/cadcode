@@ -155,7 +155,7 @@ surface (its normal square to it), `frameAt(point, normal)` one at any point, an
 
 **Round edges after the booleans** with `.fillet(r, filter)` / `.chamfer(size, filter)`: `{ along: 'z', convex: true }`
 for vertical corners, then `{ touching: '-Z' }` for the bottom rim (it runs round the rounded corners), `{ convex: false }`
-to fill inside edges. Check what a filter takes with `.edges(filter)`. Prefer `cube({ round })` when the part is a box.
+to fill inside edges. Check what a filter takes with `.edges(filter)`. Prefer `cube({ round })` when the part is a box, and `tray()` for an open box sized from the inside.
 
 **Screws and parts come from the library.** `screwHole('M3', { length: 10, head: 'countersunk' })`, `boss('M3', { h: 14,
 hole: 'insert' })`, `nutTrap('M3')`, placed with `face.place(...)`; clearances from `fit('slide')`, not hand-picked numbers.
@@ -205,6 +205,7 @@ sharp. Round and chamfer mix by group, and a top chamfer follows the rounded cor
 
 ```js
 const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
+const shell = tray([iL, iW, iH], { wall: 2, floor: 1.6, round: 3 }); // open box around a cavity at the origin
 const block = cube([60, 30, 20], { round: { z: 3 }, chamfer: { top: 1.5 } });
 cylinder({ d: 20, h: 8, chamfer: { top: 1 } }); // flat bottom, chamfered top
 ```

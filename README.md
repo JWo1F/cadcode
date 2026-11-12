@@ -203,6 +203,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 
 | Function | Notes |
 | --- | --- |
+| `tray(size, { wall, floor, round, fn })` | An open-topped box sized from the inside: the cavity `size` with a corner at the origin, walls `wall` thick outside it, a floor `floor` (default `wall`) below. `round` rounds the outside's vertical corners and the inside's by `round - wall`. |
 | `cube(size, { center, round, chamfer, fn })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge and `chamfer: c` cuts every edge at 45°, inside the same size. Either also takes sizes by group of edges, `z` (the vertical ones), `top` and `bottom` (around those faces): `{ round: { z: 3 }, chamfer: { top: 1 } }` keeps a flat bottom. |
 | `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, axis, fn })` | Stands on XY along +Z, or along `axis: 'x'` or `'y'`. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size; `{ chamfer: { top: 1 } }` does one end only. |
 | `sphere(r)` or `sphere({ r \| d, fn })` | Centered on the origin. |

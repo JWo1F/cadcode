@@ -21,6 +21,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 
 | Function | Notes |
 | --- | --- |
+| `tray(size, { wall, floor = wall, round = 0, fn })` | Open-topped box around a cavity `size` `[x, y, z]` with a corner at the origin: walls `wall` thick outside it, a floor `floor` thick below, open at z = size[2]. `round` rounds the outside's vertical corners, the inside's by `round - wall`. Outside is `[x + 2·wall, y + 2·wall, z + floor]` from `[-wall, -wall, -floor]`. |
 | `cube(size = 1, { center = false, round, chamfer, fn })` | `size`: number or `[x, y, z]`. Corner at origin unless centered. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°, inside the same size. By group: `{ round: { z, top, bottom }, chamfer: { ... } }` — `z` vertical edges, `top`/`bottom` the four around that face; a group takes round or chamfer, not both. A top/bottom treatment follows rounded vertical corners. Errors when a size does not fit. |
 | `cylinder({ h, r, d, r1, r2, d1, d2, center = false, round, chamfer, axis = 'z', fn })` | Along +Z from z = 0 (or centered); `axis: 'x' \| 'y'` lays it along +X / +Y (instead of `.rotate([0, 90, 0])` / `.rotate([-90, 0, 0])`). `r1`/`d1` bottom, `r2`/`d2` top for cones. `round`/`chamfer` soften the top and bottom edges inside the same size; `{ top, bottom }` for one end or different sizes. |
 | `sphere(r)` / `sphere({ r, d, fn })` | Centered on the origin. |

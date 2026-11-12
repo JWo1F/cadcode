@@ -164,6 +164,39 @@ function edgedCube(s, specs, fn) {
 }
 
 /**
+ * @typedef {object} TrayOptions
+ * @property {number} wall thickness of the side walls
+ * @property {number} [floor] thickness of the floor (default `wall`)
+ * @property {number} [round] radius of the outside's vertical corners; the inside's are `wall` less
+ * @property {number} [fn] segments of a full circle, for `round`
+ */
+
+/**
+ * An open-topped box built around the space inside it: the cavity `size` with one corner at the
+ * origin, walls `wall` thick outside it and a floor `floor` thick below, open at the top, z = size[2].
+ * `{ round: 3 }` rounds the outside's vertical corners by 3 and the inside's by `3 - wall`, so the
+ * wall is as thick at a corner as along a side. `tray([60, 40, 20], { wall: 2 })` is 64 × 44 × 22.
+ * @param {number[]} size `[x, y, z]` of the cavity
+ * @param {TrayOptions} options
+ * @returns {Solid}
+ */
+export function tray(size, options) {
+  const s = toVec3(size);
+  if (!s.every((v) => v > 0)) throw new Error(`tray(): every size must be more than 0, got ${JSON.stringify(size)}`);
+  const { wall, floor = wall, round = 0, fn } = options ?? {};
+  if (!(typeof wall === 'number' && wall > 0)) throw new Error(`tray(): wall must be more than 0, got ${JSON.stringify(wall)}`);
+  if (!(typeof floor === 'number' && floor > 0)) throw new Error(`tray(): floor must be more than 0, got ${JSON.stringify(floor)}`);
+  if (!(typeof round === 'number' && round >= 0)) throw new Error(`tray(): round must be 0 or more, got ${JSON.stringify(round)}`);
+  const [x, y, z] = s;
+  /** A box `r`-rounded at its vertical corners, plain when `r` is 0. @type {(size: number[], r: number) => Solid} */
+  const rounded = (size, r) => cube(size, r > 0 ? { round: { z: r }, fn } : {});
+  const outside = rounded([x + 2 * wall, y + 2 * wall, z + floor], round).translate([-wall, -wall, -floor]);
+  // The cavity reaches past the top so the opening is cut clean.
+  const cavity = rounded([x, y, z + 1], Math.max(round - wall, 0));
+  return outside.subtract(cavity);
+}
+
+/**
  * @typedef {object} CylinderOptions
  * @property {number} h
  * @property {number} [r]

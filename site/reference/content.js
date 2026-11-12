@@ -108,6 +108,22 @@ cube([40, 30, 12], { round: { z: 3 } }) // flat top and bottom
 cube([60, 30, 20], { round: { z: 3 }, chamfer: { top: 1.5 } })`,
       },
       {
+        id: 'tray',
+        name: 'tray',
+        signature: 'tray(size, options)',
+        summary: 'An open-topped box built around the space inside it: the cavity `size` with one corner at the origin, walls outside it, a floor below and the top open at z = `size[2]`. For enclosures sized from what goes inside.',
+        params: [
+          { name: 'size', type: '[x, y, z]', text: 'The cavity. The outside is `[x + 2 · wall, y + 2 · wall, z + floor]`, from `[-wall, -wall, -floor]`.' },
+          { name: 'options.wall', type: 'number', text: 'Thickness of the side walls.' },
+          { name: 'options.floor', type: 'number', default: 'wall', text: 'Thickness of the floor.' },
+          { name: 'options.round', type: 'number', default: '0', text: 'Radius of the outside\'s vertical corners. The inside\'s are `round - wall`, so a corner is as thick as a side.' },
+          { ...fn, text: 'Segments of a full circle for the rounded corners.' },
+        ],
+        returns: 'Solid',
+        example: `tray([60, 40, 20], { wall: 2 })                       // 64 × 44 × 22
+tray([60, 40, 20], { wall: 2, floor: 1.6, round: 3 })`,
+      },
+      {
         id: 'cylinder',
         name: 'cylinder',
         signature: 'cylinder(options)',

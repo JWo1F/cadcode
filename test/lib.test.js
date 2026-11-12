@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, circle, ellipse, polygon, slot, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
+import { cube, tray, cylinder, sphere, square, circle, ellipse, polygon, slot, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -305,4 +305,15 @@ test('clip with outside keeps what lies outside the ranges', () => {
   near(cube(10).clip({ x: [-Infinity, 5], y: [0, 3] }, { outside: true }).volume(), 1000 - 150);
   near(cube(10).clip({ x: [20, 30] }, { outside: true }).volume(), 1000);
   near(square(10).clip({ y: [5, Infinity] }, { outside: true }).area(), 50);
+});
+
+test('tray: cavity at the origin, walls and floor outside it, open at the top', () => {
+  const t = tray([10, 10, 10], { wall: 1, floor: 2 });
+  assert.deepEqual(t.bounds(), { min: [-1, -1, -2], max: [11, 11, 10] });
+  near(t.volume(), 12 * 12 * 12 - 1000);
+  // Rounded: the inside's corners are `wall` less, so a corner is as thick as a side.
+  const r = tray([20, 20, 5], { wall: 2, round: 3, fn: 64 });
+  near(r.slice(1).area(), cube([24, 24, 1], { round: { z: 3 }, fn: 64 }).slice(0.5).area() - cube([20, 20, 1], { round: { z: 1 }, fn: 64 }).slice(0.5).area(), 1e-6);
+  assert.throws(() => tray([10, 10, 10], {}), /wall must be more than 0/);
+  assert.throws(() => tray([10, 0, 10], { wall: 1 }), /every size must be more than 0/);
 });
