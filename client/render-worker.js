@@ -8,10 +8,8 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { createInspect } from './inspect.js';
+import { DEFAULT_COLOR, EDGE_ANGLE, SKETCH_LINE_WIDTH } from './render-style.js'; // a fat line: plain WebGL lines are always one pixel wide
 
-const DEFAULT_COLOR = '#f2c14e';
-const EDGE_ANGLE = 25;
-const SKETCH_LINE_WIDTH = 2.5; // CSS pixels; plain WebGL lines are always one pixel wide
 const GUIDE_LINE_WIDTH = 2; // CSS pixels: a sketch's construction lines, dashed
 const TURN_MS = 300; // how long the camera takes to turn to an axis view
 // Looking straight along Z, the orbit has no azimuth to hold on to, so an axis view

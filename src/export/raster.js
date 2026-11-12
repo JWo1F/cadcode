@@ -2,10 +2,15 @@
 // shading, outline edges, back-to-front blending for transparent parts, and 2D
 // shapes drawn as sketches.
 // No GPU or browser needed, so `cadcode png` runs anywhere Node runs.
+//
+// A view is drawn into a supersampled buffer in passes — backdrop, opaque faces,
+// outlines, transparent faces, sketches — and then downsampled.
 
 import { parseColor } from '../lib/colors.js';
+import { vec3 } from '../lib/vec.js';
+import { DEFAULT_COLOR as DEFAULT_HEX, EDGE_ANGLE, SKETCH_LINE_WIDTH } from '../../client/render-style.js';
 
-export const DEFAULT_COLOR = parseColor('#f2c14e');
+export const DEFAULT_COLOR = parseColor(DEFAULT_HEX);
 
 /** Camera directions (from the model toward the camera) and up vectors. Z is up. */
 export const VIEWS = {
@@ -23,29 +28,16 @@ export const VIEWS = {
 export const SHEET = ['iso', 'front', 'right', 'top'];
 
 const SUPERSAMPLE = 2;
-const EDGE_NORMAL_COS = Math.cos((25 * Math.PI) / 180);
+const EDGE_NORMAL_COS = Math.cos((EDGE_ANGLE * Math.PI) / 180);
 const EDGE_SHADE = 0.35;
-const SKETCH_LINE_WIDTH = 2.5; // output pixels
+const MARGIN = 0.08; // of the image, around the model
 const GUIDE_LINE_WIDTH = 1.75; // output pixels: a sketch's construction lines, dashed
 const DASH = 7; // output pixels drawn, then
 const GAP = 4; // left out
 
-/** A screen-space segment cut into dashes, starting with one at `a`. */
-function dashes(a, b, dash, gap) {
-  const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const at = (t) => a.map((v, k) => v + ((b[k] - v) * t) / length);
-  const out = [];
-  for (let t = 0; t < length; t += dash + gap) out.push([at(t), at(Math.min(t + dash, length))]);
-  return out;
-}
-
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const normalize = (a) => {
-  const len = Math.hypot(a[0], a[1], a[2]) || 1;
-  return [a[0] / len, a[1] / len, a[2] / len];
-};
+const { sub, dot, cross } = vec3;
+// A degenerate triangle has no normal: it stays a zero vector rather than NaN.
+const normalize = (a) => (vec3.length(a) ? vec3.normalize(a) : a);
 
 /**
  * Renders mesh groups to an RGBA pixel buffer.
@@ -74,15 +66,29 @@ function renderView(groups, width, height, viewName) {
   const view = VIEWS[viewName];
   if (!view) throw new Error(`Unknown view "${viewName}". Views: ${[...Object.keys(VIEWS), 'sheet'].join(', ')}`);
 
-  const W = width * SUPERSAMPLE;
-  const H = height * SUPERSAMPLE;
+  const camera = cameraFor(view);
+  const canvas = createCanvas(width * SUPERSAMPLE, height * SUPERSAMPLE, fitProjection(groups, camera, width * SUPERSAMPLE, height * SUPERSAMPLE));
+  paintBackdrop(canvas);
+  const { opaque, transparent } = collectTriangles(groups, canvas, camera);
+  drawOpaque(canvas, opaque);
+  drawOutlines(canvas);
+  drawTransparent(canvas, transparent);
+  drawSketches(canvas, groups.filter((g) => g.sketch));
+  return downsample(canvas, width, height);
+}
+
+/** The camera's frame for a view, and the light, which sits up and to the left of it. */
+function cameraFor(view) {
   const toCamera = normalize(view.dir);
-  const forward = [-toCamera[0], -toCamera[1], -toCamera[2]];
+  const forward = vec3.scale(toCamera, -1);
   const right = normalize(cross(forward, view.up));
   const up = cross(right, forward);
-  const light = normalize([toCamera[0] + right[0] * -0.4 + up[0] * 0.8, toCamera[1] + right[1] * -0.4 + up[1] * 0.8, toCamera[2] + right[2] * -0.4 + up[2] * 0.8]);
+  const light = normalize(vec3.add(vec3.add(toCamera, vec3.scale(right, -0.4)), vec3.scale(up, 0.8)));
+  return { toCamera, forward, right, up, light };
+}
 
-  // Fit the projected model into the image with a margin.
+/** Projects world points to the supersampled image, the model fitted into it with a margin: [x, y, depth]. */
+function fitProjection(groups, { right, up, forward }, W, H) {
   let [minX, maxX, minY, maxY] = [Infinity, -Infinity, Infinity, -Infinity];
   for (const { positions } of groups) {
     for (let i = 0; i < positions.length; i += 3) {
@@ -95,28 +101,43 @@ function renderView(groups, width, height, viewName) {
       maxY = Math.max(maxY, y);
     }
   }
-  const margin = 0.08;
-  const scale = Math.min((W * (1 - 2 * margin)) / (maxX - minX || 1), (H * (1 - 2 * margin)) / (maxY - minY || 1));
+  const scale = Math.min((W * (1 - 2 * MARGIN)) / (maxX - minX || 1), (H * (1 - 2 * MARGIN)) / (maxY - minY || 1));
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   const project = (p) => [(dot(p, right) - cx) * scale + W / 2, H / 2 - (dot(p, up) - cy) * scale, dot(p, forward)];
+  return { project, scale };
+}
 
-  const color = new Float32Array(W * H * 3);
-  const depth = new Float32Array(W * H).fill(Infinity);
-  const normals = new Float32Array(W * H * 3);
+/** The buffers a view is drawn into: linear RGB, depth and the normal of the nearest opaque face, per sample. */
+function createCanvas(W, H, { project, scale }) {
+  return {
+    W,
+    H,
+    project,
+    // How far apart in depth two neighbouring samples must be to outline them, and how
+    // far behind a face a sketch may lie and still be seen: a few pixels' worth.
+    depthJump: 6 / scale,
+    color: new Float32Array(W * H * 3),
+    depth: new Float32Array(W * H).fill(Infinity),
+    normals: new Float32Array(W * H * 3),
+  };
+}
+
+/** A pale vertical sweep, darker towards the bottom. */
+function paintBackdrop({ W, H, color }) {
   for (let y = 0; y < H; y++) {
-    const t = y / H;
-    const shade = 1 - 0.1 * t;
+    const shade = 1 - 0.1 * (y / H);
     for (let x = 0; x < W; x++) color.set([shade, shade, shade * 1.01], (y * W + x) * 3);
   }
+}
 
+/** The solids' triangles, shaded and projected: opaque ones facing the camera, and transparent ones with their depth. */
+function collectTriangles(groups, { project }, { toCamera, light }) {
   const shadeFace = (n, rgb) => {
     const facing = Math.abs(dot(n, toCamera));
     const intensity = 0.28 + 0.52 * Math.max(0, dot(n, light)) + 0.25 * facing;
     return [rgb[0] * intensity, rgb[1] * intensity, rgb[2] * intensity];
   };
-
-  // Collect triangles; opaque ones are drawn first with depth writes.
   const opaque = [];
   const transparent = [];
   for (const group of groups) {
@@ -127,7 +148,7 @@ function renderView(groups, width, height, viewName) {
       const tri = [indices[t], indices[t + 1], indices[t + 2]].map((v) => [positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2]]);
       const n = normalize(cross(sub(tri[1], tri[0]), sub(tri[2], tri[0])));
       const screen = tri.map(project);
-      const entry = { screen, n, rgb: shadeFace(n, rgba), alpha: rgba[3] };
+      const entry = { screen, n, rgb: shadeFace(n, rgba), alpha: rgba[3], depth: 0 };
       if (rgba[3] >= 0.999) {
         if (dot(n, toCamera) > 0) opaque.push(entry);
       } else {
@@ -136,8 +157,12 @@ function renderView(groups, width, height, viewName) {
       }
     }
   }
+  return { opaque, transparent };
+}
 
-  for (const { screen, n, rgb } of opaque) {
+/** Opaque faces, nearest wins. */
+function drawOpaque({ W, H, color, depth, normals }, triangles) {
+  for (const { screen, n, rgb } of triangles) {
     rasterize(screen, W, H, (i, z) => {
       if (z >= depth[i]) return;
       depth[i] = z;
@@ -145,10 +170,11 @@ function renderView(groups, width, height, viewName) {
       normals.set(n, i * 3);
     });
   }
+}
 
-  // Outlines where depth jumps or the surface turns sharply.
+/** Outlines where depth jumps or the surface turns sharply: darker on the model, a grey line off it. */
+function drawOutlines({ W, H, color, depth, normals, depthJump }) {
   const edge = new Uint8Array(W * H);
-  const depthJump = 6 / scale;
   const isEdge = (a, b) => {
     const fa = depth[a] !== Infinity;
     const fb = depth[b] !== Infinity;
@@ -168,19 +194,25 @@ function renderView(groups, width, height, viewName) {
     if (edge[i] && depth[i] !== Infinity) for (let k = 0; k < 3; k++) color[i * 3 + k] *= EDGE_SHADE;
     else if (edge[i]) for (let k = 0; k < 3; k++) color[i * 3 + k] = color[i * 3 + k] * 0.4 + 0.12;
   }
+}
 
-  // Transparent faces back to front, tested against opaque depth only.
-  transparent.sort((a, b) => b.depth - a.depth);
-  for (const { screen, rgb, alpha } of transparent) {
+/** Transparent faces back to front, tested against opaque depth only. */
+function drawTransparent({ W, H, color, depth }, triangles) {
+  triangles.sort((a, b) => b.depth - a.depth);
+  for (const { screen, rgb, alpha } of triangles) {
     rasterize(screen, W, H, (i, z) => {
       if (z >= depth[i]) return;
       for (let k = 0; k < 3; k++) color[i * 3 + k] = color[i * 3 + k] * (1 - alpha) + rgb[k] * alpha;
     });
   }
+}
 
-  // Sketches last: an unlit see-through fill, then a bold outline, both hidden only
-  // behind opaque faces. A tolerance keeps them visible where a solid stands on Z=0.
-  const sketches = groups.filter((g) => g.sketch);
+/**
+ * Sketches last: an unlit see-through fill, then a bold outline (dashed for guides),
+ * both hidden only behind opaque faces. A tolerance keeps them visible where a solid
+ * stands on Z=0.
+ */
+function drawSketches({ W, H, color, depth, depthJump, project }, sketches) {
   const visible = (i, z) => z <= depth[i] + depthJump;
   for (const { positions, indices, color: rgba } of sketches) {
     const covered = new Uint8Array(W * H); // overlapping fill triangles must not blend twice
@@ -205,8 +237,10 @@ function renderView(groups, width, height, viewName) {
       else for (const [p, q] of dashes(a, b, DASH * SUPERSAMPLE, GAP * SUPERSAMPLE)) strokeSegment(p, q, radius, W, H, plot);
     }
   }
+}
 
-  // Downsample the supersampled buffer.
+/** Averages each SUPERSAMPLE × SUPERSAMPLE block into one opaque RGBA pixel. */
+function downsample({ W, color }, width, height) {
   const pixels = new Uint8Array(width * height * 4);
   const area = SUPERSAMPLE * SUPERSAMPLE;
   for (let y = 0; y < height; y++) {
@@ -226,6 +260,15 @@ function renderView(groups, width, height, viewName) {
     }
   }
   return { width, height, pixels };
+}
+
+/** A screen-space segment cut into dashes, starting with one at `a`. */
+function dashes(a, b, dash, gap) {
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const at = (t) => a.map((v, k) => v + ((b[k] - v) * t) / length);
+  const out = [];
+  for (let t = 0; t < length; t += dash + gap) out.push([at(t), at(Math.min(t + dash, length))]);
+  return out;
 }
 
 /** Calls `plot(pixelIndex, depth)` for every pixel center within `radius` of the screen-space segment. */
