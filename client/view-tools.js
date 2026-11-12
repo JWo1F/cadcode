@@ -3,9 +3,11 @@
 // in the render worker); this binds the buttons, the section card, the keys and the
 // measurement's label to it. The markup lives in each page: see client/index.html.
 
-const AXES = ['x', 'y', 'z'];
+import { formatMm } from './format.js';
+import { storage } from './storage.js';
+import { sectionOffset } from './inspect-geometry.js';
 
-const formatMm = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const AXES = ['x', 'y', 'z'];
 
 /**
  * @param {ReturnType<typeof import('./scene.js').createScene>} view
@@ -48,25 +50,18 @@ export function bindViewTools(view, { stage, storageKey = () => null, ignoreKey 
   function save() {
     const key = storageKey();
     if (!key || key !== loadedKey) return; // not before the saved one is read
-    try {
-      localStorage.setItem(key, JSON.stringify(section));
-    } catch {
-      // Storage unavailable (private window): the section just isn't remembered.
-    }
+    storage.set(key, section);
   }
 
   function load(key) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key));
-      if (saved && AXES.includes(saved.axis)) section = { on: !!saved.on, axis: saved.axis, offset: Number.isFinite(saved.offset) ? saved.offset : null, flip: !!saved.flip };
-    } catch {}
+    const saved = storage.get(key);
+    if (saved && AXES.includes(saved.axis)) section = { on: !!saved.on, axis: saved.axis, offset: Number.isFinite(saved.offset) ? saved.offset : null, flip: !!saved.flip };
   }
 
   function applySection() {
     if (bounds) {
       const [lo, hi] = extent();
-      // Outside the model (another part, or a smaller one) the plane starts again at its middle.
-      if (section.offset === null || section.offset < lo || section.offset > hi) section.offset = (lo + hi) / 2;
+      section.offset = sectionOffset(section.offset, lo, hi);
       Object.assign(slider, { min: lo, max: hi, step: 'any' });
       ends.min.textContent = formatMm(lo);
       ends.max.textContent = formatMm(hi);

@@ -6,10 +6,9 @@ import * as THREE from 'three';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { distanceToSegment, frameCorners as frameCornersOf } from './inspect-geometry.js';
 
 const AXES = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
-// The two axes the section frame spans, for each axis it is cut across.
-const SPANS = { x: ['y', 'z'], y: ['x', 'z'], z: ['x', 'y'] };
 
 const FRAME_COLOR = 0xdcaa2c; // the filament colour of the page
 const MEASURE_COLOR = 0x1f2833; // the page's ink
@@ -51,13 +50,6 @@ function dots(fill, size) {
   points.frustumCulled = false;
   return points;
 }
-
-const distanceToSegment = (px, py, [ax, ay], [bx, by]) => {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-};
 
 /**
  * @param {{ scene: THREE.Scene, element: { clientWidth: number, clientHeight: number, left: number, top: number }, getCamera: () => THREE.Camera, post: (message: object) => void }} options
@@ -118,13 +110,8 @@ export function createInspect({ scene, element, getCamera, post }) {
   /** The frame's corners in world space, in order around it, or null without a model. */
   function frameCorners() {
     if (box.isEmpty()) return null;
-    const [u, v] = SPANS[section.axis];
-    const size = box.getSize(new THREE.Vector3());
-    const margin = Math.max(size.x, size.y, size.z) * 0.08 + 0.5;
-    const lo = box.min.clone().subScalar(margin);
-    const hi = box.max.clone().addScalar(margin);
-    const corner = (cu, cv) => new THREE.Vector3().setComponent('xyz'.indexOf(section.axis), section.offset).setComponent('xyz'.indexOf(u), cu).setComponent('xyz'.indexOf(v), cv);
-    return [corner(lo[u], lo[v]), corner(hi[u], lo[v]), corner(hi[u], hi[v]), corner(lo[u], hi[v])];
+    const corners = frameCornersOf({ min: box.min.toArray(), max: box.max.toArray() }, section.axis, section.offset);
+    return corners.map((corner) => new THREE.Vector3().fromArray(corner));
   }
 
   function updateSection() {
