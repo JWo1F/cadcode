@@ -254,6 +254,9 @@ function requestPart(name) {
 
 function connect() {
   restoreSent = false;
+  // A restarted server may watch another file, or have forgotten the part: the first
+  // model of every connection gets the camera and part saved for its file.
+  firstModel = true;
   socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/`);
   socket.binaryType = 'arraybuffer';
 
@@ -272,6 +275,10 @@ function connect() {
     const frame = decodeFrame(event.data);
     const { header } = frame;
     if (fileKey !== header.file) {
+      // The camera of the file before is saved under its name, not the new one's.
+      clearTimeout(saveTimer);
+      saveCamera();
+      camera = null;
       fileKey = header.file;
       const slash = header.file.lastIndexOf('/') + 1;
       fileEl.querySelector('.dir').textContent = header.file.slice(0, slash);
