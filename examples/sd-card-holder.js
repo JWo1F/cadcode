@@ -8,7 +8,7 @@ description: A desk block with slots for SD and microSD cards, tilted so labels 
 //
 //   cadcode dev examples/sd-card-holder.js
 //   cadcode stl examples/sd-card-holder.js --part holder --set sd=8 --set micro=12
-import { circle, cube, polygon, product, range, setResolution } from 'cadcode';
+import { circle, cube, plane, polygon, product, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -82,10 +82,7 @@ export default (p) => {
   // A notch is a circle in the end face, swept along the whole length of the block.
   const notch = (x, top, depth, width) => {
     const r = ((width / 2) ** 2 + depth ** 2) / (2 * depth);
-    return circle(r)
-      .extrude(length + 2)
-      .rotate([-90, 0, 0])
-      .translate([x, -1, top - depth + r]);
+    return plane.XZ.extrude(circle(r).translate([x, top - depth + r]), length, { through: true });
   };
   const notches = () => [
     notch(sdW / 2, p.sdH, p.sdNotch, SD.w * 0.6),
@@ -98,17 +95,9 @@ export default (p) => {
       .subtract(sdSlots(), microSlots(), notches());
 
   // Cards for the display: an SD with its clipped corner, and a plain microSD.
-  const sdCard = () =>
-    polygon([
-      [-SD.w / 2, 0],
-      [SD.w / 2, 0],
-      [SD.w / 2, SD.h - 4],
-      [SD.w / 2 - 4, SD.h],
-      [-SD.w / 2, SD.h],
-    ])
-      .extrude(SD.t)
-      .rotate([90, 0, 0])
-      .translate([0, SD.t / 2, -p.sdDepth]);
+  // The SD card stands in XZ, its thickness centred on y = 0; corner 2 is the clipped one.
+  const sdOutline = polygon([[-SD.w / 2, 0], [SD.w / 2, 0], [SD.w / 2, SD.h], [-SD.w / 2, SD.h]], { chamfer: { 2: 4 } });
+  const sdCard = () => plane.XZ.offset(-SD.t / 2).extrude(sdOutline.translate([0, -p.sdDepth]), SD.t);
   const microCard = () => cube([MICRO.w, MICRO.t, MICRO.h]).translate([-MICRO.w / 2, -MICRO.t / 2, -p.microDepth]);
   const sdColors = ['#1d4e89', '#d1495b', '#1d4e89', '#edae49', '#1d4e89', '#00798c'];
   const cards = () => [

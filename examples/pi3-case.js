@@ -7,7 +7,7 @@ description: A base with port windows and a snap-on cover for the Pi 3 Model B+.
 //
 //   cadcode dev examples/pi3-case.js
 //   cadcode stl examples/pi3-case.js --part print
-import { cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -72,38 +72,39 @@ export default (p) => {
   const outline = (off) => square([iL - 2 * r0, iW - 2 * r0]).translate([r0, r0]).offset(r0 + off);
 
   const rounded = (w, h, r) => square([w - 2 * r, h - 2 * r], { center: true }).offset(r);
-  // Window through the port-side wall (y = 0), with an optional recess for the plug.
-  const sideWindow = (x, z, [w, h, r = 1], recess) => [
-    rounded(w, h, r).extrude(p.wall + 2).rotate([90, 0, 0]).translate([bx(x), 1, z]),
-    recess && rounded(...recess).extrude(p.wall / 2 + 1).rotate([90, 0, 0]).translate([bx(x), -p.wall / 2, z]),
+  // Window through a wall, drawn on its outside face at [u, v], with an optional recess for the plug.
+  const window = (face, [u, v], [w, h, r = 1], recess) => [
+    face.extrude(rounded(w, h, r).translate([u, v]), -p.wall, { through: true }),
+    recess && face.offset(1).extrude(rounded(...recess).translate([u, v]), -(p.wall / 2 + 1)),
   ];
-  // Window through the right end wall (x = iL): width along Y, height along Z, depth along +X.
-  const endWindow = (y, z, w, h) =>
-    rounded(w, h, 1).extrude(p.wall + 2).rotate([90, 0, 0]).rotate(90).translate([iL - 1, by(y), z]);
 
   const holes = product([3.5, 61.5], [3.5, 52.5]);
 
-  const ports = () => [
-    sideWindow(10.6, boardTop + 1.5, [10, 5], [12.5, 8, 2]), // micro-USB power
-    sideWindow(32, boardTop + 3, [16.5, 7.5], [22, 12, 2]), // HDMI
-    sideWindow(53.5, boardTop + 3, [7.5, 7.5, 3.7], [10, 10, 4.9]), // audio
-    endWindow(9, boardTop + 8, 14.6, 17), // USB pair
-    endWindow(27, boardTop + 8, 14.6, 17), // USB pair
-    endWindow(45.75, boardTop + 6.75, 17, 14.6), // Ethernet
-    // SD card underneath the board's left end, with a scoop above for a fingernail
-    cube([p.wall + 2, 13, 2.6]).translate([-p.wall - 1, by(28) - 6.5, boardZ - 2.3]),
-    cylinder({ d: 12, h: p.wall / 2 + 1 })
-      .rotate([0, 90, 0])
-      .translate([-p.wall - 1, by(28), boardZ - 1])
-      .intersect(cube([p.wall + 2, 14, 7]).translate([-p.wall - 1, by(28) - 7, boardZ - 1])),
-  ];
+  const ports = (box) => {
+    const side = box.face('-Y'); // port side, (x, z)
+    const end = box.face('+X'); // right end, (y, z)
+    const left = box.face('-X'); // left end, (y, z)
+    const scoop = circle({ d: 12 }).intersect(square([14, 7]).translate([-7, 0])); // upper half
+    return [
+      window(side, [bx(10.6), boardTop + 1.5], [10, 5], [12.5, 8, 2]), // micro-USB power
+      window(side, [bx(32), boardTop + 3], [16.5, 7.5], [22, 12, 2]), // HDMI
+      window(side, [bx(53.5), boardTop + 3], [7.5, 7.5, 3.7], [10, 10, 4.9]), // audio
+      window(end, [by(9), boardTop + 8], [14.6, 17]), // USB pair
+      window(end, [by(27), boardTop + 8], [14.6, 17]), // USB pair
+      window(end, [by(45.75), boardTop + 6.75], [17, 14.6]), // Ethernet
+      // SD card underneath the board's left end, with a scoop above for a fingernail
+      left.extrude(square([13, 2.6]).translate([by(28) - 6.5, boardZ - 2.3]), -p.wall, { through: true }),
+      left.offset(1).extrude(scoop.translate([by(28), boardZ - 1]), -(p.wall / 2 + 1)),
+    ];
+  };
 
   // The whole box with every window cut, before it is split in two.
-  const shell = () =>
-    outline(p.wall)
+  const shell = () => {
+    const box = outline(p.wall)
       .extrude(p.floor + H)
-      .translate([0, 0, -p.floor])
-      .subtract(outline(0).extrude(iH), ports());
+      .translate([0, 0, -p.floor]);
+    return box.subtract(outline(0).extrude(iH), ports(box));
+  };
 
   const below = (z) => cube([iL + 20, iW + 20, z + 20]).translate([-10, -10, -20]);
   const lipRing = (off, h) => outline(off).subtract(outline(-1)).extrude(h).translate([0, 0, splitZ]);

@@ -8,7 +8,7 @@ description: A box and lid for a Pro Micro board, a Li-ion cell and a climate se
 //   cadcode dev examples/sensor-case.js
 //   cadcode stl examples/sensor-case.js --part box
 //   cadcode png examples/sensor-case.js --part assembly --view sheet
-import { cube, cylinder, square, union, difference, intersection, setResolution, range, product } from 'cadcode';
+import { circle, cube, cylinder, square, union, difference, intersection, setResolution, range, product } from 'cadcode';
 
 setResolution({ fn: 40 });
 
@@ -106,7 +106,7 @@ export default (p) => {
 
   const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
-  // Grid of holes in the XY plane over an a x b rectangle
+  // Grid of pores over an a x b rectangle, drawn from [0, 0]
   const poreGrid = (a, b) => {
     const na = Math.floor((a - poreD) / porePitch) + 1;
     const nb = Math.floor((b - poreD) / porePitch) + 1;
@@ -114,44 +114,39 @@ export default (p) => {
     const ob = (b - (nb - 1) * porePitch) / 2;
     return union(
       product(range(0, na - 1), range(0, nb - 1)).map(([i, j]) =>
-        cylinder({ d: poreD, h: 10, center: true }).translate([oa + i * porePitch, ob + j * porePitch, 0]),
+        circle({ d: poreD }).translate([oa + i * porePitch, ob + j * porePitch]),
       ),
     );
   };
 
   const snapLine = (len) => cylinder({ r: bumpR, h: len, center: true }).rotate([0, 90, 0]);
 
-  const box = () =>
-    union(
+  const box = () => {
+    const shell = roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]);
+    // Cuts drawn on a side of the shell: clean through the wall, or a pocket `depth` deep from outside
+    const through = (side, shape) => shell.face(side).extrude(shape, -wall, { through: true });
+    const pocket = (side, shape, depth) => shell.face(side).offset(1).extrude(shape, -(depth + 1));
+    const poreH = poreZ1 - poreZ0;
+    return union(
       difference(
-        roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]),
+        shell,
         cube([iL, iW, iH + 1]),
 
         // USB-C: through window + recess for the plug outside
-        square([usbH + usbSlotExtra - 2, usbW + usbSlotExtra - 2], { center: true })
-          .offset(1)
-          .extrude(wall + 2)
-          .rotate([0, 90, 0])
-          .translate([-wall - 1, usbCy, usbCz]),
-        square([plugH - 3, plugW - 3], { center: true })
-          .offset(1.5)
-          .extrude(plugDepth + 1)
-          .rotate([0, 90, 0])
-          .translate([-wall - 1, usbCy, usbCz]),
+        through('-X', square([usbW + usbSlotExtra - 2, usbH + usbSlotExtra - 2], { center: true }).offset(1).translate([usbCy, usbCz])),
+        pocket('-X', square([plugW - 3, plugH - 3], { center: true }).offset(1.5).translate([usbCy, usbCz]), plugDepth),
 
         // Fingernail notch in the long side, clear of the snap groove: a gap to pry the lid up from,
         // 0.6 mm of wall left inside
-        cube([8, wall - 0.6 + 1, 1.2 + 1]).translate([2, -wall - 1, iH - 1.2]),
+        pocket('-Y', square([8, 1.2 + 1]).translate([2, iH - 1.2]), wall - 0.6),
 
         // Snap grooves
         product(bumpXs, [0, iW]).map(([x, y]) => snapLine(bumpLen + 1).translate([x, y, iH - lipD / 2])),
 
         // Sensor compartment pores: end wall, side walls, floor
-        poreGrid(poreZ1 - poreZ0, iW).mirror([1, 0, 0]).rotate([0, 90, 0]).translate([iL + wall / 2, 0, poreZ0]),
-        [-wall / 2, iW + wall / 2].map((y) =>
-          poreGrid(sensL, poreZ1 - poreZ0).mirror([0, 1, 0]).rotate([-90, 0, 0]).translate([sx0, y, poreZ0]),
-        ),
-        poreGrid(sensL, iW).translate([sx0, 0, -floorT / 2]),
+        through('+X', poreGrid(iW, poreH).translate([0, poreZ0])),
+        ['-Y', '+Y'].map((side) => through(side, poreGrid(sensL, poreH).translate([sx0, poreZ0]))),
+        shell.face('-Z').extrude(poreGrid(sensL, iW).translate([sx0, 0]), -floorT, { through: true }),
       ),
 
       // Divider with a hole for the wires
@@ -176,15 +171,15 @@ export default (p) => {
       // Sensor pad
       cube([sensorS - 4, sensorS - 4, sensorPadH]).translate([sx0 + (sensL - sensorS) / 2 + 2, (iW - sensorS) / 2 + 2, 0]),
     );
+  };
 
   // In assembly coordinates: the lid's underside is at z = iH
   const lid = () => {
     const batTop = (batD + batClr) / 2 + batD / 2;
+    const top = roundedBox(iL + 2 * wall, iW + 2 * wall, lidT, cornerR);
+    const pores = poreGrid(sensL - fit - lipT, iW - 2 * (fit + lipT)).translate([sx0 + wall, wall + fit + lipT]); // inside the skirt
     return union(
-      difference(
-        roundedBox(iL + 2 * wall, iW + 2 * wall, lidT, cornerR),
-        poreGrid(sensL - fit - lipT, iW - 2 * (fit + lipT)).translate([sx0 + wall, wall + fit + lipT, 0]), // inside the skirt
-      ).translate([-wall, -wall, iH]),
+      top.subtract(top.face('+Z').extrude(pores, -lidT, { through: true })).translate([-wall, -wall, iH]),
 
       // Skirt with snap bumps
       difference(

@@ -7,7 +7,7 @@ description: A stepped tray for 1/4" screwdriver bits, with a strip in front for
 //
 //   cadcode dev examples/hex-bit-holder.js
 //   cadcode stl examples/hex-bit-holder.js --part tray
-import { circle, cube, cylinder, polygon, product, range, setResolution, square, union } from 'cadcode';
+import { circle, cube, cylinder, plane, polygon, product, range, setResolution, square, union } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -62,13 +62,9 @@ export default (p) => {
       .offset(1.2); // soften the step edges
   };
 
-  // Profile X runs front to back (world Y), profile Y is height, the extrusion runs along world X.
+  // The profile stands in YZ, front to back and up, and runs along X across the tray.
   const body = () =>
-    profile()
-      .extrude(W)
-      .rotate([90, 0, 0])
-      .rotate(90)
-      .intersect(cube([W, D, rowTop(p.rows) + 5], { round: { z: p.r } }));
+    plane.YZ.extrude(profile(), W).intersect(cube([W, D, rowTop(p.rows) + 5], { round: { z: p.r } }));
 
   // Hex pocket with a small lead-in at the mouth; the hexagon's flats face the front.
   const socket = (i, c) => {

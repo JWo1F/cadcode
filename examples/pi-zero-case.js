@@ -7,7 +7,7 @@ description: A case for the Pi Zero and Zero 2 W with a sliding lid that clicks 
 //
 //   cadcode dev examples/pi-zero-case.js
 //   cadcode stl examples/pi-zero-case.js --part print
-import { cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -72,17 +72,12 @@ export default (p) => {
 
   const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
-  // A rounded window through a wall facing -Y, with an optional recess for the plug's overmould.
-  const sideWindow = (x, z, w, h, recess) => {
-    const window = (ww, hh, depth) =>
-      square([ww - 2, hh - 2], { center: true })
-        .offset(1)
-        .extrude(depth)
-        .rotate([90, 0, 0])
-        .translate([x, 0, z]);
+  // A rounded window through the wall under `face`, at [u, v] on it, with an optional recess for the plug's overmould.
+  const sideWindow = (face, [u, v], w, h, recess) => {
+    const window = (ww, hh) => square([ww - 2, hh - 2], { center: true }).offset(1).translate([u, v]);
     return [
-      window(w, h, p.wall + 2).translate([0, 1, 0]),
-      recess && window(recess[0], recess[1], p.wall / 2 + 1).translate([0, -p.wall / 2, 0]),
+      face.extrude(window(w, h), -p.wall, { through: true }),
+      recess && face.offset(1).extrude(window(recess[0], recess[1]), -(p.wall / 2 + 1)),
     ];
   };
 
@@ -91,24 +86,28 @@ export default (p) => {
   const base = () => {
     const shell = roundedBox(iL + 2 * p.wall, iW + 2 * p.wall, p.floor + H, p.corner).translate([-p.wall, -p.wall, -p.floor]);
 
+    const side = shell.face('-Y'); // port side, (x, z)
+    const left = shell.face('-X'); // (y, z)
+    const right = shell.face('+X'); // (y, z)
+
     const portZ = (h) => boardTop + h / 2;
     const ports = [
-      sideWindow(bx(p.hdmiX), portZ(3.3), 12.4, 4.6, [14, 6.5]),
-      sideWindow(bx(p.otgX), portZ(2.6), 9, 4.2, [11.5, 7]),
-      sideWindow(bx(p.pwrX), portZ(2.6), 9, 4.2, [11.5, 7]),
+      sideWindow(side, [bx(p.hdmiX), portZ(3.3)], 12.4, 4.6, [14, 6.5]),
+      sideWindow(side, [bx(p.otgX), portZ(2.6)], 9, 4.2, [11.5, 7]),
+      sideWindow(side, [bx(p.pwrX), portZ(2.6)], 9, 4.2, [11.5, 7]),
     ];
 
     // SD card in the left end, with a scoop to get a fingernail on the card
+    const scoop = circle({ d: 12 })
+      .translate([by(p.sdY), boardTop + 1])
+      .intersect(square([20, 10]).translate([by(p.sdY) - 10, boardTop - 0.5]));
     const sd = [
-      cube([p.wall + 2, 13, 3]).translate([-p.wall - 1, by(p.sdY) - 6.5, boardTop - 0.5]),
-      cylinder({ d: 12, h: 0.9 + 1 }) // stops short of the lid groove behind it
-        .rotate([0, 90, 0])
-        .translate([-p.wall - 1, by(p.sdY), boardTop + 1])
-        .intersect(cube([3, 20, 10]).translate([-p.wall - 1, by(p.sdY) - 10, boardTop - 0.5])),
+      left.extrude(square([13, 3]).translate([by(p.sdY) - 6.5, boardTop - 0.5]), -p.wall, { through: true }),
+      left.offset(1).extrude(scoop, -(0.9 + 1)), // stops short of the lid groove behind it
     ];
 
     // Ribbon cable out of the right end
-    const camera = p.cameraSlot && cube([p.wall + 2, 17, 2.2]).translate([iL - 1, by(15) - 8.5, boardTop]);
+    const camera = p.cameraSlot && right.extrude(square([17, 2.2]).translate([by(15) - 8.5, boardTop]), -p.wall, { through: true });
 
     // The lid runs in grooves along both long walls and into the left end; the right end is open above the lid line.
     const grooves = cube([iL + p.groove + p.wall + 1, iW + 2 * p.groove, p.tongueT + p.slide]).translate([
@@ -116,7 +115,7 @@ export default (p) => {
       -p.groove,
       lidZ,
     ]);
-    const entry = cube([p.wall + 2, iW, p.lidT + 1]).translate([iL - 1, 0, lidZ]);
+    const entry = right.extrude(square([iW, p.lidT + 1]).translate([0, lidZ]), -p.wall, { through: true });
     // Pockets in the back of each groove for the lid's click bumps
     const notches = [-1, 1].map((s) => {
       // 0.05 deeper than the bump reaches

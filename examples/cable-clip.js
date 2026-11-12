@@ -8,7 +8,7 @@ description: Snap-in channels for cables under a desk, one per cable size.
 //
 //   cadcode dev examples/cable-clip.js
 //   cadcode stl examples/cable-clip.js --part clip --set 'cables=[5,5,5]'
-import { circle, cube, cylinder, polygon, setResolution, square, union } from 'cadcode';
+import { circle, cube, cylinder, plane, polygon, setResolution, square, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -80,11 +80,7 @@ export default (p) => {
 
   // The profile stands up in XZ and is pushed along Y, then the plan's corners are rounded.
   const body = () =>
-    profile()
-      .extrude(p.width)
-      .rotate([90, 0, 0])
-      .translate([0, p.width, 0])
-      .intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
+    plane.XZ.extrude(profile(), p.width).intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
 
   // Screw from the top: through hole plus a 90° countersink ending flush with the base's top.
   const sink = (p.headD - p.screwD) / 2;

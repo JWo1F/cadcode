@@ -36,27 +36,24 @@ export default (p) => {
   // Pip spots on a face, in units of `a`.
   const layouts = {
     1: [[0, 0]],
-    2: [[-1, -1], [1, 1]],
-    3: [[-1, -1], [0, 0], [1, 1]],
+    2: [[-1, 1], [1, -1]],
+    3: [[-1, 1], [0, 0], [1, -1]],
     4: product([-1, 1], [-1, 1]),
     5: [...product([-1, 1], [-1, 1]), [0, 0]],
     6: [...product([-1, 1], [-1, 1]), [-1, 0], [1, 0]],
   };
 
-  // Where each number goes: a rotation that carries the top face (+Z) onto it.
-  // 1 top / 6 bottom, 2 right / 5 left, 3 back / 4 front.
-  const faces = { 1: [0, 0, 0], 6: [180, 0, 0], 2: [0, 90, 0], 5: [0, -90, 0], 3: [-90, 0, 0], 4: [90, 0, 0] };
-
-  const pips = () =>
-    Object.entries(faces).map(([n, turn]) =>
-      layouts[n].map(([u, v]) =>
-        sphere({ d: p.pipD, fn: 20 })
-          .translate([u * a, v * a, half + p.pipD / 2 - p.pipDepth])
-          .rotate(turn),
-      ),
-    );
-
   const body = () => cube(p.size, { center: true }).intersect(sphere({ d: p.size * p.round, fn: 96 }));
+
+  // Which face each number goes on: 1 top / 6 bottom, 2 right / 5 left, 3 back / 4 front.
+  const faces = { 1: '+Z', 6: '-Z', 2: '+X', 5: '-X', 3: '+Y', 4: '-Y' };
+
+  // A pip is a sphere sunk into the face; the face's u and v are world axes (y, z on an X face).
+  const pips = () => {
+    const box = cube(p.size, { center: true });
+    const pip = sphere({ d: p.pipD, fn: 20 }).translate([0, 0, p.pipD / 2 - p.pipDepth]);
+    return Object.entries(faces).map(([n, side]) => layouts[n].map(([u, v]) => box.face(side).place(pip.translate([u * a, v * a, 0]))));
+  };
 
   // One up, six on the bed.
   const die = () => body().subtract(pips()).translate([0, 0, half]);
