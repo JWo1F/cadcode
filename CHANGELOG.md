@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-12
+
 ### Added
 
 - `ellipse([rx, ry])`, or `{ d: [width, height] }`, is a 2D ellipse centered on the origin.
@@ -147,7 +149,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/6c34691...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/03842cf...HEAD
+[0.14.0]: https://github.com/JWo1F/cadcode/compare/6c34691...03842cf
 [0.13.0]: https://github.com/JWo1F/cadcode/compare/499707c...6c34691
 [0.12.0]: https://github.com/JWo1F/cadcode/compare/c49acef...499707c
 [0.11.1]: https://github.com/JWo1F/cadcode/compare/599b817...c49acef
