@@ -348,9 +348,11 @@ export function polygon(points, paths, options) {
 
 /**
  * @internal One spec per point from polygon()'s `round` and `chamfer`; a path's close() sizes its joins with it.
- * @param {number} count
+ * @param {unknown[]} points the corners, one spec each
  * @param {unknown} round
  * @param {unknown} chamfer
+ * @param {string} [op] the function to name in errors
+ * @param {string} [what] what a point is called in errors
  * @returns {(EdgeSpec | undefined)[]}
  */
 export function cornerSpecs(points, round, chamfer, op = 'polygon()', what = 'corner') {
