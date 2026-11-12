@@ -25,7 +25,7 @@ function moved(item, v) {
 
 /**
  * Spreads parts over the bed for printing: in a row along +X, or in rows of `columns` stacked along +Y,
- * `gap` apart by their bounding boxes, each centered across its row, the whole layout centered on the
+ * `gap` apart by their bounding boxes, each centered in Y on its row, every row starting at the same X, the whole layout centered on the
  * origin. Heights are kept, so lay the parts flat first. A part may be an array of solids, such as a
  * part in two colors; they move together.
  * @param {ArrangeItems[]} parts

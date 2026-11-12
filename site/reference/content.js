@@ -1291,7 +1291,7 @@ box.subtract(box.face('+X').extrude(vents.translate([0, 2]), -wall, { through: t
         id: 'arrange',
         name: 'arrange',
         signature: 'arrange(parts, options)',
-        summary: 'Spreads parts over the bed for printing: in a row along +X, or in rows stacked along +Y, a gap apart by their bounding boxes, each centered across its row, the whole layout centered on the origin. Heights are kept, so lay the parts flat first.',
+        summary: 'Spreads parts over the bed for printing: in a row along +X, or in rows stacked along +Y, a gap apart by their bounding boxes, each centered in Y on its row, every row starting at the same X, the whole layout centered on the origin. Heights are kept, so lay the parts flat first.',
         params: [
           { name: 'parts', type: '(Solid | Solid[])[]', text: 'The parts. An array of solids, such as a part in two colors, moves together. Falsy entries are skipped and come back as they were.' },
           { name: 'options.gap', type: 'number', default: '5', text: 'Space between neighbours, in X and between rows.' },
