@@ -5,10 +5,8 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { format } from 'node:util';
 import { evaluateProgram } from '../core/program.js';
-import { meshGroups } from '../core/mesh.js';
-import { toSTL } from '../export/stl.js';
-import { to3MF } from '../export/3mf.js';
 import { loadMemo, memoEntries } from '../lib/memo.js';
+import { packResult } from './pack-result.js';
 
 // Bundles carry inline source maps; this makes stack traces point at the user's files.
 process.setSourceMapsEnabled(true);
@@ -29,25 +27,20 @@ const started = performance.now();
 try {
   // Overrides of parameters the program has dropped are skipped; the server prunes them.
   const result = await evaluateProgram(bundle, { part, overrides, fallbackToFirst: !output, ignoreUnknown: true });
-  if (output) {
-    const file = output === '3mf' ? to3MF(result.solids, { name: result.part }) : toSTL(result.solids);
-    parentPort.postMessage({ ok: true, partNames: result.partNames, part: result.part, file }, [file.buffer]);
-  } else {
-    const groups = meshGroups(result.solids, result.shapes, result.sketches);
+  const { message, transfer } = packResult(result, output);
+  if (output) parentPort.postMessage(message, transfer);
+  else {
     parentPort.postMessage(
       {
-        ok: true,
-        partNames: result.partNames,
-        part: result.part,
+        ...message,
         // Plain data only: the browser edits these as numbers, strings, booleans and JSON.
         declared: JSON.parse(JSON.stringify(result.declared)),
         sections: result.sections,
-        groups,
         logs,
         ms: Math.round(performance.now() - started),
         memo: memoEntries(),
       },
-      groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
+      transfer,
     );
   }
 } catch (error) {

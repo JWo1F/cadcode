@@ -3,10 +3,8 @@
 // that frees the WASM memory and resets library state such as setResolution().
 import * as cadcode from '../../src/lib/index.js';
 import { evaluateModule } from '../../src/core/evaluate.js';
-import { meshGroups } from '../../src/core/mesh.js';
-import { toSTL } from '../../src/export/stl.js';
-import { to3MF } from '../../src/export/3mf.js';
 import { loadMemo, memoEntries } from '../../src/lib/memo.js';
+import { packResult } from '../../src/dev/pack-result.js';
 
 // The code is loaded from a blob URL, where a bare `'cadcode'` cannot resolve.
 // It is pointed at a module re-exporting this worker's copy of the library:
@@ -35,16 +33,9 @@ self.onmessage = async ({ data: { code, part, output, memo } }) => {
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   try {
     const result = await evaluateModule(await import(url), { part, fallbackToFirst: !output });
-    if (output) {
-      const file = output === '3mf' ? to3MF(result.solids, { name: result.part }) : toSTL(result.solids);
-      self.postMessage({ ok: true, partNames: result.partNames, part: result.part, file }, [file.buffer]);
-    } else {
-      const groups = meshGroups(result.solids, result.shapes, result.sketches);
-      self.postMessage(
-        { ok: true, partNames: result.partNames, part: result.part, groups, logs, ms: Math.round(performance.now() - started), memo: memoEntries() },
-        groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),
-      );
-    }
+    const { message, transfer } = packResult(result, output);
+    if (output) self.postMessage(message, transfer);
+    else self.postMessage({ ...message, logs, ms: Math.round(performance.now() - started), memo: memoEntries() }, transfer);
   } catch (error) {
     // Stack frames name the blob URL; the person reading them knows the code as the editor.
     const stack = error?.stack?.replaceAll(url, 'program.js');

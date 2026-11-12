@@ -8,6 +8,8 @@
 //   from the worker: reply (to show and snapshot), camera (on every move), cursor,
 //                    section (the plane dragged), measure, measure-label
 
+import { groupBuffers } from './mesh-buffers.js';
+
 /** The event fields OrbitControls reads. */
 const FIELDS = ['pointerId', 'pointerType', 'button', 'buttons', 'clientX', 'clientY', 'pageX', 'pageY', 'deltaX', 'deltaY', 'deltaMode', 'ctrlKey', 'metaKey', 'shiftKey', 'altKey', 'key', 'code'];
 
@@ -104,8 +106,7 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
      * @returns {Promise<{ triangles: number, size: [number, number, number] | null, bounds: { min: number[], max: number[] } | null }>}
      */
     showModel(groups) {
-      const buffers = new Set(groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]));
-      return request({ type: 'show', groups }, [...buffers]).then((result) => {
+      return request({ type: 'show', groups }, groupBuffers(groups)).then((result) => {
         emit('model', result);
         return result;
       });
