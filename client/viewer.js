@@ -3,6 +3,7 @@ import { bindDisplayButtons, createScene, saveBlob } from './scene.js';
 import { createAxisGizmo } from './gizmo.js';
 import { bindViewTools } from './view-tools.js';
 import { bindDownloadMenu } from './download-menu.js';
+import { decodeFrame } from './frame-codec.js';
 
 const canvas = document.getElementById('view');
 const stage = document.getElementById('stage');
@@ -91,23 +92,6 @@ window.addEventListener('keydown', (event) => {
 });
 
 // --- Model -------------------------------------------------------------------
-
-/** Decodes a binary model frame: u32 header length, JSON header, then f32 positions, u32 indices and f32 sketch outline per group. */
-function decodeModel(buffer) {
-  const headerLength = new DataView(buffer).getUint32(0, true);
-  const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, 4, headerLength)));
-  let offset = 4 + headerLength;
-  const groups = header.groups.map((g) => {
-    const positions = new Float32Array(buffer, offset, g.vertices * 3);
-    offset += positions.byteLength;
-    const indices = new Uint32Array(buffer, offset, g.indices);
-    offset += indices.byteLength;
-    const lines = new Float32Array(buffer, offset, g.lines);
-    offset += lines.byteLength;
-    return { ...g, positions, indices, lines: g.sketch ? lines : undefined };
-  });
-  return { header, groups };
-}
 
 let shown = null; // header of the model on screen
 
@@ -277,7 +261,7 @@ function connect() {
       return;
     }
 
-    const frame = decodeModel(event.data);
+    const frame = decodeFrame(event.data);
     const { header } = frame;
     if (fileKey !== header.file) {
       fileKey = header.file;
