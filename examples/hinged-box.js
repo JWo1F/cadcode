@@ -9,7 +9,7 @@ description: A small box and lid joined by a hinge that comes off the bed alread
 //
 //   cadcode dev examples/hinged-box.js
 //   cadcode stl examples/hinged-box.js --part print
-import { cube, cylinder, hull, range, setResolution } from 'cadcode';
+import { circle, cube, frameAt, hull, plane, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -62,8 +62,9 @@ export default (p) => {
     const x1 = p.margin + (i + 1) * segL - (i < p.knuckles - 1 ? p.gap / 2 : 0);
     return [x0, x1 - x0];
   };
-  const barrel = (x, len, d) =>
-    cylinder({ d, h: len }).rotate([0, 90, 0]).translate([x, axisY, axisZ]);
+  // A plane across the hinge axis at X = 0, its normal along the axis.
+  const hinge = frameAt([0, axisY, axisZ], [1, 0, 0]);
+  const barrel = (x, len, d) => hinge.offset(x).extrude(circle({ d }), len);
   const slab = (x, len, y0, y1, z0, z1) => cube([len, y1 - y0, z1 - z0]).translate([x, y0, z0]);
 
   const boxIdx = range(0, p.knuckles - 1, 2);
@@ -94,7 +95,7 @@ export default (p) => {
 
   // Notch in the box's front rim for a thumbnail, and a matching tab on the lid.
   const thumbNotch = () =>
-    cylinder({ d: 16, h: 10, center: true }).rotate([90, 0, 0]).scale([1, 1, 0.5]).translate([p.length / 2, 0, p.boxH]);
+    plane.XZ.extrude(circle({ d: 16 }).scale([1, 0.5]).translate([p.length / 2, p.boxH]), p.wall, { through: true });
   const tab = () =>
     hull(
       cube([20, 0.1, p.lidH - 2]).translate([p.length / 2 - 10, 0, p.boxH + 2]),
@@ -120,7 +121,7 @@ export default (p) => {
       .subtract(lidBores());
 
   // Opening turns the front of the lid up and over the back.
-  const opened = (shape, a) => shape.translate([0, -axisY, -axisZ]).rotate([-a, 0, 0]).translate([0, axisY, axisZ]);
+  const opened = (shape, a) => shape.rotate([-a, 0, 0], { around: [0, axisY, axisZ] });
 
   return {
     assembly: () => [box().color('#e9e4d8'), opened(lid(), p.open).color('#d9534f')],

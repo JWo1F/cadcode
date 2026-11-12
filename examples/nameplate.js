@@ -64,10 +64,11 @@ export default (p) => {
     );
 
   // Raised letters stand on the face; engraved ones are cut from it, starting a little above.
-  const letters = p.raised ? lettering.extrude(p.depth).translate([0, 0, p.thick]) : null;
+  const face = slab.face('+Z');
+  const letters = p.raised ? face.extrude(lettering, p.depth) : null;
   const plate = () => {
     const body = frame ? slab.union(frame) : slab;
-    return p.raised ? body : body.subtract(lettering.extrude(p.depth + 1).translate([0, 0, p.thick - p.depth]));
+    return p.raised ? body : body.subtract(face.offset(1).extrude(lettering, -(p.depth + 1)));
   };
 
   return {

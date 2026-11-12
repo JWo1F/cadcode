@@ -101,16 +101,11 @@ export default (p) => {
   const mounted = (s) => s.translate([0, 0, -p.t / 2]).rotate([90, 0, 0]);
 
   // A patch of board, three holes by four, around the hook's two holes.
-  const board = () =>
-    cube([p.boardT, 3 * p.pitch, 4 * p.pitch])
-      .translate([-p.boardT, -1.5 * p.pitch, -1.5 * p.pitch])
-      .subtract(
-        product([-1, 0, 1], range(-1, 2)).map(([y, z]) =>
-          cylinder({ d: p.holeD, h: p.boardT + 2, center: true })
-            .rotate([0, 90, 0])
-            .translate([-p.boardT / 2, y * p.pitch, z * p.pitch]),
-        ),
-      );
+  const board = () => {
+    const panel = cube([p.boardT, 3 * p.pitch, 4 * p.pitch]).translate([-p.boardT, -1.5 * p.pitch, -1.5 * p.pitch]);
+    const holes = product([-1, 0, 1], range(-1, 2)).map(([y, z]) => circle({ d: p.holeD }).translate([y * p.pitch, z * p.pitch]));
+    return panel.subtract(panel.face('+X').extrude(union(holes), -p.boardT, { through: true }));
+  };
 
   // A roll of tape threaded onto the arm, its core resting on the arm's top edge.
   const tape = () => {

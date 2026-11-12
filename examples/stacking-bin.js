@@ -8,7 +8,7 @@ description: A parts bin with a front scoop and a label shelf that stacks withou
 //
 //   cadcode dev examples/stacking-bin.js
 //   cadcode stl examples/stacking-bin.js --part bin --set width=100
-import { cube, cylinder, hull, polygon, setResolution, square } from 'cadcode';
+import { circle, cube, hull, plane, polygon, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -79,25 +79,24 @@ export default (p) => {
     const y = p.wall + p.scoop; // tangent to the inside of the front wall above the step
     const z = p.floor + p.scoop;
     return cube([p.width, y, z])
-      .subtract(cylinder({ r: p.scoop, h: p.width + 2 }).rotate([0, 90, 0]).translate([-1, y, z]))
+      .subtract(plane.YZ.extrude(circle(p.scoop).translate([y, z]), p.width, { through: true }))
       .intersect(solidBody());
   };
 
-  // Shelf profile in (y, z): 45° underside, vertical label face, flush with the rim on top.
-  // Drawn in 2D and turned so its X runs along Y, its Y up Z, and the extrusion along X.
+  // Shelf profile in the YZ plane: 45° underside, vertical label face, flush with the rim on top.
+  // Extruded along X, centred on the front.
   const shelfLen = p.width - 2 * p.corner - 4;
   const shelfZ0 = H - p.shelfH - p.shelfOut;
   const shelf = () =>
-    polygon([
-      [1, shelfZ0 - 1],
-      [-p.shelfOut, shelfZ0 + p.shelfOut],
-      [-p.shelfOut, H],
-      [1, H],
-    ])
-      .extrude(shelfLen)
-      .rotate([90, 0, 0])
-      .rotate(90)
-      .translate([(p.width - shelfLen) / 2, 0, 0]);
+    plane.YZ.offset((p.width - shelfLen) / 2).extrude(
+      polygon([
+        [1, shelfZ0 - 1],
+        [-p.shelfOut, shelfZ0 + p.shelfOut],
+        [-p.shelfOut, H],
+        [1, H],
+      ]),
+      shelfLen,
+    );
 
   const bin = () => solidBody().subtract(cavity()).union(scoop(), shelf());
 

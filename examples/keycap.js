@@ -9,7 +9,7 @@ description: A sloped, dished keycap with the cross stem for Cherry MX style swi
 //
 //   cadcode dev examples/keycap.js
 //   cadcode stl examples/keycap.js --part print --set units=2
-import { cube, cylinder, hull, setResolution, square } from 'cadcode';
+import { cube, cylinder, frameAt, hull, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -52,25 +52,26 @@ export default (p) => {
 
   const rect = (w, d, r) => square([w - 2 * r, d - 2 * r], { center: true }).offset(r);
 
+  // The top's plane at height z on the axis, tilted towards the typist (-Y).
+  const tiltR = (p.tilt * Math.PI) / 180;
+  const top = (z) => frameAt([0, 0, z], [0, -Math.sin(tiltR), Math.cos(tiltR)]);
+
   // Outer body, shrunk inwards by `inset`: a hull of the skirt outline and the tilted top outline.
   const body = (inset, bottomZ) =>
     hull(
       rect(baseW - 2 * inset, p.base - 2 * inset, 1.5).extrude(0.01).translate([0, 0, bottomZ]),
-      rect(topW - 2 * inset, p.topD - 2 * inset, 2.5)
-        .extrude(0.01)
-        .rotate([p.tilt, 0, 0])
-        .translate([0, 0, p.height - inset]),
+      top(p.height - inset).extrude(rect(topW - 2 * inset, p.topD - 2 * inset, 2.5), 0.01),
     );
 
   // Dish: a big cylinder running front to back, tilted with the top. Its radius is the one whose
   // chord across the top is `topW` with the given depth.
   const dishR = ((topW / 2) ** 2 + p.dish ** 2) / (2 * p.dish);
   const dish = () =>
-    cylinder({ r: dishR, h: p.topD + 10, center: true, fn: 180 })
-      .rotate([90, 0, 0])
-      .translate([0, 0, dishR - p.dish])
-      .rotate([p.tilt, 0, 0])
-      .translate([0, 0, p.height]);
+    top(p.height).place(
+      cylinder({ r: dishR, h: p.topD + 10, center: true, fn: 180 })
+        .rotate([90, 0, 0])
+        .translate([0, 0, dishR - p.dish]),
+    );
 
   const roofZ = p.height - p.dish - p.roof; // underside of the roof, at the middle
   const stem = () => {

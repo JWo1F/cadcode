@@ -30,7 +30,7 @@ for (const file of files) {
     for (const part of partNames) {
       await t.test(part, async () => {
         const result = await quietly(() => evaluateProgram(bundle, { part }));
-        const triangles = meshGroups(result.solids, result.shapes).reduce((n, g) => n + g.indices.length / 3, 0);
+        const triangles = meshGroups(result.solids, result.shapes, result.sketches).reduce((n, g) => n + g.indices.length / 3, 0);
         assert.ok(triangles > 0, `part "${part}" has no triangles`);
         if (result.solids.length > 0) assert.ok(new DataView(toSTL(result.solids).buffer).getUint32(80, true) > 0);
       });
