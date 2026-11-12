@@ -10,6 +10,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 - `Solid` methods
 - `Shape2` methods
 - Functions
+- Frames
 - Lofts and threads
 - Helpers
 
@@ -108,6 +109,22 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | `offset(r, ...shapes)` | `union(...shapes).offset(r)` |
 | `linearExtrude(h, options, ...shapes)` | `union(...shapes).extrude(h, options)` |
 
+## Frames
+
+A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of `.extrude().rotate().translate()` chains.
+
+| Function | Notes |
+| --- | --- |
+| `solid.face('+X' \| '-X' \| '+Y' \| '-Y' \| '+Z' \| '-Z')` | Side of the **bounding box** (not mesh faces), normal outward. u, v = **world coordinates** of the other two axes in order: X side → (y, z), Y side → (x, z), Z side → (x, y). So a hole at world `[y, z]` on either X side is drawn at `[y, z]`. Text drawn on a `-X`, `+Y` or `-Z` side reads mirrored from outside. |
+| `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, +Y, +X. |
+| `frameAt(origin, normal)` | Any point/normal (e.g. on a dome). Right-handed: v toward +Z (or +Y when the normal is vertical), u = v × normal. |
+| `frame.extrude(shape2, depth, { through = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through` adds 1 at both ends — use it for cuts through a wall instead of a hand-written `+1`. |
+| `frame.offset(d)` | Moved along the normal. |
+| `frame.place(solid \| point)` | Local X, Y → u, v; local Z → normal. |
+| `frame.origin`, `frame.normal` | `[x, y, z]`. |
+
+`toFront(shape, depth, y0)` (extrude towards -Y from y = y0) is `plane.XZ.offset(y0).extrude(shape, -depth)`.
+
 ## Lofts and threads
 
 | Function | Notes |
@@ -125,4 +142,4 @@ They work on solids or on 2D shapes, but not both mixed. With no shapes they ret
 | `memo(fn)` | Same function, remembering its result per arguments. Key = fn source + JSON args + resolution; in `cadcode dev`/playground it survives across saves (not the CLI). Args: plain data only (no shapes). Result: shapes or nested arrays, may be async. Closure variables (`p`!) and called helpers are NOT in the key: pass them as args or results go stale. |
 | `setResolution({ fn, fa, fs })` | Defaults for curves, OpenSCAD rules. `fn > 0` wins; else `ceil(max(min(360/fa, 2πr/fs), 5))`. |
 | `parseColor(c, alpha?)` | Returns `[r, g, b, a]`. |
-| `Solid`, `Shape2` | Classes, for `instanceof`. |
+| `Solid`, `Shape2`, `Frame` | Classes, for `instanceof`. |

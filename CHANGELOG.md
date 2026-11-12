@@ -4,6 +4,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- Frames: `solid.face('-X')`, `plane.XZ` and `frameAt(point, normal)` are planes to draw 2D shapes on and extrude them from with `frame.extrude(shape, depth, { through })`, instead of rotating them into place. Positions on a face are world coordinates. `frame.place(solid)` puts a solid built at the origin onto a frame.
+
 ## [0.11.1] - 2026-11-11
 
 ### Changed

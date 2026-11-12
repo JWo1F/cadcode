@@ -22,6 +22,7 @@ export function checkCoverage() {
     ...Object.keys(lib),
     ...methodsOf(lib.Solid).map((name) => `Solid.${name}`),
     ...methodsOf(lib.Shape2).map((name) => `Shape2.${name}`),
+    ...methodsOf(lib.Frame).map((name) => `Frame.${name}`),
   ];
   const missing = required.filter((name) => !documented.has(name));
   if (missing.length) throw new Error(`site/reference/content.js does not describe: ${missing.join(', ')}`);

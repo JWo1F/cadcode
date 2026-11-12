@@ -253,6 +253,23 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `offset(r, ...shapes)` | `union(...shapes).offset(r)` |
 | `linearExtrude(h, options, ...shapes)` | `union(...shapes).extrude(h, options)` |
 
+### Frames
+
+A frame is a plane with its own 2D coordinates: draw a shape in them and extrude it along the plane's normal, instead of a `rotate().translate()` chain.
+
+```js
+const usb = square([9, 3.3], { center: true }).offset(0.5).translate([usbY, usbZ]);
+box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
+```
+
+| Function | Notes |
+| --- | --- |
+| `solid.face(name)` | The side `'+X'`, `'-X'`, `'+Y'`, `'-Y'`, `'+Z'` or `'-Z'` of the bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. |
+| `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
+| `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
+| `frame.extrude(shape, depth, { through })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin. |
+| `frame.offset(d)`, `frame.place(solidOrPoint)` | The plane moved along its normal; a solid or point built at the origin moved onto the frame (Z along the normal). `.origin` and `.normal` read it. |
+
 ### Lofts and threads
 
 | Function | Notes |

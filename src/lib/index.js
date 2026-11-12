@@ -24,6 +24,7 @@ export {
   offset,
   linearExtrude,
 } from './shapes.js';
+export { Frame, plane, frameAt } from './frame.js';
 export { helix, loft } from './sweep.js';
 export { thread } from './thread.js';
 export { text } from './text.js';

@@ -8,7 +8,7 @@
 
 /**
  * @typedef {{ name: string, type: string, default?: string, text: string }} Param
- * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
+ * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2' | 'Frame' | 'Sketch' | 'Line' | 'Circle', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
  * @typedef {{ id: string, title: string, intro?: string, entries: Entry[] }} Section
  */
 
@@ -861,6 +861,102 @@ const nut = cylinder({ d: 17, h: 8, fn: 6 })
   .subtract(thread({ d: 10, pitch: 1.5, length: 8, internal: true, taper: 1, fn: 48 }))
   .translate([20, 0, 0]);
 export default [bolt, nut];`,
+      },
+    ],
+  },
+  {
+    id: 'frames',
+    title: 'Frames',
+    intro: 'A frame is a plane in space with its own 2D coordinates: draw a shape in them and extrude it along the plane\'s normal, instead of a `rotate().translate()` chain. A frame never changes; its methods return new ones.',
+    entries: [
+      {
+        id: 'solid-face',
+        name: 'face',
+        owner: 'Solid',
+        signature: '.face(name)',
+        summary: 'The frame on one side of the solid\'s bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. So a hole at `[y, z]` in a side wall is drawn at `[y, z]`, whichever side it is on.',
+        params: [{ name: 'name', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side: `\'+X\'` is the one at the largest X, `\'-X\'` at the smallest.' }],
+        returns: 'Frame',
+        notes: ['The side comes from the bounding box, not from the faces of the mesh: on a rounded or sloped part it is the plane that touches it.'],
+        example: `const usb = square([9, 3.3], { center: true }).offset(0.5).translate([usbY, usbZ])
+box.subtract(box.face('-X').extrude(usb, -wall, { through: true }))`,
+      },
+      {
+        id: 'plane',
+        name: 'plane',
+        signature: 'plane.XY | plane.XZ | plane.YZ',
+        summary: 'The three planes through the origin, with world coordinates for u and v: `plane.XY` has u = X, v = Y and its normal along +Z; `plane.XZ` u = X, v = Z, normal +Y; `plane.YZ` u = Y, v = Z, normal +X.',
+        returns: 'Frame',
+        example: `// A panel's front at y = -58, 2.4 thick, growing back towards +Y
+plane.XZ.offset(-58).extrude(outline, 2.4)`,
+      },
+      {
+        id: 'frameAt',
+        name: 'frameAt',
+        signature: 'frameAt(origin, normal)',
+        summary: 'A frame at a point with any normal, such as on a curved surface. Local v points as close to world +Z as the plane allows (to +Y when the normal is vertical) and u = v × normal, so a drawing on it reads the right way round from the side the normal points to.',
+        params: [
+          { name: 'origin', type: '[x, y, z] | Point', text: 'Where local `[0, 0, 0]` lies.' },
+          { name: 'normal', type: '[x, y, z]', text: 'The direction positive depths go. It need not be unit length.' },
+        ],
+        returns: 'Frame',
+        example: `const knob = frameAt([42, 0, z], surfaceNormal)
+dome.subtract(knob.extrude(circle({ d: 7.4 }), -10, { through: true }))`,
+      },
+      {
+        id: 'frame-extrude',
+        name: 'extrude',
+        owner: 'Frame',
+        signature: '.extrude(shape, depth, options)',
+        summary: 'Extrudes a 2D shape drawn in the frame\'s coordinates along its normal.',
+        params: [
+          { name: 'shape', type: 'Shape2', text: 'The outline, in the frame\'s u and v.' },
+          { name: 'depth', type: 'number', text: 'Positive goes along the normal (out of a face), negative against it (into the part). `0` throws.' },
+          { name: 'options.through', type: 'boolean', default: 'false', text: 'Reach 1 past both ends, so a cut goes clean through the faces it starts and ends on and leaves no skin.' },
+        ],
+        returns: 'Solid',
+      },
+      {
+        id: 'frame-offset',
+        name: 'offset',
+        owner: 'Frame',
+        signature: '.offset(distance)',
+        summary: 'The same plane moved along its normal.',
+        params: [{ name: 'distance', type: 'number', text: 'How far; negative moves against the normal.' }],
+        returns: 'Frame',
+      },
+      {
+        id: 'frame-place',
+        name: 'place',
+        owner: 'Frame',
+        signature: '.place(item)',
+        summary: 'Moves a solid or point built around the origin onto the frame: its X and Y go to u and v, its Z along the normal.',
+        params: [{ name: 'item', type: 'Solid | Point', text: 'What to move.' }],
+        returns: 'Solid | Point, as given',
+        example: `const atKnob = frameAt([42, 0, z], surfaceNormal)
+atKnob.place(cylinder({ d: 24, h: 15 }).translate([0, 0, -14]))`,
+      },
+      {
+        id: 'frame-origin',
+        name: 'origin',
+        owner: 'Frame',
+        signature: '.origin',
+        summary: 'Where local `[0, 0, 0]` lies, as `[x, y, z]`.',
+        returns: '[x, y, z]',
+      },
+      {
+        id: 'frame-normal',
+        name: 'normal',
+        owner: 'Frame',
+        signature: '.normal',
+        summary: 'The direction positive depths go, a unit vector.',
+        returns: '[x, y, z]',
+      },
+      {
+        id: 'Frame',
+        name: 'Frame',
+        signature: 'Frame',
+        summary: 'The class of frames, exported for `instanceof` checks. Make frames with `face`, `plane` and `frameAt`, not with `new`.',
       },
     ],
   },

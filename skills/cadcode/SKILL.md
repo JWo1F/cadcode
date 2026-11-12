@@ -142,8 +142,15 @@ joins sections at those heights, for a square base flowing into a round neck. Sc
 `thread({ d, pitch, length })`; the matching hole is `thread({ ..., internal: true })` subtracted from the nut
 (0.2 mm `clearance` by default; printed threads under about M8 rarely work, prefer `profile: 'trapezoid'` and a
 pitch of 2 to 4 for lids). A 2D shape left in a part is
-only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold outline), left out of STL (a part with no solids fails to export). `.extrude` grows along +Z, so a profile meant for a side wall is extruded and
-then rotated into place (`.extrude(depth).rotate([0, 90, 0])` points it along +X after rotation).
+only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold outline), left out of STL (a part with no solids fails to export). `.extrude` grows along +Z; for a profile on a side wall
+use a frame instead of rotating it into place (below).
+
+**Draw on a face with a frame.** `box.face('-X')` is the plane of that side of the bounding box, normal outward,
+with **world coordinates** in it (y, z on an X side; x, z on a Y side; x, y on a Z side), so nothing needs
+rotating: `box.subtract(box.face('-X').extrude(window.translate([y, z]), -wall, { through: true }))` cuts a
+window through the wall. Negative depth goes into the part, positive out of it; `through: true` is the
+overshoot of 1 at both ends. `plane.XZ.offset(y0)` is a plane through y = y0, `frameAt(point, normal)` one on
+a curved surface, and `frame.place(solid)` puts a solid built at the origin onto any of them (Z along the normal).
 Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.
 
 **Text.** `text('A1', { size: 5, halign: 'center', valign: 'center' })` is a `Shape2`; extrude it for raised

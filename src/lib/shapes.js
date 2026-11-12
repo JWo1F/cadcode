@@ -2,6 +2,7 @@ import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
 import { range } from './util.js';
 import { sweepPolygons } from './sweep.js';
+import { faceFrame } from './frame.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -273,6 +274,17 @@ export class Solid {
   /** @returns {boolean} */
   isEmpty() {
     return this.manifold.isEmpty();
+  }
+
+  /**
+   * The plane of one side of the bounding box, to draw on and extrude from: `'+X'` is the side at the
+   * largest X, its normal pointing out, and so on for `'-X'`, `'+Y'`, `'-Y'`, `'+Z'`, `'-Z'`. Positions
+   * in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side.
+   * `box.face('-X').extrude(window, -wall, { through: true })` cuts a window through the wall at -X.
+   * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} name
+   */
+  face(name) {
+    return faceFrame(name, this.bounds());
   }
 }
 
