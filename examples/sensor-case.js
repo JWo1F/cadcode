@@ -8,7 +8,7 @@ description: A box and lid for a Pro Micro board, a Li-ion cell and a climate se
 //   cadcode dev examples/sensor-case.js
 //   cadcode stl examples/sensor-case.js --part box
 //   cadcode png examples/sensor-case.js --part assembly --view sheet
-import { cell, circle, cube, cylinder, square, union, difference, setResolution, product, grid, arrange } from 'cadcode';
+import { cell, proMicro, tray, circle, cube, cylinder, square, union, difference, setResolution, product, grid, arrange } from 'cadcode';
 
 setResolution({ fn: 40 });
 
@@ -37,12 +37,10 @@ export const params = [
   {
     name: 'USB-C',
     children: {
-      usbW: { value: 9.0, name: 'USB width', description: 'Width of the USB-C connector body, in mm.' },
-      usbH: { value: 3.3, name: 'USB height', description: 'Height of the USB-C connector body, in mm.' },
-      usbSlotExtra: { value: 0.8, name: 'USB hole allowance', description: 'Added to the connector size for the USB-C window, in mm.' },
+      usbClr: { value: 0.4, name: 'USB hole clearance', description: 'Gap round the USB-C connector in its window, per side, in mm.' },
       plugW: { value: 12.5, name: 'Plug recess width', description: 'Width of the outside recess for the plug overmold, in mm.' },
       plugH: { value: 7.5, name: 'Plug recess height', description: 'Height of the outside recess for the plug overmold, in mm.' },
-      plugDepth: { value: 1.2, name: 'Plug recess depth', description: 'Depth of the plug recess into the wall, in mm.' },
+      plugGap: { value: 0.6, name: 'Plug gap', description: 'How close to the connector mouth the plug overmold must come; the recess is cut into the wall up to there, in mm.' },
     },
   },
   {
@@ -81,7 +79,7 @@ export const params = [
 
 export default (p) => {
   const { wall, floorT, lidT, fit, cornerR, boardL, boardW, boardT, boardStandoff, boardX0, boardY0 } = p;
-  const { usbW, usbH, usbSlotExtra, plugW, plugH, plugDepth, batD, batL, batClr, sensorS, sensorPadH, sensL } = p;
+  const { usbClr, plugW, plugH, plugGap, batD, batL, batClr, sensorS, sensorPadH, sensL } = p;
   const { lipD, lipT, bumpR, bumpLen, poreD, porePitch } = p;
 
   // Interior
@@ -94,8 +92,12 @@ export default (p) => {
   const wireHole = [6, 2.5]; // I2C wires through the divider
 
   const sx0 = mainL + divT; // sensor compartment start
-  const usbCz = boardStandoff + boardT + usbH / 2;
   const usbCy = boardY0 + boardW / 2;
+
+  // The board on its rails, USB-C on top of it at the -X wall; its cutout is the USB window and the plug recess.
+  const mcu = proMicro({ length: boardL, width: boardW, thickness: boardT, usbDrop: 0, clearance: usbClr, recess: { size: [plugW, plugH], round: 1.5, gap: plugGap } })
+    .translate([boardX0, usbCy, boardStandoff]);
+  const usbTop = mcu.body.bounds().max[2];
 
   // Pore zone in the walls: below the lid skirt
   const poreZ0 = 1.0;
@@ -103,8 +105,6 @@ export default (p) => {
 
   // Snap grooves on the long walls, in both compartments
   const bumpXs = [mainL / 2, sx0 + sensL / 2];
-
-  const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   // Grid of pores over an a x b rectangle, drawn from [0, 0]
   const poreGrid = (a, b) => grid(circle({ d: poreD }), { pitch: porePitch, within: square([a, b]) });
@@ -115,7 +115,7 @@ export default (p) => {
   const battery = cell({ d: batD, length: batL, clearance: batClr / 2 }).translate([mainL / 2 - batL / 2, batY0 + (batD + batClr) / 2, 0]);
 
   const box = () => {
-    const shell = roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]);
+    const shell = tray([iL, iW, iH], { wall, floor: floorT, round: cornerR });
     // Cuts drawn on a side of the shell: clean through the wall, or a pocket `depth` deep from outside
     const through = (side, shape) => shell.face(side).extrude(shape, -wall, { through: true });
     const pocket = (side, shape, depth) => shell.face(side).extrude(shape, -depth, { through: 'start' });
@@ -123,11 +123,9 @@ export default (p) => {
     return union(
       difference(
         shell,
-        cube([iL, iW, iH + 1]),
 
         // USB-C: through window + recess for the plug outside
-        through('-X', square([usbW + usbSlotExtra, usbH + usbSlotExtra], { center: true, round: 1 }).translate([-usbCy, usbCz])),
-        pocket('-X', square([plugW, plugH], { center: true, round: 1.5 }).translate([-usbCy, usbCz]), plugDepth),
+        mcu.cutout,
 
         // Fingernail notch in the long side, clear of the snap groove: a gap to pry the lid up from,
         // 0.6 mm of wall left inside
@@ -167,7 +165,7 @@ export default (p) => {
   // In assembly coordinates: the lid's underside is at z = iH
   const lid = () => {
     const batTop = (batD + batClr) / 2 + batD / 2;
-    const top = roundedBox(iL + 2 * wall, iW + 2 * wall, lidT, cornerR);
+    const top = cube([iL + 2 * wall, iW + 2 * wall, lidT], { round: { z: cornerR } });
     const pores = poreGrid(sensL - fit - lipT, iW - 2 * (fit + lipT)).translate([sx0 + wall, wall + fit + lipT]); // inside the skirt
     return union(
       top.subtract(top.face('+Z').extrude(pores, -lidT, { through: true })).translate([-wall, -wall, iH]),
@@ -184,7 +182,7 @@ export default (p) => {
       product(bumpXs, [fit, iW - fit]).map(([x, y]) => snapLine(bumpLen).translate([x, y, iH - lipD / 2])),
 
       // Board hold-downs: on the USB-C body and on the far edge of the board
-      cylinder({ d: 3, h: iH - (boardStandoff + boardT + usbH + 0.2) }).translate([boardX0 + 4, usbCy, boardStandoff + boardT + usbH + 0.2]),
+      cylinder({ d: 3, h: iH - (usbTop + 0.2) }).translate([boardX0 + 4, usbCy, usbTop + 0.2]),
       [boardY0 + 1.2, boardY0 + boardW - 1.2].map((y) =>
         cylinder({ d: 2, h: iH - (boardStandoff + boardT + 0.2) }).translate([boardX0 + boardL - 1.5, y, boardStandoff + boardT + 0.2]),
       ),
@@ -195,8 +193,7 @@ export default (p) => {
   };
 
   const dummies = () => [
-    cube([boardL, boardW, boardT]).translate([boardX0, boardY0, boardStandoff]).color('green'),
-    cube([7.5, usbW, usbH]).translate([boardX0 - 0.5, usbCy - usbW / 2, boardStandoff + boardT]).color('silver'),
+    mcu.body,
     battery.body.color('royalblue'),
     cube([sensorS, sensorS, 1.2]).translate([sx0 + (sensL - sensorS) / 2, (iW - sensorS) / 2, sensorPadH]).color('purple'),
   ];
