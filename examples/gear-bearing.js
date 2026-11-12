@@ -2,7 +2,7 @@
 title: Gear bearing
 description: A planetary bearing with herringbone teeth that turns straight off the bed.
 ---*/
-import { circle, cylinder, polygon, range, setResolution, union } from 'cadcode';
+import { circle, cylinder, plane, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 96 });
 
@@ -71,7 +71,7 @@ export default (p) => {
   };
 
   const sun = () => {
-    const hexHole = circle({ r: p.hex / Math.sqrt(3), fn: 6 }).extrude(p.height + 2).translate([0, 0, -1]);
+    const hexHole = plane.XY.extrude(circle({ r: p.hex / Math.sqrt(3), fn: 6 }), p.height, { through: true });
     return herringbone(gearProfile(p.sunTeeth).offset(-p.clearance), p.sunTeeth, 1).subtract(hexHole);
   };
 

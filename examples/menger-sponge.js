@@ -37,13 +37,13 @@ export default (p) => {
     return union(holes);
   };
 
+  // The carpet is the same on every face and mirror-symmetric, so one drawing serves all three
+  // axes, cut in from the +X, +Y and +Z sides right through the cube.
   const sponge = () => {
-    const over = 1;
-    const cutter = carpetHoles().extrude(p.size + 2 * over).translate([0, 0, -over]);
-    return cube(p.size).subtract(
-      cutter, // along Z
-      cutter.rotate([90, 0, 0]).translate([0, p.size, 0]), // along Y
-      cutter.rotate([0, 90, 0]).translate([0, 0, p.size]), // along X
+    const block = cube(p.size);
+    const holes = carpetHoles();
+    return block.subtract(
+      ['+X', '+Y', '+Z'].map((side) => block.face(side).extrude(holes, -p.size, { through: true })),
     );
   };
 

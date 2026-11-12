@@ -30,8 +30,8 @@ export default (p) => {
       const r = i % 2 === 0 ? p.radius : p.radius * p.valley;
       return [r * Math.cos(a), r * Math.sin(a)];
     });
-    // Closing then opening rounds the valleys, opening then closing rounds the tips.
-    return polygon(points).offset(p.round).offset(-p.round).offset(-p.round).offset(p.round);
+    // Every tip is rounded and every valley, an inside corner, becomes a fillet.
+    return polygon(points, { round: p.round });
   };
 
   // Twist and scale grow linearly with height, so a taller extrusion with both stretched to match
