@@ -8,7 +8,7 @@ description: A retro model rocket with swept fins, portholes and a nozzle, print
 //
 //   cadcode dev examples/rocket.js
 //   cadcode stl examples/rocket.js --part body
-import { cylinder, polygon, range, setResolution, union } from 'cadcode';
+import { cylinder, frameAt, plane, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -77,16 +77,12 @@ export default (p) => {
   const nozzle = () =>
     cylinder({ r1: 8, r2: 5.5, h: p.tail }).subtract(cylinder({ r1: 6.5, r2: 2.5, h: p.tail - 3 }).translate([0, 0, -0.01]));
 
-  // One fin in the XZ plane: root inside the body, leading edge sweeping down to a flat foot at z = 0.
+  // One fin in the XZ plane, centred on it: root inside the body, leading edge sweeping down to a
+  // flat foot at z = 0, every corner rounded.
   const fin = () => {
     const s = p.finSpan;
-    return polygon([
-      [3, 52], [12, 41], [21, 27], [s - 3, 13], [s, 5], [s, 0], [s - 10, 0], [12, 6], [3, 13],
-    ])
-      .offset(-1.5)
-      .offset(1.5) // round the tip
-      .extrude(p.finT, { center: true })
-      .rotate([90, 0, 0]);
+    const outline = polygon([[3, 52], [12, 41], [21, 27], [s - 3, 13], [s, 5], [s, 0], [s - 10, 0], [12, 6], [3, 13]], { round: 1.5 });
+    return plane.XZ.offset(-p.finT / 2).extrude(outline, p.finT);
   };
   // A fin and its mirror image make a pair; the pairs are turned round the axis.
   const fins = () => {
@@ -99,13 +95,14 @@ export default (p) => {
     { z: 64, d: p.portD },
     { z: 49, d: p.portD * 0.7 },
   ];
-  const facing = -360 / p.fins / 2; // halfway between the first two fins
-  const radial = (shape, z) => shape.rotate([0, 90, 0]).translate([0, 0, z]).rotate(facing);
-  const rims = () => portAt.map(({ z, d }) => radial(cylinder({ d: d + 3, h: R + p.rim }), z));
+  // Each porthole is built on a frame on the axis at its height, looking out between the first two fins.
+  const facing = ((-360 / p.fins / 2) * Math.PI) / 180;
+  const radial = (z) => frameAt([0, 0, z], [Math.cos(facing), Math.sin(facing), 0]);
+  const rims = () => portAt.map(({ z, d }) => radial(z).place(cylinder({ d: d + 3, h: R + p.rim })));
   const recess = 1.2;
-  const holes = () => portAt.map(({ z, d }) => radial(cylinder({ d, h: recess + 1 }).translate([0, 0, R + p.rim - recess]), z));
+  const holes = () => portAt.map(({ z, d }) => radial(z).offset(R + p.rim - recess).place(cylinder({ d, h: recess + 1 })));
   // For the preview: a pane sitting at the bottom of each recess.
-  const panes = () => portAt.map(({ z, d }) => radial(cylinder({ d: d - 0.2, h: R + p.rim - recess + 0.2 }), z));
+  const panes = () => portAt.map(({ z, d }) => radial(z).place(cylinder({ d: d - 0.2, h: R + p.rim - recess + 0.2 })));
 
   // A raised band where the nose meets the tube.
   const band = () => cylinder({ r: R + 0.8, h: 2.4 }).translate([0, 0, p.tubeTop - 1.2]);

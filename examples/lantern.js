@@ -2,7 +2,7 @@
 title: Lantern
 description: A hexagonal tealight lantern with honeycomb windows and a roof that drops on.
 ---*/
-import { circle, cube, cylinder, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { circle, cube, cylinder, plane, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -80,9 +80,10 @@ export default (p) => {
   };
 
   // The window pattern pushed through each face. A hexagon from fn: 6 has corners at 0, 60, ...
-  // degrees, so its faces look out at 30, 90, ...; the pattern starts on the face at -90.
-  const windowCutters = () => {
-    const cutter = windows().extrude(4 * p.wall, { center: true }).rotate([90, 0, 0]).translate([0, -apothem, 0]);
+  // degrees, so its faces look out at 30, 90, ...; the pattern starts on the face at -90, the
+  // shell's -Y side, whose u and v are X and Z.
+  const windowCutters = (shell) => {
+    const cutter = shell.face('-Y').extrude(windows(), -p.wall, { through: true });
     return range(0, 5).map((i) => cutter.rotate(60 * i));
   };
 
@@ -94,7 +95,7 @@ export default (p) => {
     const holder = cylinder({ r: holderR + 1.6, h: 5 })
       .subtract(cylinder({ r: holderR, h: 7 }).translate([0, 0, -1]))
       .translate([0, 0, p.floor - 0.01]);
-    return shell.union(holder).subtract(windowCutters());
+    return shell.union(holder).subtract(windowCutters(shell));
   };
 
   // Half cross-section of the roof, revolved in six steps so it matches the shell. X is the
@@ -126,11 +127,8 @@ export default (p) => {
     // A loop standing on a bar that bridges the chimney mouth, for a hook or a cord.
     const ringR = rc - 1;
     const bar = cube([2 * rc - 1, 3, 2], { center: true }).translate([0, 0, zTop - 1]);
-    const loop = circle(ringR)
-      .subtract(circle(ringR - 2.4))
-      .extrude(3, { center: true })
-      .rotate([90, 0, 0])
-      .translate([0, 0, zTop - 1 + ringR]);
+    const ring = circle(ringR).subtract(circle(ringR - 2.4)).translate([0, zTop - 1 + ringR]);
+    const loop = plane.XZ.offset(-1.5).extrude(ring, 3);
     return body.union(bar, loop);
   };
 

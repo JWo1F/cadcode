@@ -54,8 +54,10 @@ export default (p) => {
     .union(cylinder({ d: p.hole + 2 * p.rim, h: p.thick }).translate([0, lugY, 0]).hull(cylinder({ r: r * 0.5, h: p.thick })))
     .subtract(cylinder({ d: p.hole, h: p.thick + 2 }).translate([0, lugY, -1]));
 
-  const raisedLogo = p.raised ? mark.extrude(p.depth).translate([0, 0, p.thick]) : null;
-  const tag = () => (p.raised ? body : body.subtract(mark.extrude(p.depth + 1).translate([0, 0, p.thick - p.depth])));
+  // On the top face: raised out of it, or engraved into it with the cutter reaching 1 above.
+  const top = body.face('+Z');
+  const raisedLogo = p.raised ? top.extrude(mark, p.depth) : null;
+  const tag = () => (p.raised ? body : body.subtract(top.offset(1).extrude(mark, -(p.depth + 1))));
 
   return {
     assembly: () => [tag().color('#3a6ea5'), raisedLogo?.color('#f4f1de')],

@@ -53,7 +53,7 @@ export default (p) => {
       return [r * Math.cos(a), r * Math.sin(a)];
     });
     // Blunt the tips and the valleys, so the blade can bend round them and the dough comes out.
-    return polygon(points).offset(-3).offset(3).offset(2).offset(-2);
+    return polygon(points, { round: Object.fromEntries(points.map((_, i) => [i, i % 2 ? 2 : 3])) });
   };
 
   const outline = () => {

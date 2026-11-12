@@ -2,7 +2,7 @@
 title: Propeller
 description: A fan propeller with twisted, tapered blades and a domed spinner.
 ---*/
-import { cube, cylinder, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { cube, cylinder, frameAt, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -66,18 +66,17 @@ export default (p) => {
   };
 
   // The section is centred on its 35 % chord point, so twist and taper happen about the blade's
-  // spine, then turned so the chord sits at the root pitch. Extruded along Z, then laid along X:
-  // the chord's X becomes axial (-Z), its Y stays tangential.
+  // spine, then turned so the chord sits at the root pitch, leading edge up. It is extruded with
+  // twist and taper and placed on a frame at the blade root looking out along X: u is tangential
+  // (Y), v is axial (Z).
   const blade = () => {
     const length = R - rootAt;
     const section = airfoil()
       .translate([-0.35, 0])
       .scale(p.chord)
-      .rotate(90 - p.rootPitch);
-    return section
-      .extrude(length, { twist: p.rootPitch - p.tipPitch, scale: p.taper, divisions: 24 })
-      .rotate([0, 90, 0])
-      .translate([rootAt, 0, p.hubH / 2]);
+      .rotate(-p.rootPitch);
+    const root = frameAt([rootAt, 0, p.hubH / 2], [1, 0, 0]);
+    return root.place(section.extrude(length, { twist: p.rootPitch - p.tipPitch, scale: p.taper, divisions: 24 }));
   };
 
   const hub = () => {
