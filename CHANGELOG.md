@@ -8,6 +8,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 - `path(start)` draws an outline piece by piece: `line`, Bézier `curve`, `quad` and `smooth`, `arc` tangent or through a point, and `spline` through points, then `close()` into a 2D shape with rounded or cut joins; an open path's `points()` are for `sweep()`. `spline(points, { closed, start, end })` is a smooth curve through points on its own. In a sketch, `s.path()` and `s.spline()` show their curve, points and Bézier handles.
 
+### Changed
+
+- The rocket's tail and nose, the cookie cutter's heart and the headphone hook's strap are drawn as paths. The heart is now 70 wide with gently curved sides.
+
 ## [0.12.0] - 2026-11-12
 
 ### Added
