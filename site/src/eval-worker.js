@@ -39,7 +39,7 @@ self.onmessage = async ({ data: { code, part, output, memo } }) => {
       const file = output === '3mf' ? to3MF(result.solids, { name: result.part }) : toSTL(result.solids);
       self.postMessage({ ok: true, partNames: result.partNames, part: result.part, file }, [file.buffer]);
     } else {
-      const groups = meshGroups(result.solids, result.shapes);
+      const groups = meshGroups(result.solids, result.shapes, result.sketches);
       self.postMessage(
         { ok: true, partNames: result.partNames, part: result.part, groups, logs, ms: Math.round(performance.now() - started), memo: memoEntries() },
         groups.flatMap((g) => [g.positions.buffer, g.indices.buffer, ...(g.lines ? [g.lines.buffer] : [])]),

@@ -272,7 +272,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 
 ### Sketches
 
-A sketch is construction geometry on a frame, to work out the points of an outline as on paper: lines, parallels, perpendiculars, circles and where they cross. Points are plain `[x, y]` in the frame's coordinates. Return the sketch in a part and the viewer draws its guides in place, dashed, with the crossings marked; it never reaches an STL and cannot go into a boolean.
+A sketch is construction geometry on a frame, to work out the points of an outline as on paper: lines, parallels, perpendiculars, circles and where they cross. Points are plain `[x, y]` in the frame's coordinates. Return the sketch in a part and the viewer draws its guides in place, dashed and on top of the part, with the crossings marked; it never reaches an STL and cannot go into a boolean.
 
 ```js
 const s = sketch(box.face('+Z'));

@@ -12,6 +12,7 @@ import { createInspect } from './inspect.js';
 const DEFAULT_COLOR = '#f2c14e';
 const EDGE_ANGLE = 25;
 const SKETCH_LINE_WIDTH = 2.5; // CSS pixels; plain WebGL lines are always one pixel wide
+const GUIDE_LINE_WIDTH = 2; // CSS pixels: a sketch's construction lines, dashed
 const TURN_MS = 300; // how long the camera takes to turn to an axis view
 // Looking straight along Z, the orbit has no azimuth to hold on to, so an axis view
 // along Z leans this far towards -Y: X then points right, as in a drawing's plan.
@@ -294,8 +295,15 @@ function createView({ canvas, colors, ...size }) {
     renderer.render(scene, camera);
   });
 
+  /** The model's bounding box, leaving out sketch guides: they help draw the part, they are not its size. */
+  function modelBox() {
+    const box = new THREE.Box3();
+    for (const child of model.children) if (!child.userData.guide) box.expandByObject(child);
+    return box;
+  }
+
   function modelSphere() {
-    return new THREE.Box3().setFromObject(model).getBoundingSphere(new THREE.Sphere());
+    return modelBox().getBoundingSphere(new THREE.Sphere());
   }
 
   function fitView() {
@@ -435,7 +443,7 @@ function createView({ canvas, colors, ...size }) {
     scene.add(model);
     applyDisplay();
 
-    const box = new THREE.Box3().setFromObject(model);
+    const box = modelBox();
     inspect.setModel(shapes, box.clone());
     const sphere = box.getBoundingSphere(new THREE.Sphere());
     if (!sphere.isEmpty()) {
@@ -462,6 +470,7 @@ function createView({ canvas, colors, ...size }) {
    * worth showing. Returns the outline's material.
    */
   function addSketch(group, g) {
+    if (g.guide) return addGuides(group, g);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(g.positions, 3));
     geometry.setIndex(new THREE.BufferAttribute(g.indices, 1));
@@ -488,6 +497,35 @@ function createView({ canvas, colors, ...size }) {
     const outline = new LineSegments2(new LineSegmentsGeometry().setPositions(g.lines), material);
     outline.renderOrder = 3;
     group.add(outline);
+    return material;
+  }
+
+  /**
+   * Draws a sketch's construction lines: thin, dashed and with no fill, on top of everything.
+   * They lie on the faces they were drawn on and would flicker in and out of them, and a guide
+   * hidden under the part is still worth seeing. Dashes are sized to the sketch, so they read
+   * the same on a part of any size. Returns the lines' material.
+   */
+  function addGuides(group, g) {
+    const geometry = new LineSegmentsGeometry().setPositions(g.lines);
+    geometry.computeBoundingSphere();
+    const size = Math.max(geometry.boundingSphere.radius, 1e-6);
+    const [r, gr, b] = g.color;
+    const material = new LineMaterial({
+      color: new THREE.Color(r, gr, b),
+      linewidth: GUIDE_LINE_WIDTH,
+      dashed: true,
+      dashSize: size / 25,
+      gapSize: size / 50,
+      depthTest: false,
+      transparent: true,
+    });
+    material.resolution.set(element.clientWidth, element.clientHeight);
+    const lines = new LineSegments2(geometry, material);
+    lines.computeLineDistances();
+    lines.renderOrder = 4;
+    lines.userData.guide = true;
+    group.add(lines);
     return material;
   }
 

@@ -43,10 +43,10 @@ export function encodePNG({ width, height, pixels }) {
 }
 
 /**
- * Renders a part's solids and 2D shapes to a PNG preview.
- * @param {{ solids: import('../lib/shapes.js').Solid[], shapes?: import('../lib/shapes.js').Shape2[] }} part
+ * Renders a part's solids, 2D shapes and sketches to a PNG preview.
+ * @param {{ solids: import('../lib/shapes.js').Solid[], shapes?: import('../lib/shapes.js').Shape2[], sketches?: import('../lib/sketch.js').Sketch[] }} part
  * @param {{ width?: number, height?: number, view?: string }} [options]
  */
-export function toPNG({ solids, shapes }, options) {
-  return encodePNG(render(meshGroups(solids, shapes), options));
+export function toPNG({ solids, shapes, sketches }, options) {
+  return encodePNG(render(meshGroups(solids, shapes, sketches), options));
 }

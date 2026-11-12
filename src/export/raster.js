@@ -26,6 +26,18 @@ const SUPERSAMPLE = 2;
 const EDGE_NORMAL_COS = Math.cos((25 * Math.PI) / 180);
 const EDGE_SHADE = 0.35;
 const SKETCH_LINE_WIDTH = 2.5; // output pixels
+const GUIDE_LINE_WIDTH = 1.75; // output pixels: a sketch's construction lines, dashed
+const DASH = 7; // output pixels drawn, then
+const GAP = 4; // left out
+
+/** A screen-space segment cut into dashes, starting with one at `a`. */
+function dashes(a, b, dash, gap) {
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const at = (t) => a.map((v, k) => v + ((b[k] - v) * t) / length);
+  const out = [];
+  for (let t = 0; t < length; t += dash + gap) out.push([at(t), at(Math.min(t + dash, length))]);
+  return out;
+}
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -181,14 +193,16 @@ function renderView(groups, width, height, viewName) {
       });
     }
   }
-  const radius = (SKETCH_LINE_WIDTH * SUPERSAMPLE) / 2;
-  for (const { lines, color: rgba } of sketches) {
+  for (const { lines, color: rgba, guide } of sketches) {
+    const radius = ((guide ? GUIDE_LINE_WIDTH : SKETCH_LINE_WIDTH) * SUPERSAMPLE) / 2;
+    const plot = (i, z) => {
+      if (visible(i, z)) color.set(rgba.slice(0, 3), i * 3);
+    };
     for (let s = 0; s < lines.length; s += 6) {
       const a = project([lines[s], lines[s + 1], lines[s + 2]]);
       const b = project([lines[s + 3], lines[s + 4], lines[s + 5]]);
-      strokeSegment(a, b, radius, W, H, (i, z) => {
-        if (visible(i, z)) color.set(rgba.slice(0, 3), i * 3);
-      });
+      if (!guide) strokeSegment(a, b, radius, W, H, plot);
+      else for (const [p, q] of dashes(a, b, DASH * SUPERSAMPLE, GAP * SUPERSAMPLE)) strokeSegment(p, q, radius, W, H, plot);
     }
   }
 

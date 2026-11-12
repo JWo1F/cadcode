@@ -88,3 +88,24 @@ test('a part may return a sketch beside its solids', async () => {
   const alone = await evaluateModule({ default: s });
   assert.equal(alone.sketches.length, 1);
 });
+
+test('a sketch is drawn on its frame: outlines filled, guides as lines only', async () => {
+  const { meshGroups } = await import('../src/core/mesh.js');
+  const box = cube([20, 10, 8]);
+  const s = sketch(box.face('+X'));
+  const floor = s.line([2, 2], [8, 2]);
+  floor.intersect(s.line([5, 0], { angle: 90 }));
+  s.polygon([floor.start, floor.end, floor.parallel(3).end]);
+  const groups = meshGroups([box], [], [s]);
+  const [outline, guides] = groups.filter((g) => g.sketch);
+  assert.ok(outline.indices.length > 0 && !outline.guide);
+  assert.equal(guides.guide, true);
+  assert.equal(guides.indices.length, 0);
+  // Everything lies on the +X face, at x = 20.
+  for (const g of [outline, guides]) for (let i = 0; i < g.lines.length; i += 3) near(g.lines[i], 20, 1e-5);
+  // The endless line is cut to the sketch with a tenth to spare: y = 5 from z below 0 to above 5.
+  const zs = [];
+  for (let i = 0; i < guides.lines.length; i += 6) if (Math.abs(guides.lines[i + 1] - 5) < 1e-6 && Math.abs(guides.lines[i + 4] - 5) < 1e-6) zs.push(guides.lines[i + 2], guides.lines[i + 5]);
+  assert.ok(Math.min(...zs) < 0 && Math.max(...zs) > 5 && Math.max(...zs) < 7, zs.join());
+  assert.equal(meshGroups([], [], [sketch()]).length, 0);
+});

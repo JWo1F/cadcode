@@ -968,7 +968,7 @@ atKnob.place(cylinder({ d: 24, h: 15 }).translate([0, 0, -14]))`,
   {
     id: 'sketches',
     title: 'Sketches',
-    intro: 'A sketch is construction geometry on a frame: lines, parallels, perpendiculars and circles, and the points where they cross, to work out an outline as on paper. Its points are plain `[x, y]` in the frame\'s coordinates, so they go straight into `polygon()` or `.translate()`. The guides are not part of the model: return the sketch in a part and the viewer draws them in place, dashed, with the crossings marked; it never reaches an STL or 3MF, and it cannot go into a boolean.',
+    intro: 'A sketch is construction geometry on a frame: lines, parallels, perpendiculars and circles, and the points where they cross, to work out an outline as on paper. Its points are plain `[x, y]` in the frame\'s coordinates, so they go straight into `polygon()` or `.translate()`. The guides are not part of the model: return the sketch in a part and the viewer draws them in place, dashed and on top of the part, with the crossings marked; they do not count in its size, and the sketch never reaches an STL or 3MF, and it cannot go into a boolean.',
     entries: [
       {
         id: 'sketch',

@@ -49,6 +49,7 @@ function encodeModel(result, file, { overrides, restored }) {
       body: g.body,
       color: g.color,
       sketch: g.sketch,
+      guide: g.guide,
       vertices: g.positions.length / 3,
       indices: g.indices.length,
       lines: g.lines?.length ?? 0,
