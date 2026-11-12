@@ -9,7 +9,7 @@ description: A rounded strap that screws under a desk and holds headphones by th
 //
 //   cadcode dev examples/headphone-hook.js
 //   cadcode stl examples/headphone-hook.js --part hanger
-import { cube, cylinder, frameAt, plane, setResolution, sketch, square, union } from 'cadcode';
+import { cube, cylinder, plane, setResolution, sketch, square, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -61,16 +61,10 @@ export default (p) => {
   const section = () =>
     square([p.t, p.width], { center: true, round: p.edge }).translate([0, p.width / 2]);
 
-  // The strap along a line of the sketch, and round a circle of it from one angle to another.
-  const straight = (line) => frameAt([...line.start, 0], [...line.direction, 0]).extrude(section(), line.length);
-  const arc = (circle, from, to) =>
-    section()
-      .translate([circle.r, 0])
-      .revolve({ angle: to - from })
-      .rotate(from)
-      .translate([...circle.center, 0]);
-
-  const strap = () => [straight(plate), arc(bend, 0, 90), straight(stem), arc(saddle, 180, 360), straight(lip)];
+  // The centre line itself, one path along the lines and round the circles; each arc carries on
+  // tangent to the line before it. The strap is its section swept along it, standing upright.
+  const centre = s.path(plate.start).line(plate.end).arc(stem.start).line(stem.end).arc(lip.start).line(lip.end);
+  const strap = () => section().sweep(centre.points().map(([x, y]) => [x, y, 0]), { up: [0, 0, 1] });
 
   // Screws go up into the desk; the heads sink into the plate's lower face, halfway up the width.
   const sink = (p.headD - p.screwD) / 2;
@@ -85,7 +79,7 @@ export default (p) => {
     [p.holeInset, p.plate - p.holeInset].map((x) => lowerFace.place(screwHole().translate([x, p.width / 2, 0])));
 
   // Print orientation: on its side, the strap's width standing up from the bed.
-  const hanger = () => union(strap()).subtract(holes());
+  const hanger = () => strap().subtract(holes());
 
   // In use: the path's plane is upright (XZ) and the desk's underside is at Z = 0.
   const mounted = (s) => s.translate([0, 0, -p.width / 2]).rotate([90, 0, 0]);

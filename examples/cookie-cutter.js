@@ -7,7 +7,7 @@ description: A thin blade grown from any 2D outline, with a wide rim to press on
 //
 //   cadcode dev examples/cookie-cutter.js
 //   cadcode stl examples/cookie-cutter.js --part cutter --set shape=star
-import { circle, cylinder, hull, polygon, range, setResolution, union } from 'cadcode';
+import { cylinder, path, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -39,12 +39,18 @@ export const params = [
 
 export default (p) => {
   // Both outlines are drawn 70 mm wide and scaled to `size`.
-  const heart = () => {
-    const tip = circle(1).translate([0, -30]);
-    return union(hull(circle(18).translate([-15, 8]), tip), hull(circle(18).translate([15, 8]), tip))
-      .offset(1.5)
-      .offset(-1.5); // fill the notch between the lobes with a soft curve
-  };
+  // The heart: from the tip up the right side, over the lobe into the notch, and back down the left
+  // as its mirror image. smooth() carries each curve on from the last without a kink; the long curves
+  // want finer steps than the default.
+  const heart = () =>
+    path([0, -31], { fn: 96 })
+      .curve([4, -26], [35, -4], [35, 8])
+      .smooth([27, 27], [17, 27])
+      .smooth([4, 23], [0, 17])
+      .curve([-4, 23], [-7, 27], [-17, 27])
+      .smooth([-35, 20], [-35, 8])
+      .smooth([-4, -26], [0, -31])
+      .close({ round: { 0: 1, 3: 0.75 } }); // blunt the tip, soften the notch
 
   const star = () => {
     const points = range(0, 9).map((i) => {

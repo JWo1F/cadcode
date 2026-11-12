@@ -8,7 +8,7 @@ description: A retro model rocket with swept fins, portholes and a nozzle, print
 //
 //   cadcode dev examples/rocket.js
 //   cadcode stl examples/rocket.js --part body
-import { cylinder, frameAt, plane, polar, polygon, range, setResolution, union } from 'cadcode';
+import { cylinder, frameAt, path, plane, polar, polygon, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -43,35 +43,29 @@ export default (p) => {
   const R = p.radius;
 
   // Boat tail: out from the nozzle at 45°, then easing into the tube.
-  const tailProfile = () => [
-    [0, p.tail],
-    [5.5, p.tail],
-    [12, p.tail + 6.5],
-    ...range(1, 8).map((i) => {
-      const t = i / 8;
-      return [12 + (R - 12) * (1 - (1 - t) ** 2), p.tail + 6.5 + 18 * t];
-    }),
-    [R, p.tubeTop],
-    [0, p.tubeTop],
-  ];
+  const tube = () =>
+    path([0, p.tail])
+      .line([5.5, p.tail])
+      .line([12, p.tail + 6.5])
+      .quad([R, p.tail + 15.5], [R, p.tail + 24.5])
+      .line([R, p.tubeTop])
+      .line([0, p.tubeTop])
+      .close()
+      .revolve();
 
-  // Tangent ogive: a circular arc of radius rho that meets the tube without a kink.
-  const noseProfile = () => {
+  // Tangent ogive: a circular arc of radius rho that meets the tube without a kink. Its centre lies
+  // level with the tube's top, so the arc leaves it upright; it is fixed by passing the tip and the
+  // point halfway up. The arc turns only about 38°, hence the fine resolution.
+  const nose = () => {
     const L = p.noseLength;
     const rho = (R * R + L * L) / (2 * R);
-    const steps = 24;
-    return [
-      [0, p.tubeTop],
-      ...range(0, steps - 1).map((i) => {
-        const x = (L * i) / steps;
-        return [Math.sqrt(rho * rho - x * x) - (rho - R), p.tubeTop + x];
-      }),
-      [0, p.tubeTop + L],
-    ];
+    const half = [Math.sqrt(rho * rho - (L / 2) ** 2) - (rho - R), p.tubeTop + L / 2];
+    return path([0, p.tubeTop], { fn: 240 })
+      .line([R, p.tubeTop])
+      .arc([0, p.tubeTop + L], { through: half })
+      .close()
+      .revolve();
   };
-
-  const tube = () => polygon(tailProfile()).revolve();
-  const nose = () => polygon(noseProfile()).revolve();
 
   // A bell that flares towards the bed, hollow inside.
   const nozzle = () =>
