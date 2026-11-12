@@ -8,38 +8,21 @@
 // overrides it ran with, and the panel follows them, except for the field being
 // typed in and while its own change is still on the way.
 
-const HEX = /^#[0-9a-f]{6}$/i;
-
-/** Key-order-independent JSON, to compare sets of values. */
-const stable = (value) =>
-  JSON.stringify(value, (_key, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1))) : v));
-
-const same = (a, b) => stable(a) === stable(b);
-
-/** What a param is edited as: its options, or by the kind of its value. */
-function kindOf({ value, options }) {
-  if (options) return 'choice';
-  if (typeof value === 'number') return 'number';
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'string') return HEX.test(value) ? 'color' : 'text';
-  return 'json';
-}
-
-/** The arrow-key step of a number field: 1 for whole numbers, else one unit of its last decimal. */
-function stepOf(value) {
-  const decimals = String(value).split('.')[1]?.length ?? 0;
-  return decimals === 0 ? 1 : 10 ** -Math.min(decimals, 4);
-}
+import { HEX, kindOf, stepOf, stable, same, formatJSON, followServer } from './params-values.js';
 
 /**
  * @typedef {{ name: string | null, keys: string[] }} Section a run of params; one with no name gets no heading
  * @param {{
  *   form: HTMLFormElement,
  *   resetAll: HTMLButtonElement,
- *   onChange: (overrides: Record<string, unknown>) => void,
+ *   onChange: (overrides: Record<string, unknown>) => boolean,
  *   collapsed: { get: () => string[], set: (names: string[]) => void },
- * }} options `collapsed` keeps the names of the sections folded away
- * @returns {{ show: (specs: Record<string, { value: unknown, name: string, description: string, options?: unknown[] }>, overrides: Record<string, unknown>, sections: Section[]) => void }}
+ * }} options onChange sends the overrides and tells whether they went out (not while
+ *   disconnected); `collapsed` keeps the names of the sections folded away
+ * @returns {{
+ *   show: (specs: Record<string, { value: unknown, name: string, description: string, options?: unknown[] }>, overrides: Record<string, unknown>, sections: Section[]) => void,
+ *   forgetSent: () => void,
+ * }} forgetSent is for a lost connection: what was sent may never come back, so the next frame is followed
  */
 export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   let specs = {};
@@ -52,9 +35,9 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
   const rows = new Map(); // name → { row, set(value), get() → { ok, value } }
 
   function commit() {
-    sent = { ...overrides };
     markChanged();
-    onChange({ ...overrides });
+    // What did not go out will not come back: the next frame is followed instead.
+    sent = onChange({ ...overrides }) ? { ...overrides } : null;
   }
 
   /** Records a row's value: an override when it differs from the code, none when it matches. */
@@ -71,12 +54,19 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
     resetAll.hidden = Object.keys(overrides).length === 0;
   }
 
-  // Number fields send while typing, a moment after the last key, so "24" does not build "2" first.
-  let typingTimer = 0;
-  const later = (fn) => {
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(fn, 250);
-  };
+  // Number fields and colour swatches send while typing or dragging, a moment after the
+  // last change, so "24" does not build "2" first. Each control waits on its own, so an
+  // edit of another control does not cancel one still waiting.
+  function delayed() {
+    let timer = 0;
+    return {
+      later(fn) {
+        clearTimeout(timer);
+        timer = setTimeout(fn, 250);
+      },
+      cancel: () => clearTimeout(timer),
+    };
+  }
 
   function numberControl(name, row, label) {
     // A text field rather than type=number, which writes the browser's locale (0,72):
@@ -89,13 +79,14 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
       const value = Number(input.value.trim().replace(',', '.'));
       return { ok: input.value.trim() !== '' && Number.isFinite(value), value };
     };
+    const { later, cancel } = delayed();
     const send = () => {
       const { ok, value } = read();
       input.setAttribute('aria-invalid', String(!ok));
       if (ok) change(name, value);
     };
     input.addEventListener('input', () => later(send));
-    input.addEventListener('change', () => (clearTimeout(typingTimer), send()));
+    input.addEventListener('change', () => (cancel(), send()));
     // Arrows step by the value's own precision; shift steps ten times as far.
     input.addEventListener('keydown', (event) => {
       const dir = { ArrowUp: 1, ArrowDown: -1 }[event.key];
@@ -140,6 +131,7 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
     const swatch = Object.assign(document.createElement('input'), { type: 'color', title: 'Pick a colour' });
     swatch.setAttribute('aria-label', `${name} colour`);
     const text = Object.assign(document.createElement('input'), { type: 'text', id: `param-${name}`, spellcheck: false });
+    const { later } = delayed();
     swatch.addEventListener('input', () => {
       text.value = swatch.value;
       later(() => change(name, swatch.value));
@@ -254,9 +246,7 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
       change(name, value);
     });
     row.append(input);
-    // On one line with a space after each comma and colon: [4, 6, 8].
-    const format = (v) => JSON.stringify(v, null, 1).replace(/\n\s*/g, ' ').replace(/([[{]) /g, '$1').replace(/ ([\]}])/g, '$1');
-    return { set: (v) => (input.value = format(v), input.removeAttribute('aria-invalid')) };
+    return { set: (v) => (input.value = formatJSON(v), input.removeAttribute('aria-invalid')) };
   }
 
   const CONTROLS = { number: numberControl, boolean: booleanControl, color: colorControl, text: textControl, json: jsonControl, choice: choiceControl };
@@ -342,18 +332,15 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
       sections = nextSections;
       declared = Object.fromEntries(Object.entries(specs).map(([name, spec]) => [name, spec.value]));
       const nextShape = stable([sections, Object.entries(specs).map(([name, spec]) => [name, kindOf(spec), spec.name, spec.description, spec.options])]);
-      // Until the server has run with what was sent, its overrides are older than the panel's.
-      if (sent) {
-        const pending = Object.fromEntries(Object.entries(sent).filter(([name]) => name in declared));
-        if (same(pending, serverOverrides)) sent = null;
-      }
-      if (!sent) overrides = { ...serverOverrides };
-      for (const name of Object.keys(overrides)) if (!(name in declared)) delete overrides[name];
+      ({ sent, overrides } = followServer({ sent, overrides, serverOverrides, declared }));
       if (nextShape !== shape) {
         shape = nextShape;
         build();
       }
       fill();
+    },
+    forgetSent() {
+      sent = null;
     },
   };
 }

@@ -287,6 +287,8 @@ function connect() {
   });
 
   socket.addEventListener('close', () => {
+    // A change sent just before may never have been run; the next server's frame is the truth.
+    paramsPanel.forgetSent();
     setStatus('disconnected');
     setTimeout(connect, 1000);
   });
@@ -302,7 +304,9 @@ const paramsPanel = createParamsPanel({
   form: document.getElementById('params'),
   resetAll: document.getElementById('params-reset'),
   onChange(overrides) {
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'params', overrides }));
+    if (socket?.readyState !== WebSocket.OPEN) return false;
+    socket.send(JSON.stringify({ type: 'params', overrides }));
+    return true;
   },
   // The sections folded away, per file.
   collapsed: {
