@@ -19,6 +19,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 ### Changed
 
 - The examples cut and place features with faces and frames instead of rotate chains, and l-bracket, phone-stand and headphone-hook build their profiles from sketches, with a `sketch` part that shows the construction lines.
+- The examples use `polar`, `grid`, `slot`, rounded squares, `align`, `layFlat` and `arrange`. Their print, lid, cover and cap parts are now centered on the bed, the rocket takes an odd number of fins, and the lantern's honeycomb rows run 4-3-4.
 
 ## [0.11.1] - 2026-11-11
 
