@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-12
+
 ### Added
 
 - Hardware: `screw('M3')` gives a metric size's clearance and tap holes, cap and countersunk heads, nut and heat-set insert; `screwHole()`, `boss()` and `nutTrap()` make the solids for them, drawn at z = 0 going down, to place on a face with a frame. `fit('slide')` is the clearance per side for a kind of fit, and `setFit()` changes it everywhere.
@@ -160,7 +162,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/03842cf...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/81e43c6...HEAD
+[0.15.0]: https://github.com/JWo1F/cadcode/compare/03842cf...81e43c6
 [0.14.0]: https://github.com/JWo1F/cadcode/compare/6c34691...03842cf
 [0.13.0]: https://github.com/JWo1F/cadcode/compare/499707c...6c34691
 [0.12.0]: https://github.com/JWo1F/cadcode/compare/c49acef...499707c
