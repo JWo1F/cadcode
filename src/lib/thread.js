@@ -36,7 +36,8 @@ const PROFILES = {
 
 /**
  * A screw thread along +Z from 0 to `length`: a threaded rod, or with `internal: true` the solid to
- * subtract for a threaded hole, `clearance` bigger and reaching 1 past both ends so it cuts through.
+ * subtract for a threaded hole, `clearance` bigger and reaching 1 past both ends so it cuts through;
+ * its facets are grown so even their flats clear a round screw.
  * @param {ThreadOptions} options
  * @returns {Solid}
  */
@@ -103,6 +104,12 @@ export function thread(options) {
       ? polygon([[0, 0], [minor, 0], [outer, rise], [outer, length - rise], [minor, length], [0, length]])
       : square([outer, length]);
     result = result.intersect(envelope.revolve({ fn: perTurn }));
+  }
+  // A hole's facets lie inside the circle through its corners, which would bind on a round screw;
+  // grown so the flats reach the true radii, as screwHole() does for plain holes.
+  if (internal) {
+    const across = 1 / Math.cos(Math.PI / perTurn);
+    result = result.scale([across, across, 1]);
   }
   return leftHand ? result.mirror([1, 0, 0]) : result;
 }

@@ -48,3 +48,11 @@ test('thread: bad options are refused', () => {
   assert.throws(() => thread({ d: 2, pitch: 4, length: 6 }), /too coarse/);
   assert.throws(() => thread({ d: 10, pitch: 1.5, length: 6, starts: 1.5 }), /whole number/);
 });
+
+test('a threaded hole at the default resolution clears a round screw, M3 included', () => {
+  for (const [d, pitch] of [[3, 0.5], [6, 1], [8, 1.25]]) {
+    const screw = thread({ d, pitch, length: 6, fn: 128 });
+    const hole = thread({ d, pitch, length: 6, internal: true });
+    assert.ok(screw.subtract(hole).clip({ z: [0.5, 5.5] }).volume() < 1e-3, `M${d} binds`);
+  }
+});
