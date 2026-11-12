@@ -76,6 +76,8 @@ booleans or a part's export.
 | `.volume()`, `.surfaceArea()` | |
 | `.bounds()` | `{ min: [x, y, z], max: [x, y, z] }` |
 | `.isEmpty()` | |
+| `.fillet(r, { between, touching, along, convex, where, fn })` / `.chamfer(size, filter)` | Post-boolean edge rounding. Edge = run of mesh edges with > 20° turn, chained along ONE flat face (base) through points where it bends ≤ 60° (rims round rounded corners and cylinder rims are single closed edges; box corners end a run). Outside (convex) edges: subtract swept sliver; inside: union filler (stops at open ends). Filters (all must hold): `between: [dirA, dirB]` (faces at the edge's start, either order), `touching: dir`, `along: 'x'\|'y'\|'z'\|vec` (straight only), `convex: bool`, `where: fn(edge)`. No filter = every edge; zero matches throws. Rounds overlap at corners (no ball blends). Keep r below the adjacent faces' sizes. Order matters: fillet vertical corners first, then rims (they then run round). |
+| `.edges(filter)` | `{ points, closed, from, to, direction (null if not straight), length, normals: [base, side at start], convex, angle }[]` — inspect before filleting. |
 | `.layFlat(side = '-Z')` | Rotate so that bbox side faces -Z, then center in XY and set min z = 0. Print orientation: `lid.layFlat('+Z')`. Replaces hand-written onBed/faceDown helpers. |
 | `.at(side = 'center')` | `Point` at the bbox center or a side's center (`'+X'`…`'-Z'`). |
 | `.align(target, { x, y, z, gap = 0 })` | Translate so bboxes line up per axis: `'min'`/`'max'` flush on that side (gap = inset), `'center'`, `'before'`/`'after'` wholly past target's min/max (gap = clearance). Target: Solid, Shape2, Point or `[x, y, z]`. Omitted axes don't move. Prefer over hand-computed `translate` from another part's dimensions. |

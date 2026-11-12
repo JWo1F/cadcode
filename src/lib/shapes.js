@@ -3,6 +3,7 @@ import { parseColor } from './colors.js';
 import { range } from './util.js';
 import { sweepPolygons } from './sweep.js';
 import { faceFrame, frameAt } from './frame.js';
+import { edgesOf, softenEdges } from './edges.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -385,6 +386,40 @@ export class Solid {
    */
   face(name) {
     return faceFrame(name, this.bounds());
+  }
+
+  /**
+   * The straight edges of the solid, where two flat faces meet, that pass a filter: to count or look at
+   * before `fillet()` or `chamfer()` them. Each is `{ from, to, direction, length, normals, convex, angle }`.
+   * @param {import('./edges.js').EdgeFilter} [filter]
+   * @returns {import('./edges.js').Edge[]}
+   */
+  edges(filter) {
+    return edgesOf(this, filter, 'edges()');
+  }
+
+  /**
+   * Rounds the solid's straight edges that pass a filter, after the booleans: an outside edge is cut
+   * round, an inside one filled round. `cup.fillet(2, { between: ['+Z', '-X'] })` rounds where the top
+   * meets the -X side; `{ along: 'z', convex: true }` takes every vertical outside edge. Edges of a curved
+   * surface are left alone. Where filleted edges meet at a corner the rounds overlap rather than blend.
+   * @param {number} r
+   * @param {import('./edges.js').EdgeFilter & { fn?: number }} [filter]
+   * @returns {Solid}
+   */
+  fillet(r, filter) {
+    return softenEdges(this, 'round', r, filter);
+  }
+
+  /**
+   * Cuts the solid's straight edges that pass a filter `size` back along both faces, or fills an inside
+   * edge as much: as `fillet()`, with a flat cut instead of a round.
+   * @param {number} size
+   * @param {import('./edges.js').EdgeFilter} [filter]
+   * @returns {Solid}
+   */
+  chamfer(size, filter) {
+    return softenEdges(this, 'chamfer', size, filter);
   }
 
   /**

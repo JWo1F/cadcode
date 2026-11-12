@@ -220,6 +220,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
+| `.fillet(r, filter)`, `.chamfer(size, filter)` | Round or cut edges after the booleans: outside edges are cut, inside ones (wall meets floor) filled. `filter` picks them by the faces either side: `{ along: 'z' }`, `{ touching: '-Z' }`, `{ between: ['+Z', '-X'] }`, `{ convex: false }`, `{ where: (edge) => ... }`; none takes every edge. An edge follows one flat face, so a floor's rim runs on round rounded corners. Where rounds meet at a corner they overlap rather than blend. |
+| `.edges(filter)` | The edges a filter picks, to check before rounding them: `{ points, closed, length, normals, convex, angle, ... }`. |
 | `.layFlat(side = '-Z')` | Turns that side of the bounding box down and puts the solid on the bed, centered in X and Y: `lid.layFlat('+Z')` prints a lid top down. |
 | `.at(side = 'center')` | A `point` at the center of the bounding box or of a side, `'+X'` … `'-Z'`. |
 | `.align(target, { x, y, z, gap })` | Lines up with another shape or a point by bounding boxes, per axis: `'min'`, `'center'`, `'max'`, or `'before'` / `'after'` to sit wholly past its min or max side. `gap` leaves space. `pad.align(floor, { x: 'center', y: 'center', z: 'after' })` stands the pad centered on the floor. |
