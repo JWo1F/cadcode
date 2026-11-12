@@ -1,5 +1,6 @@
 import { colorOfId, union } from '../lib/shapes.js';
 import { parseColor } from '../lib/colors.js';
+import { mat4 } from '../lib/vec.js';
 
 /**
  * @typedef {object} MeshGroup
@@ -15,10 +16,10 @@ import { parseColor } from '../lib/colors.js';
 
 // 2D shapes are drawn like a sketch in a CAD program: a see-through fill on Z=0
 // and a bold outline, in a blue no solid is given by default.
-export const SKETCH_COLOR = parseColor('#1f6fd1', 0.18);
+const SKETCH_COLOR = parseColor('#1f6fd1', 0.18);
 
 // A sketch's guides: thin dashed lines in a color apart from the outlines and the default yellow.
-export const GUIDE_COLOR = parseColor('#d6336c', 1);
+const GUIDE_COLOR = parseColor('#d6336c', 1);
 
 /**
  * Splits each solid's mesh into groups of one color each, for rendering.
@@ -60,12 +61,7 @@ export function meshGroups(solids, shapes = [], sketches = []) {
 /** Moves a group drawn in a frame's u, v onto the frame. */
 function placed(group, m) {
   const move = (xyz) => {
-    for (let i = 0; i < xyz.length; i += 3) {
-      const [x, y, z] = [xyz[i], xyz[i + 1], xyz[i + 2]];
-      xyz[i] = m[0] * x + m[4] * y + m[8] * z + m[12];
-      xyz[i + 1] = m[1] * x + m[5] * y + m[9] * z + m[13];
-      xyz[i + 2] = m[2] * x + m[6] * y + m[10] * z + m[14];
-    }
+    for (let i = 0; i < xyz.length; i += 3) xyz.set(mat4.apply(m, xyz[i], xyz[i + 1], xyz[i + 2]), i);
   };
   move(group.positions);
   if (group.lines) move(group.lines);
@@ -178,24 +174,4 @@ function meshGroup({ numProp, vertProperties }, tris, body, color) {
     indices[i] = n;
   }
   return { body, color, positions: new Float32Array(positions), indices };
-}
-
-/** Bounding box over all groups. */
-export function groupBounds(groups) {
-  const min = [Infinity, Infinity, Infinity];
-  const max = [-Infinity, -Infinity, -Infinity];
-  for (const { positions } of groups) {
-    for (let i = 0; i < positions.length; i += 3) {
-      for (let k = 0; k < 3; k++) {
-        min[k] = Math.min(min[k], positions[i + k]);
-        max[k] = Math.max(max[k], positions[i + k]);
-      }
-    }
-  }
-  return { min, max };
-}
-
-/** The solids of a part merged into one, as written to STL. */
-export function mergedSolid(solids) {
-  return union(solids);
 }

@@ -13,7 +13,7 @@ import { DEFAULT_COLOR as DEFAULT_HEX, EDGE_ANGLE, SKETCH_LINE_WIDTH } from '../
 export const DEFAULT_COLOR = parseColor(DEFAULT_HEX);
 
 /** Camera directions (from the model toward the camera) and up vectors. Z is up. */
-export const VIEWS = {
+const VIEWS = {
   iso: { dir: [1, -1, 1], up: [0, 0, 1] },
   'iso-back': { dir: [-1, 1, 1], up: [0, 0, 1] },
   front: { dir: [0, -1, 0], up: [0, 0, 1] },
@@ -25,7 +25,7 @@ export const VIEWS = {
 };
 
 /** Views laid out by `view: 'sheet'`, two by two. */
-export const SHEET = ['iso', 'front', 'right', 'top'];
+const SHEET = ['iso', 'front', 'right', 'top'];
 
 const SUPERSAMPLE = 2;
 const EDGE_NORMAL_COS = Math.cos((EDGE_ANGLE * Math.PI) / 180);

@@ -1,6 +1,7 @@
 import { unzipSync, strFromU8 } from 'fflate';
 import { parseColor } from '../colors.js';
 import { reserveColorIds } from '../shapes.js';
+import { mat4 } from '../vec.js';
 import { toBytes, solidFromMesh } from './common.js';
 import { parseXML, attribute } from './xml.js';
 
@@ -46,7 +47,7 @@ export function import3MF(bytes) {
     const object = reader.object(key);
     if (object.type !== 'model') continue;
     const mesh = { positions: [], triangles: [], colors: [] };
-    reader.collect(key, multiply(toMillimeters, parseTransform(item.attributes.transform)), mesh, new Set());
+    reader.collect(key, mat4.multiply(toMillimeters, parseTransform(item.attributes.transform)), mesh, new Set());
     solids.push(toSolid(mesh, object.name ?? `object ${item.attributes.objectid}`));
   }
   if (solids.length === 0) throw new Error('import3MF(): the build plate holds only support or other non-model objects');
@@ -134,7 +135,7 @@ class PackageReader {
     if (object.mesh) addMesh(object, matrix, out, this);
     for (const component of object.components) {
       const path = resolvePath(attribute(component, 'path'), object.path);
-      this.collect(`${path}#${component.attributes.objectid}`, multiply(matrix, parseTransform(component.attributes.transform)), out, visiting);
+      this.collect(`${path}#${component.attributes.objectid}`, mat4.multiply(matrix, parseTransform(component.attributes.transform)), out, visiting);
     }
     visiting.delete(key);
   }
@@ -146,10 +147,10 @@ function addMesh(object, m, out, reader) {
   const first = out.positions.length / 3;
   for (const { attributes: a } of vertices) {
     const [x, y, z] = [Number(a.x), Number(a.y), Number(a.z)];
-    out.positions.push(m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]);
+    out.positions.push(...mat4.apply(m, x, y, z));
   }
   // A mirroring transform turns triangles inside out; swapping two corners turns them back.
-  const mirrored = determinant(m) < 0;
+  const mirrored = mat4.determinant(m) < 0;
   const fallback = reader.colorOf(object.path, object.pid, object.pindex);
   for (const { attributes: a } of triangles) {
     const [v1, v2, v3] = [Number(a.v1), Number(a.v2), Number(a.v3)];
@@ -185,10 +186,7 @@ const children = (element, local) => element?.children.filter((c) => c.local ===
 
 /** `#RRGGBB` or `#RRGGBBAA`, as 3MF writes colors. */
 function color(value) {
-  if (!value) return null;
-  const hex = value.trim();
-  if (/^#[0-9a-fA-F]{8}$/.test(hex)) return parseColor(hex.slice(0, 7), parseInt(hex.slice(7), 16) / 255);
-  return parseColor(hex);
+  return value ? parseColor(value.trim()) : null;
 }
 
 /** A part name relative to the model that mentions it, as a path from the package root. */
@@ -211,18 +209,3 @@ function parseTransform(value) {
 }
 
 const scaling = (s) => [s, 0, 0, 0, 0, s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1];
-
-/** a × b, both column-major 4×4. */
-function multiply(a, b) {
-  const out = new Array(16).fill(0);
-  for (let col = 0; col < 4; col++) {
-    for (let row = 0; row < 4; row++) {
-      for (let k = 0; k < 4; k++) out[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
-    }
-  }
-  return out;
-}
-
-function determinant(m) {
-  return m[0] * (m[5] * m[10] - m[9] * m[6]) - m[4] * (m[1] * m[10] - m[9] * m[2]) + m[8] * (m[1] * m[6] - m[5] * m[2]);
-}

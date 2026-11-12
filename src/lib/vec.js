@@ -41,3 +41,21 @@ export const vec2 = {
   /** The unit vector at `degrees` from +X. @param {number} degrees @returns {Vec2} */
   fromAngle: (degrees) => [Math.cos((degrees * Math.PI) / 180), Math.sin((degrees * Math.PI) / 180)],
 };
+
+/** Column-major 4×4 matrices, as frames and `transform()` take them. */
+export const mat4 = {
+  /** a × b. @param {number[]} a @param {number[]} b @returns {number[]} */
+  multiply(a, b) {
+    const out = new Array(16).fill(0);
+    for (let col = 0; col < 4; col++) {
+      for (let row = 0; row < 4; row++) {
+        for (let k = 0; k < 4; k++) out[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
+      }
+    }
+    return out;
+  },
+  /** The point [x, y, z] moved by `m`. @param {number[]} m @param {number} x @param {number} y @param {number} z @returns {Vec3} */
+  apply: (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]],
+  /** The determinant of the 3×3 part: negative when `m` mirrors. @param {number[]} m */
+  determinant: (m) => m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5]),
+};

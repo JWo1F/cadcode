@@ -1,4 +1,4 @@
-import { mergedSolid } from '../core/mesh.js';
+import { union } from '../lib/shapes.js';
 
 /**
  * Binary STL of the part's solids merged into one. 2D shapes have no volume and are
@@ -9,7 +9,7 @@ import { mergedSolid } from '../core/mesh.js';
  */
 export function toSTL(solids) {
   if (solids.length === 0) throw new Error('Nothing to export to STL: the part has no solids (2D shapes are not exported)');
-  const { numProp, vertProperties, triVerts } = mergedSolid(solids).manifold.getMesh();
+  const { numProp, vertProperties, triVerts } = union(solids).manifold.getMesh();
   const triCount = triVerts.length / 3;
   const bytes = new Uint8Array(84 + triCount * 50);
   bytes.set(new TextEncoder().encode('cadcode'));

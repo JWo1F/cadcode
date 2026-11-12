@@ -24,7 +24,7 @@ function chunk(type, data) {
 }
 
 /** Encodes RGBA pixels as a PNG file. */
-export function encodePNG({ width, height, pixels }) {
+function encodePNG({ width, height, pixels }) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);

@@ -1,7 +1,7 @@
 import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
 import { range } from './util.js';
-import { vec3 } from './vec.js';
+import { mat4, vec3 } from './vec.js';
 import { sweepPolygons } from './sweep.js';
 import { faceFrame, frameAt } from './frame.js';
 import { edgesOf, softenEdges } from './edges.js';
@@ -111,7 +111,7 @@ export const POINT_IS_NOT_A_SHAPE =
   'A point has no geometry, so it cannot be combined with shapes or exported. Use it as a pivot (`rotate(a, { around: p })`) or read its coordinates with `.toArray()`.';
 
 /** @internal */
-export const SKETCH_IS_NOT_A_SHAPE =
+const SKETCH_IS_NOT_A_SHAPE =
   'A sketch and its lines and circles are guides, not shapes: return the sketch in a part to see it, and extrude an outline made from its points (`s.polygon()`, `s.extrude()`) to build with it.';
 
 /** Why `item` cannot go where shapes are expected. @param {unknown} item */
@@ -179,18 +179,7 @@ function axisRotation(degrees, axis) {
 /** Rotation by `[x, y, z]` degrees, around X, then Y, then Z, as a column-major 4x4 matrix. */
 function eulerRotation(angles) {
   const [ax, ay, az] = toVec3(angles);
-  return multiply(axisRotation(az, [0, 0, 1]), multiply(axisRotation(ay, [0, 1, 0]), axisRotation(ax, [1, 0, 0])));
-}
-
-/** The product `a * b` of two column-major 4x4 matrices: `b` applies first. */
-function multiply(a, b) {
-  const out = new Array(16).fill(0);
-  for (let col = 0; col < 4; col++) {
-    for (let row = 0; row < 4; row++) {
-      for (let k = 0; k < 4; k++) out[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
-    }
-  }
-  return out;
+  return mat4.multiply(axisRotation(az, [0, 0, 1]), mat4.multiply(axisRotation(ay, [0, 1, 0]), axisRotation(ax, [1, 0, 0])));
 }
 
 /**
@@ -809,12 +798,7 @@ export class Point {
 
   /** Applies a column-major 4x4 matrix. @param {number[]} m */
   transform(m) {
-    const { x, y, z } = this;
-    return new Point([
-      m[0] * x + m[4] * y + m[8] * z + m[12],
-      m[1] * x + m[5] * y + m[9] * z + m[13],
-      m[2] * x + m[6] * y + m[10] * z + m[14],
-    ]);
+    return new Point(mat4.apply(m, this.x, this.y, this.z));
   }
 
   /** @param {number[]} v */
