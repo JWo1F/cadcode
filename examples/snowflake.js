@@ -2,7 +2,7 @@
 title: Snowflake
 description: A flat ornament grown from one branching arm, with a loop for a thread.
 ---*/
-import { circle, polygon, range, union } from 'cadcode';
+import { circle, polar, polygon, range, union } from 'cadcode';
 
 // A snowflake ornament. One arm is drawn as a 2D dendrite — a tapering spine with side branches,
 // and twigs on the longer branches — mirrored about its own axis, repeated around the centre and
@@ -85,7 +85,7 @@ export default (p) => {
   };
 
   const flake2d = () => {
-    const arms = range(0, p.arms - 1).map((i) => arm().rotate(90 + (360 * i) / p.arms));
+    const arms = polar(arm(), { count: p.arms, start: 90 });
     const hub = circle({ r: p.hub, fn: p.arms }).rotate(90);
     const hole = circle({ r: p.hub * 0.45, fn: p.arms }).rotate(90);
     // The loop overlaps the tip of the top arm.

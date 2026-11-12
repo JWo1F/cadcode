@@ -7,7 +7,7 @@ description: A Staunton-style set turned on a virtual lathe, every piece printed
 //
 //   cadcode dev examples/chess-set.js
 //   cadcode stl examples/chess-set.js --all
-import { cube, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { cube, polar, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -65,8 +65,8 @@ export default (p) => {
       [0, 36.5],
     ]);
     // Three slots across the top leave six merlons.
-    const slots = range(0, 2).map((i) => cube([30, 3.6, 4], { center: true }).translate([0, 0, 39]).rotate(30 + i * 60));
-    return body.subtract(slots.map((s) => s.scale(p.scale)));
+    const slots = polar(cube([30, 3.6, 4], { center: true }).translate([0, 0, 39]), { count: 3, start: 30, angle: 120 });
+    return body.subtract(slots.scale(p.scale));
   };
 
   const bishop = () => {
@@ -108,8 +108,8 @@ export default (p) => {
       ...arc([0, 59.5], 3, -55, 90, 8),
     ]);
     // Scallops round the rim leave the crown's points.
-    const scallops = range(0, 9).map((i) => sphere({ r: 3.2, fn: 20 }).translate([10.6, 0, 59.2]).rotate(i * 36));
-    return body.subtract(scallops.map((s) => s.scale(p.scale)));
+    const scallops = polar(sphere({ r: 3.2, fn: 20 }).translate([0, 0, 59.2]), { count: 10, r: 10.6 });
+    return body.subtract(scallops.scale(p.scale));
   };
 
   const king = () => {

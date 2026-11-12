@@ -2,7 +2,7 @@
 title: Knob
 description: A knurled knob with a pointer, for a 6 mm D-shaft potentiometer.
 ---*/
-import { cube, cylinder, polygon, range, setResolution } from 'cadcode';
+import { cube, cylinder, polar, polygon, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });
 
@@ -54,11 +54,7 @@ export default (p) => {
     ]).revolve();
 
   const knurling = () =>
-    range(0, p.knurls - 1).map((i) =>
-      cylinder({ d: p.knurlD, h: p.height, fn: 16 })
-        .translate([r + p.knurlD / 4, 0, p.skirtH + 2])
-        .rotate((360 * i) / p.knurls),
-    );
+    polar(cylinder({ d: p.knurlD, h: p.height, fn: 16 }).translate([0, 0, p.skirtH + 2]), { count: p.knurls, r: r + p.knurlD / 4 });
 
   const pointer = () => cube([skirtR, 1.2, 1]).translate([r - 1, -0.6, p.skirtH - 0.8]);
   const topMark = () => cube([r - 3, 1.2, 1]).translate([2, -0.6, p.height - 0.6]);

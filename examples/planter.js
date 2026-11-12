@@ -8,7 +8,7 @@ description: A twisted, faceted plant pot with a drainage hole and a matching sa
 //
 //   cadcode dev examples/planter.js
 //   cadcode stl examples/planter.js --all
-import { cube, cylinder, polygon, range, setResolution, sphere } from 'cadcode';
+import { cube, cylinder, polar, polygon, range, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -69,7 +69,7 @@ export default (p) => {
     const inside = extrude(profile().offset({ delta: -p.wall }), p.height + over).intersect(
       cube([span, span, p.height + over]).translate([-span / 2, -span / 2, p.bottom]),
     );
-    const channels = range(0, 2).map((i) => cube([2 * p.radius + 2, p.channel, 2], { center: true }).rotate(i * 60 + 15));
+    const channels = polar(cube([2 * p.radius + 2, p.channel, 2], { center: true }), { count: 3, start: 15 }); // each bar crosses the whole floor
     return extrude(profile(), p.height).subtract(inside, cylinder({ d: p.hole, h: 3 * p.bottom, center: true }), channels);
   };
 
@@ -93,18 +93,15 @@ export default (p) => {
       { n: 9, len: 15, tilt: 55, out: 8 },
       { n: 11, len: 19, tilt: 70, out: 13 },
     ];
-    const leaves = rings.flatMap(({ n, len, tilt, out }, k) =>
-      range(0, n - 1).map((i) =>
-        sphere({ r: 1, fn: 20 })
-          .scale([len, len * 0.38, len * 0.16])
-          .translate([len * 0.9, 0, 0])
-          .rotate([0, -(90 - tilt), 0])
-          .translate([out * 0.4, 0, 0])
-          .rotate((360 * i) / n + k * 17)
-          .translate([0, 0, soilZ + 1 + (3 - k) * 1.5])
-          .color(['#6ab187', '#5aa17a', '#4e9170', '#3f7f63'][k]),
-      ),
-    );
+    const leaves = rings.map(({ n, len, tilt, out }, k) => {
+      const leaf = sphere({ r: 1, fn: 20 })
+        .scale([len, len * 0.38, len * 0.16])
+        .translate([len * 0.9, 0, 0])
+        .rotate([0, -(90 - tilt), 0]);
+      return polar(leaf, { count: n, r: out * 0.4, start: k * 17 })
+        .translate([0, 0, soilZ + 1 + (3 - k) * 1.5])
+        .color(['#6ab187', '#5aa17a', '#4e9170', '#3f7f63'][k]);
+    });
     return [soil, ...leaves];
   };
 

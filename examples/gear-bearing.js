@@ -2,7 +2,7 @@
 title: Gear bearing
 description: A planetary bearing with herringbone teeth that turns straight off the bed.
 ---*/
-import { circle, cylinder, plane, polygon, range, setResolution, union } from 'cadcode';
+import { circle, cylinder, plane, polar, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 96 });
 
@@ -54,10 +54,7 @@ export default (p) => {
     const rootUp = rf < rb ? [[rf * Math.cos(flank(rb)), rf * Math.sin(flank(rb))]] : [];
     const tooth = polygon([[0, 0], ...root, ...side(-1), ...side(1).reverse(), ...rootUp]);
 
-    return union(
-      circle({ r: rf }),
-      range(0, z - 1).map((i) => tooth.rotate((360 * i) / z)),
-    );
+    return union(circle({ r: rf }), polar(tooth, { count: z }));
   };
 
   // Every gear twists so its pitch circle moves by the same arc per millimetre of height, which

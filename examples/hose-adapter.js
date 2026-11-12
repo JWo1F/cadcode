@@ -9,7 +9,7 @@ description: From a shop-vacuum hose cuff to a garden hose, revolved from one cr
 //
 //   cadcode dev examples/hose-adapter.js
 //   cadcode stl examples/hose-adapter.js --set bigOD=32 --set hoseID=13
-import { circle, polygon, range, setResolution } from 'cadcode';
+import { circle, polar, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });
 
@@ -96,9 +96,7 @@ export default (p) => {
 
   // Rounded grooves round the collar, made in 2D and extruded through its height.
   const grooves = () =>
-    range(0, p.ribs - 1)
-      .map((i) => circle({ r: 1.4, fn: 16 }).translate([rCollar + 0.5, 0]).rotate((360 * i) / p.ribs))
-      .reduce((a, b) => a.union(b))
+    polar(circle({ r: 1.4, fn: 16 }), { count: p.ribs, r: rCollar + 0.5 })
       .extrude(p.collarH - 2)
       .translate([0, 0, zCollar1 + 0.5]);
 

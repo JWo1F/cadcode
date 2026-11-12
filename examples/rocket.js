@@ -8,7 +8,7 @@ description: A retro model rocket with swept fins, portholes and a nozzle, print
 //
 //   cadcode dev examples/rocket.js
 //   cadcode stl examples/rocket.js --part body
-import { cylinder, frameAt, plane, polygon, range, setResolution, union } from 'cadcode';
+import { cylinder, frameAt, plane, polar, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -25,7 +25,7 @@ export const params = [
   {
     name: 'Fins',
     children: {
-      fins: { value: 4, name: 'Fins', description: 'Number of fins; they come in mirrored pairs, so keep it even.' },
+      fins: { value: 4, name: 'Fins', description: 'Number of fins, spaced evenly round the body.' },
       finT: { value: 3, name: 'Fin thickness', description: 'Thickness of each fin, in mm.' },
       finSpan: { value: 33, name: 'Fin span', description: 'From the axis out to the fin tip, in mm.' },
     },
@@ -84,11 +84,7 @@ export default (p) => {
     const outline = polygon([[3, 52], [12, 41], [21, 27], [s - 3, 13], [s, 5], [s, 0], [s - 10, 0], [12, 6], [3, 13]], { round: 1.5 });
     return plane.XZ.extrude(outline, p.finT, { center: true });
   };
-  // A fin and its mirror image make a pair; the pairs are turned round the axis.
-  const fins = () => {
-    const pair = union(fin(), fin().mirror([1, 0, 0]));
-    return range(0, p.fins / 2 - 1).map((i) => pair.rotate((360 * i) / p.fins));
-  };
+  const fins = () => polar(fin(), { count: p.fins });
 
   // Portholes face the gap between two fins, towards the default iso camera.
   const portAt = [
@@ -115,7 +111,7 @@ export default (p) => {
     assembly: () => [
       tube().color('whitesmoke'),
       nose().color('#e63946'),
-      fins().map((f) => f.subtract(tube(), nozzle()).color('#e63946')),
+      fins().subtract(tube(), nozzle()).color('#e63946'),
       nozzle().color('#555'),
       band().subtract(tube(), nose()).color('silver'),
       rims().map((r) => r.subtract(tube(), holes()).color('silver')),
