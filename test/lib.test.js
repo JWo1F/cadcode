@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, polygon, slot, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, circle, ellipse, polygon, slot, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -259,4 +259,15 @@ test('square rounds its corners inside the same size; slot is a stadium', () => 
   near(s.area(), 12 + Math.PI, 1e-2);
   near(s.bounds().max[0], 4, 1e-9);
   assert.throws(() => slot([0, 0], [1, 0], 0), /width/);
+});
+
+test('ellipse is a circle stretched to its radii', () => {
+  const e = ellipse({ r: [20, 10], fn: 400 });
+  near(e.area(), Math.PI * 200, 0.1);
+  assert.deepEqual(e.bounds(), { min: [-20, -10], max: [20, 10] });
+  near(ellipse({ d: [16, 8], fn: 400 }).area(), Math.PI * 32, 0.05);
+  const same = circle({ r: 1, fn: 64 }).scale([20, 10]);
+  near(ellipse({ r: [20, 10], fn: 64 }).subtract(same).area() + same.subtract(ellipse({ r: [20, 10], fn: 64 })).area(), 0);
+  assert.throws(() => ellipse([1, 0]), /more than 0/);
+  assert.throws(() => ellipse(5), /\[rx, ry\]/);
 });

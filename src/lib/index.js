@@ -10,6 +10,7 @@ export {
   polyhedron,
   square,
   circle,
+  ellipse,
   polygon,
   slot,
   union,

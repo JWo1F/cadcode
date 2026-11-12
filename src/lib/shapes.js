@@ -1043,6 +1043,19 @@ export function circle(options) {
  */
 
 /**
+ * An ellipse centered on the origin, its radii along X and Y: `ellipse([20, 10])` is 40 wide and 20 tall.
+ * It has as many segments as a circle of its larger radius.
+ * @param {number[] | { r?: number[], d?: number[], fn?: number }} options `[rx, ry]`, or `{ r: [rx, ry] }`
+ *   or `{ d: [width, height] }`
+ */
+export function ellipse(options) {
+  const o = Array.isArray(options) ? { r: options } : options ?? {};
+  const r = o.r ?? (o.d ? [o.d[0] / 2, o.d[1] / 2] : undefined);
+  if (!Array.isArray(r) || !(r[0] > 0 && r[1] > 0)) throw new Error(`ellipse(): give the radii as [rx, ry] or { d: [width, height] }, both more than 0, got ${JSON.stringify(options)}`);
+  return new Shape2(CrossSection.circle(1, segmentsFor(Math.max(r[0], r[1]), o.fn)).scale([r[0], r[1]]));
+}
+
+/**
  * A polygon from points. With `paths`, each path is a list of point indices;
  * paths inside others become holes (even-odd fill), like OpenSCAD's polygon().
  * `{ round }` and `{ chamfer }` soften corners, all of them or some by index:

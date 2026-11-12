@@ -4,6 +4,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- `ellipse([rx, ry])`, or `{ d: [width, height] }`, is a 2D ellipse centered on the origin.
+
 ## [0.13.0] - 2026-11-12
 
 ### Added
