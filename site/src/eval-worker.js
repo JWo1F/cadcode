@@ -5,6 +5,7 @@ import * as cadcode from '../../src/lib/index.js';
 import { evaluateModule } from '../../src/core/evaluate.js';
 import { loadMemo, memoEntries } from '../../src/lib/memo.js';
 import { packResult } from '../../src/dev/pack-result.js';
+import { pointCadcodeAt } from './cadcode-imports.js';
 
 // The code is loaded from a blob URL, where a bare `'cadcode'` cannot resolve.
 // It is pointed at a module re-exporting this worker's copy of the library:
@@ -29,7 +30,7 @@ self.onmessage = async ({ data: { code, part, output, memo } }) => {
   const started = performance.now();
   // What memo() built in earlier runs, kept by the page; the preview hands back what this run used.
   loadMemo(memo);
-  const source = code.replace(/(\bfrom\s*|\bimport\s*\(\s*)(['"])cadcode\2/g, `$1"${SHIM_URL}"`);
+  const source = pointCadcodeAt(code, SHIM_URL);
   const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   try {
     const result = await evaluateModule(await import(url), { part, fallbackToFirst: !output });

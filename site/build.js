@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 import { renderReference } from './reference/render.js';
 import { zipFolder } from './zip.js';
+import { readFrontmatter } from './src/frontmatter.js';
 
 const SITE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(SITE);
@@ -24,23 +25,7 @@ fs.mkdirSync(ASSETS, { recursive: true });
 // build when an export is undocumented, and the rest takes a while.
 const reference = renderReference();
 
-// Every example opens with a frontmatter block — `key: value` lines between /*--- and ---*/ —
-// that names it for the gallery. The playground gets the code without it.
-const FRONTMATTER = /^\/\*---\n([\s\S]*?)\n---\*\/\n/;
-
-const readExample = (file) => {
-  const source = fs.readFileSync(path.join(EXAMPLES, file), 'utf8');
-  const match = source.match(FRONTMATTER);
-  if (!match) throw new Error(`examples/${file} has no frontmatter`);
-  const meta = Object.fromEntries(
-    match[1].split('\n').map((line) => {
-      const colon = line.indexOf(':');
-      return [line.slice(0, colon).trim(), line.slice(colon + 1).trim()];
-    }),
-  );
-  for (const key of ['title', 'description']) if (!meta[key]) throw new Error(`examples/${file} has no ${key} in its frontmatter`);
-  return { meta, code: source.slice(match[0].length) };
-};
+const readExample = (file) => readFrontmatter(fs.readFileSync(path.join(EXAMPLES, file), 'utf8'), `examples/${file}`);
 
 const exampleFiles = Object.fromEntries(
   fs
