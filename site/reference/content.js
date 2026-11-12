@@ -653,6 +653,17 @@ const height = max[2] - min[2];`,
         returns: 'boolean',
       },
       {
+        id: 'solid-layFlat',
+        name: 'layFlat',
+        owner: 'Solid',
+        signature: '.layFlat(side)',
+        summary: 'Turns the solid so one side of its bounding box faces down, and puts it on the bed: centered on the origin in X and Y, its bottom at Z = 0. For a part\'s print orientation.',
+        params: [{ name: 'side', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", default: "'-Z'", text: 'The side that ends up on the bed. `\'-Z\'` only moves the solid onto the bed.' }],
+        returns: 'Solid',
+        example: `lid.layFlat('+Z')        // a lid modelled in place, printed top down
+panel.layFlat('-Y')      // a front panel, printed face down`,
+      },
+      {
         id: 'solid-at',
         name: 'at',
         owner: 'Solid',
@@ -1196,6 +1207,19 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
     id: 'helpers',
     title: 'Helpers',
     entries: [
+      {
+        id: 'arrange',
+        name: 'arrange',
+        signature: 'arrange(parts, options)',
+        summary: 'Spreads parts over the bed for printing: in a row along +X, or in rows stacked along +Y, a gap apart by their bounding boxes, each centered across its row, the whole layout centered on the origin. Heights are kept, so lay the parts flat first.',
+        params: [
+          { name: 'parts', type: '(Solid | Solid[])[]', text: 'The parts. An array of solids, such as a part in two colors, moves together. Falsy entries are skipped and come back as they were.' },
+          { name: 'options.gap', type: 'number', default: '5', text: 'Space between neighbours, in X and between rows.' },
+          { name: 'options.columns', type: 'number', default: 'all in one row', text: 'Parts per row.' },
+        ],
+        returns: 'the parts moved, in the same order and nesting',
+        example: `print: () => arrange([box().layFlat(), lid().layFlat('+Z'), knob().layFlat('+Z')], { gap: 6 })`,
+      },
       {
         id: 'setResolution',
         name: 'setResolution',

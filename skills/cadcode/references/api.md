@@ -76,6 +76,7 @@ booleans or a part's export.
 | `.volume()`, `.surfaceArea()` | |
 | `.bounds()` | `{ min: [x, y, z], max: [x, y, z] }` |
 | `.isEmpty()` | |
+| `.layFlat(side = '-Z')` | Rotate so that bbox side faces -Z, then center in XY and set min z = 0. Print orientation: `lid.layFlat('+Z')`. Replaces hand-written onBed/faceDown helpers. |
 | `.at(side = 'center')` | `Point` at the bbox center or a side's center (`'+X'`…`'-Z'`). |
 | `.align(target, { x, y, z, gap = 0 })` | Translate so bboxes line up per axis: `'min'`/`'max'` flush on that side (gap = inset), `'center'`, `'before'`/`'after'` wholly past target's min/max (gap = clearance). Target: Solid, Shape2, Point or `[x, y, z]`. Omitted axes don't move. Prefer over hand-computed `translate` from another part's dimensions. |
 
@@ -163,6 +164,7 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 | Function | Notes |
 | --- | --- |
 | `helix({ r \| d, pitch, turns \| height, leftHand = false, fn })` | `[x, y, z]` points from `[r, 0, 0]`, counterclockwise from above (right-hand), rising `pitch` per turn; `fn` points per turn. For `.sweep()`. |
+| `arrange(parts, { gap = 5, columns })` | Print layout: parts (a Solid or an array moving together; falsy kept) in a row along +X or rows of `columns` along +Y, `gap` apart by bbox, centered on the origin. Z is kept — `layFlat()` first. Returns the same structure. |
 | `range(start, end, step = 1)` | Inclusive of `end`. |
 | `product(...lists)` | Cartesian product: `product([1, 2], ['a'])` → `[[1, 'a'], [2, 'a']]`. |
 | `memo(fn)` | Same function, remembering its result per arguments. Key = fn source + JSON args + resolution; in `cadcode dev`/playground it survives across saves (not the CLI). Args: plain data only (no shapes). Result: shapes or nested arrays, may be async. Closure variables (`p`!) and called helpers are NOT in the key: pass them as args or results go stale. |

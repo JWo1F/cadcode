@@ -184,6 +184,16 @@ function pivotOf(target) {
 
 const ALIGNMENTS = ['min', 'center', 'max', 'before', 'after'];
 
+/** The rotation that turns each side of a box to face down, -Z, for layFlat(). */
+const DOWN = {
+  '-Z': [0, 0, 0],
+  '+Z': [180, 0, 0],
+  '+X': [0, 90, 0],
+  '-X': [0, -90, 0],
+  '+Y': [-90, 0, 0],
+  '-Y': [90, 0, 0],
+};
+
 /**
  * The bounding box of what something is aligned to: a shape's, or a point as a box of no size.
  * @param {string} op
@@ -375,6 +385,21 @@ export class Solid {
    */
   face(name) {
     return faceFrame(name, this.bounds());
+  }
+
+  /**
+   * Turns the solid so `side` of its bounding box faces down, and puts it on the bed: centered on the
+   * origin in X and Y, its bottom at Z = 0. `lid.layFlat('+Z')` prints a lid top down; `layFlat()` only
+   * moves the solid onto the bed.
+   * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} [side]
+   * @returns {Solid}
+   */
+  layFlat(side = '-Z') {
+    const turn = DOWN[/** @type {keyof typeof DOWN} */ (side)];
+    if (!turn) throw new Error(`layFlat(): side must be one of ${Object.keys(DOWN).join(', ')}, got ${JSON.stringify(side)}`);
+    const turned = this.rotate(turn);
+    const { min, max } = turned.bounds();
+    return turned.translate([-(min[0] + max[0]) / 2, -(min[1] + max[1]) / 2, -min[2]]);
   }
 
   /**

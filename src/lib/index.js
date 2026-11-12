@@ -27,6 +27,7 @@ export {
 } from './shapes.js';
 export { Frame, plane, frameAt } from './frame.js';
 export { Sketch, sketch } from './sketch.js';
+export { arrange } from './layout.js';
 export { helix, loft } from './sweep.js';
 export { thread } from './thread.js';
 export { text } from './text.js';

@@ -220,6 +220,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
+| `.layFlat(side = '-Z')` | Turns that side of the bounding box down and puts the solid on the bed, centered in X and Y: `lid.layFlat('+Z')` prints a lid top down. |
 | `.at(side = 'center')` | A `point` at the center of the bounding box or of a side, `'+X'` … `'-Z'`. |
 | `.align(target, { x, y, z, gap })` | Lines up with another shape or a point by bounding boxes, per axis: `'min'`, `'center'`, `'max'`, or `'before'` / `'after'` to sit wholly past its min or max side. `gap` leaves space. `pad.align(floor, { x: 'center', y: 'center', z: 'after' })` stands the pad centered on the floor. |
 
@@ -312,6 +313,7 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] };
 | --- | --- |
 | `point([x, y, z])` | A place without geometry, such as a pivot for `rotate(..., { around })`. It has `.translate`, `.rotate`, `.scale`, `.mirror`, `.transform`, so it can move with its part, and `.x`, `.y`, `.z`, `.toArray()`. It cannot go into booleans or an export. |
 | `helix({ r \| d, pitch, turns \| height, leftHand, fn })` | Points along a helix around Z from `[r, 0, 0]`, rising `pitch` per turn: a path for `.sweep()`. `fn` is points per turn. |
+| `arrange(parts, { gap = 5, columns })` | Spreads parts over the bed for a print layout: a row along +X (or rows of `columns`), `gap` apart, centered on the origin. A part may be an array of solids that move together. Lay them flat first. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
 | `memo(fn)` | Builds once per set of arguments. In `cadcode dev` and the playground the result outlives the run, so a save that leaves the function and its arguments as they were skips it: `const ring = memo((teeth, module) => ...)`. The key is the function's source, its arguments and the resolution; a helper it calls or a variable it reads from outside (such as `p`) is not part of it, so pass those as arguments. Arguments are plain data; the result is shapes or arrays of them. |
