@@ -1,7 +1,9 @@
 // Paths: outlines drawn piece by piece — lines, Bézier curves, arcs and smooth splines through
 // points — closed into a 2D shape, or left open as the points of a path to sweep along.
 
-import { polygon, circle, union, cornerSpecs, resolution, arcPoints, shortArc } from './shapes.js';
+import { resolution, arcPoints, shortArc } from './shapes.js';
+import { polygon, circle, cornerSpecs } from './primitives.js';
+import { union } from './functional.js';
 import { vec2 as V2 } from './vec.js';
 import { bezierAt } from './curves.js';
 
@@ -375,7 +377,7 @@ export class Path {
    * Closes the path back to its start with a straight line if it is not there already, and makes it a
    * 2D shape. `round` and `chamfer` soften the corners where pieces meet, as for `polygon()`, by the
    * index of the join: 0 is the start, then the end of each piece in order.
-   * @param {import('./shapes.js').PolygonOptions} [options]
+   * @param {import('./primitives.js').PolygonOptions} [options]
    * @returns {import('./shapes.js').Shape2}
    */
   close(options = {}) {

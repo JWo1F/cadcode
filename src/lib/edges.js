@@ -4,7 +4,8 @@
 // rounded box's floor. A fillet subtracts (on an outside edge) or adds (on an inside one) the sliver
 // between the corner and an arc, swept along the run; a chamfer does the same with a straight cut.
 
-import { Solid, polygon, shortArc } from './shapes.js';
+import { Solid, shortArc } from './shapes.js';
+import { polygon } from './primitives.js';
 import { vec3 } from './vec.js';
 
 /** @typedef {[number, number, number]} Vec3 */

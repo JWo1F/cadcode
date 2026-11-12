@@ -1,5 +1,7 @@
 // Screw threads for printing: a threaded rod, or the cutter for a threaded hole.
-import { Solid, cylinder, polygon, square, union, segmentsFor } from './shapes.js';
+import { Solid, segmentsFor } from './shapes.js';
+import { cylinder, polygon, square } from './primitives.js';
+import { union } from './functional.js';
 import { tube } from './sweep.js';
 
 /** @typedef {import('./shapes.js').Vec2} Vec2 */

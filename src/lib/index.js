@@ -1,31 +1,7 @@
-export {
-  Solid,
-  Shape2,
-  Point,
-  point,
-  setResolution,
-  cube,
-  cylinder,
-  sphere,
-  polyhedron,
-  square,
-  circle,
-  ellipse,
-  polygon,
-  slot,
-  union,
-  difference,
-  intersection,
-  hull,
-  minkowski,
-  translate,
-  rotate,
-  scale,
-  mirror,
-  color,
-  offset,
-  linearExtrude,
-} from './shapes.js';
+export { Solid, Shape2, Point, point } from './shapes.js';
+export { setResolution } from './resolution.js';
+export { cube, cylinder, sphere, polyhedron, square, circle, ellipse, polygon, slot } from './primitives.js';
+export { union, difference, intersection, hull, minkowski, translate, rotate, scale, mirror, color, offset, linearExtrude } from './functional.js';
 export { Frame, plane, frameAt } from './frame.js';
 export { Sketch, sketch } from './sketch.js';
 export { arrange } from './layout.js';

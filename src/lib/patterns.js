@@ -1,7 +1,8 @@
 // Patterns: copies of a shape in a grid or around a circle, unioned. A grid can fill a region by
 // itself, so vents and pegboards need no count-and-center arithmetic.
 
-import { Solid, Shape2, union } from './shapes.js';
+import { Solid, Shape2 } from './shapes.js';
+import { union } from './functional.js';
 
 /** @typedef {Solid | Shape2} Patterned */
 

@@ -1,7 +1,8 @@
 // Common parts to build enclosures around: each is a body, a stand-in to see the part in place,
 // and a cutout, what to subtract from the enclosure so the part fits and can be reached, moving
 // together. Their dimensions are nominal, from parts already modelled: measure yours.
-import { Solid, Point, point, cube, cylinder, sphere, circle, square, slot } from './shapes.js';
+import { Solid, Point, point } from './shapes.js';
+import { cube, cylinder, sphere, circle, square, slot } from './primitives.js';
 import { plane } from './frame.js';
 import { fit } from './hardware.js';
 

@@ -3,7 +3,7 @@
 // no geometry of the part: return the sketch in a part and the viewer draws them, dashed, in place.
 
 import { plane } from './frame.js';
-import { polygon } from './shapes.js';
+import { polygon } from './primitives.js';
 import { sketchPath, splineIn } from './path.js';
 import { vec2 as V2 } from './vec.js';
 
@@ -288,8 +288,8 @@ export class Sketch {
    * A polygon through points of the sketch, with the same arguments as `polygon()`. The viewer draws it
    * in place with the guides.
    * @param {number[][]} points
-   * @param {number[][] | import('./shapes.js').PolygonOptions} [paths]
-   * @param {import('./shapes.js').PolygonOptions} [options]
+   * @param {number[][] | import('./primitives.js').PolygonOptions} [paths]
+   * @param {import('./primitives.js').PolygonOptions} [options]
    * @returns {import('./shapes.js').Shape2}
    */
   polygon(points, paths, options) {

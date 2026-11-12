@@ -5,7 +5,8 @@
 // above z = 0 so it cuts cleanly through the face it starts on. Put one on a face with a frame:
 // `box.subtract(box.face('+Z').place(screwHole('M3', { length: 8 })))`; the frame turns local Z
 // into the face's outward normal, so the cutter goes into the part whichever side it is on.
-import { Solid, cylinder, segmentsFor } from './shapes.js';
+import { Solid, segmentsFor } from './shapes.js';
+import { cylinder } from './primitives.js';
 
 /** How far the cutters reach above z = 0, so a subtraction leaves no skin on the face. */
 const OVERSHOOT = 1;
