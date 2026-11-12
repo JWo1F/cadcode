@@ -4,6 +4,14 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- `frame.flip()` turns a frame to face the other way, for a cutter on a plane whose normal points into the part, and `boss()` takes a `floor`.
+
+### Fixed
+
+- `cell().cutout` stops at z = 0 instead of digging `clearance` into the floor the cell rests on.
+
 ## [0.15.0] - 2026-11-12
 
 ### Added

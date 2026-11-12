@@ -196,6 +196,7 @@ export function screwHole(size, options = {}) {
 /**
  * @typedef {object} BossOptions
  * @property {number} h height, from z = 0
+ * @property {number} [floor] how thick the bottom under a blind hole is (default 1); 0 opens it to the part below
  * @property {number} [d] outer diameter (default the larger of 2.2 × the screw's diameter and the hole
  *   plus 1.6 of wall each side, rounded up to 0.1)
  * @property {'tap' | 'insert' | 'clearance'} [hole] the hole down its middle: `'tap'` for a screw that cuts
@@ -214,7 +215,8 @@ export function screwHole(size, options = {}) {
 export function boss(size, options) {
   const op = 'boss()';
   const s = lookup(op, size);
-  const { h, hole = 'tap', d: diameter, fn } = options ?? {};
+  const { h, hole = 'tap', d: diameter, floor = BOSS_FLOOR, fn } = options ?? {};
+  if (!(typeof floor === 'number' && floor >= 0)) throw new Error(`${op}: floor must be 0 or more, got ${JSON.stringify(floor)}`);
   positive(op, 'h', h);
   if (!['tap', 'insert', 'clearance'].includes(hole)) throw new Error(`${op}: hole must be 'tap', 'insert' or 'clearance', got ${JSON.stringify(hole)}`);
   const holeD = hole === 'clearance' ? s.clearance : hole === 'tap' ? s.tap : s.insert.d;
@@ -223,10 +225,10 @@ export function boss(size, options) {
   positive(op, 'd', d);
   if (d <= holeD) throw new Error(`${op}: d ${d} leaves no wall around the ${holeD} hole`);
 
-  const depth = hole === 'clearance' ? h : h - BOSS_FLOOR;
-  if (depth <= 0) throw new Error(`${op}: h must be more than ${BOSS_FLOOR} for a blind hole, got ${h}`);
+  const depth = hole === 'clearance' ? h : h - floor;
+  if (depth <= 0) throw new Error(`${op}: h must be more than the floor, ${floor}, for a blind hole, got ${h}`);
   if (hole === 'insert' && depth < s.insert.depth) {
-    throw new Error(`${op}: an ${size} insert needs a hole ${s.insert.depth} deep, but h ${h} leaves ${depth}; make h at least ${s.insert.depth + BOSS_FLOOR}`);
+    throw new Error(`${op}: an ${size} insert needs a hole ${s.insert.depth} deep, but h ${h} leaves ${depth}; make h at least ${s.insert.depth + floor}`);
   }
   // The hole reaches past the top, and for a through hole past the bottom too, so it leaves no skin.
   const bottom = hole === 'clearance' ? -OVERSHOOT : h - depth;

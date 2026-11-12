@@ -54,6 +54,17 @@ export class Frame {
   }
 
   /**
+   * The same plane facing the other way: its normal reversed, u and v as they were. Use it to put a
+   * cutter that goes down local -Z onto a plane whose normal points into the part.
+   * @returns {Frame}
+   */
+  flip() {
+    const m = [...this.matrix];
+    for (let k = 8; k < 11; k++) m[k] = -m[k];
+    return new Frame(m);
+  }
+
+  /**
    * Extrudes a 2D shape drawn in the frame's coordinates. A positive `depth` goes along the normal
    * (out of a face), a negative one against it (into the part); `{ center: true }` puts the frame's
    * plane in the middle.

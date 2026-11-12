@@ -1112,6 +1112,7 @@ box.subtract(box.face('+Z').place(screwHole('M3', { length: 12, head: 'cap' }).t
         signature: 'boss(size, options)',
         summary: 'A screw boss: a cylinder standing on z = 0, `h` tall, with the screw\'s hole from its top down. Union it onto a floor.',
         params: [
+          { name: 'options.floor', type: 'number', default: '1', text: 'How thick the bottom under a blind hole is; 0 opens it to the part below.' },
           { name: 'size', type: "'M2' … 'M8'", text: 'As for `screw`.' },
           { name: 'options.h', type: 'number', text: 'Height.' },
           { name: 'options.d', type: 'number', text: 'Outer diameter. By default the larger of 2.2 × the screw\'s diameter and the hole with 1.6 of wall each side, rounded up to 0.1.' },
@@ -1401,6 +1402,15 @@ plane.XZ.extrude(fin, 2, { center: true })           // a 2 thick fin on y = 0`,
         returns: 'Solid | Point, as given',
         example: `const atKnob = frameAt([42, 0, z], surfaceNormal)
 atKnob.place(cylinder({ d: 24, h: 15 }).translate([0, 0, -14]))`,
+      },
+      {
+        id: 'frame-flip',
+        name: 'flip',
+        owner: 'Frame',
+        signature: '.flip()',
+        summary: 'The same plane facing the other way: its normal reversed, u and v as they were. For a cutter that goes down local -Z, such as `screwHole`, onto a plane whose normal points into the part.',
+        returns: 'Frame',
+        example: `plane.XZ.offset(-t).flip().place(screwHole('M4', { length: t, head: 'countersunk' }))`,
       },
       {
         id: 'frame-origin',

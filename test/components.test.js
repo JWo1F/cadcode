@@ -72,7 +72,7 @@ test('led5: flange on z = 0, 8.6 tall, hole from the flange up', () => {
 test('cell: lying along +X on z = 0, an 18650 by default', () => {
   const c = cell();
   box(c.body, [0, -9.2, 0], [65.2, 9.2, 18.4], 1e-3);
-  box(c.cutout, [-0.2, -9.4, -0.2], [65.4, 9.4, 18.6], 1e-3);
+  box(c.cutout, [-0.2, -9.4, 0], [65.4, 9.4, 18.6], 1e-3); // stops at the floor the cell rests on
   box(cell({ d: 12, l: 30 }).body, [0, -6, 0], [30, 6, 12], 1e-3);
   assert.throws(() => cell({ d: 0 }), /d must be a positive number/);
 });

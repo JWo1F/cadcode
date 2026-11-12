@@ -280,6 +280,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 | `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
 | `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
 | `frame.extrude(shape, depth, { through, center })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin; `through: 'start'` reaches 1 back past the plane only, for a pocket cut into a face. `center: true` puts the plane in the middle. |
+| `frame.flip()` | The plane facing the other way, u and v kept: to place a cutter on a plane whose normal points into the part. |
 | `frame.offset(d)`, `frame.place(solidOrPoint)` | The plane moved along its normal; a solid or point built at the origin moved onto the frame (Z along the normal). `.origin` and `.normal` read it. |
 
 ### Sketches
@@ -338,7 +339,7 @@ Sizes M2, M2.5, M3, M4, M5, M6, M8. Cutters are drawn at a surface at z = 0 goin
 | `screw(size)` | The numbers for a size: `{ d, clearance, tap, capHead: { d, h }, countersunk: { d }, nut: { s, h }, insert: { d, depth } }`. Heat-set inserts vary by brand: check yours. |
 | `fit(kind)` / `setFit({ press, slide, loose })` | Clearance per side: `press` 0.1, `slide` 0.2, `loose` 0.4. `setFit` changes them for everything after it. |
 | `screwHole(size, { length, head, hole, headDepth, fn })` | Cutter for a screw: `hole` is `'clearance'`, `'tap'` or `'insert'`; `head` is `'none'`, `'cap'` (counterbore a slide fit bigger, head height deep) or `'countersunk'` (90° cone, head diameter at z = 0). |
-| `boss(size, { h, d, hole, fn })` | A cylinder on z = 0 with the screw's hole from the top; `'tap'` and `'insert'` leave a 1 floor, `'clearance'` goes through. |
+| `boss(size, { h, d, hole, floor, fn })` | A cylinder on z = 0 with the screw's hole from the top; `'tap'` and `'insert'` leave a `floor` (default 1), `'clearance'` goes through. |
 | `nutTrap(size, { depth, fit })` | Cutter for a hex nut pocket, a slide fit bigger across the flats. |
 
 ### Components

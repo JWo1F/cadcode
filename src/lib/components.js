@@ -311,5 +311,6 @@ export function cell(options = {}) {
   if (!(typeof l === 'number' && l > 0)) throw new Error(`cell(): l must be a positive number, got ${JSON.stringify(l)}`);
   /** A cylinder on the cell's axis from x = `from` to `to`. @type {(diameter: number, from: number, to: number) => Solid} */
   const along = (diameter, from, to) => plane.YZ.offset(from).extrude(circle({ d: diameter, fn }).translate([0, d / 2]), to - from);
-  return new Component({ body: along(d, 0, l).color(CELL), cutout: along(d + 2 * c, -c, l + c) });
+  // The cutout stops at z = 0, where the cell rests, so it never digs into the floor it lies on.
+  return new Component({ body: along(d, 0, l).color(CELL), cutout: along(d + 2 * c, -c, l + c).clip({ z: [0, Infinity] }) });
 }

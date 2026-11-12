@@ -104,3 +104,11 @@ test('surfaceAt reads the normal of a curve, not of the facet it meets', () => {
   // Sharp edges stay sharp: next to a box's edge its top still faces straight up.
   close(cube(10).surfaceAt('+Z', [9.99, 5]).normal, [0, 0, 1], 1e-9);
 });
+
+test('flip turns a frame to face the other way, u and v kept', () => {
+  const f = plane.XZ.offset(-3).flip();
+  close(f.normal, [0, -1, 0]);
+  close(f.origin, [0, -3, 0]);
+  close(f.place(point([1, 2, 0])).toArray(), [1, -3, 2]);
+  close(f.place(point([0, 0, 1])).toArray(), [0, -4, 0]);
+});

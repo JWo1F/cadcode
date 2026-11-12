@@ -137,3 +137,11 @@ test('a nut trap is a hexagon a slide fit bigger across the flats', () => {
   near(nutTrap('M3', { depth: 3 }).bounds().min[2], -3);
   assert.throws(() => nutTrap('M3', { depth: -1 }), /depth must be a positive number/);
 });
+
+test('a boss can leave a thinner floor, and a cell never digs into the floor it rests on', async () => {
+  const thin = boss('M2.5', { h: 3, floor: 0.6, fn: 64 });
+  near(thin.slice(0.65).area() < thin.slice(0.5).area() ? 1 : 0, 1);
+  assert.throws(() => boss('M3', { h: 3, floor: -1 }), /floor must be 0 or more/);
+  const { cell } = await import('../src/lib/components.js');
+  near(cell({ d: 12, l: 30 }).cutout.bounds().min[2], 0);
+});
