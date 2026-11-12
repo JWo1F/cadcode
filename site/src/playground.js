@@ -6,6 +6,7 @@ import { bindDownloadMenu } from '../../client/download-menu.js';
 import { storage } from '../../client/storage.js';
 import { showError as showErrorIn, showLogs as showLogsIn, showReadout, createPartPill } from '../../client/page-ui.js';
 import { bindPanelLayout } from '../../client/panel-layout.js';
+import { pack, unpack } from './share-link.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
@@ -112,19 +113,6 @@ const DRAFT_KEY = 'cadcode:playground';
 
 function saveDraft() {
   storage.set(DRAFT_KEY, { code: model.getValue(), example: currentExample, part: currentPart });
-}
-
-const toBase64Url = (bytes) => btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join('')).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
-const fromBase64Url = (text) => Uint8Array.from(atob(text.replaceAll('-', '+').replaceAll('_', '/')), (c) => c.charCodeAt(0));
-
-async function pack(code) {
-  const stream = new Blob([code]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-  return toBase64Url(new Uint8Array(await new Response(stream).arrayBuffer()));
-}
-
-async function unpack(packed) {
-  const stream = new Blob([fromBase64Url(packed)]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Response(stream).text();
 }
 
 async function shareLink() {
