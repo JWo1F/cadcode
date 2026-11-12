@@ -8,7 +8,7 @@
 
 /**
  * @typedef {{ name: string, type: string, default?: string, text: string }} Param
- * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2' | 'Frame' | 'Sketch' | 'Line' | 'Circle', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
+ * @typedef {{ id: string, name: string, owner?: 'Solid' | 'Shape2' | 'Frame' | 'Sketch' | 'Line' | 'Circle' | 'Path', signature: string, summary: string, params?: Param[], returns?: string, notes?: string[], example?: string }} Entry
  * @typedef {{ id: string, title: string, intro?: string, entries: Entry[] }} Section
  */
 
@@ -1171,6 +1171,22 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
         returns: '[x, y]',
       },
       {
+        id: 'sketch-path',
+        name: 'path',
+        owner: 'Sketch',
+        signature: '.path(start, options)',
+        summary: 'A path in the sketch, as `path()` starts one. The viewer draws its curve, the points its pieces end at, the handles of its Bézier curves, and its outline once closed: the way to see why a curve bends as it does.',
+        returns: 'Path',
+      },
+      {
+        id: 'sketch-spline',
+        name: 'spline',
+        owner: 'Sketch',
+        signature: '.spline(points, options)',
+        summary: 'A spline in the sketch, as `spline()` makes one, drawn with the points it passes through.',
+        returns: 'Shape2 when closed, else Path',
+      },
+      {
         id: 'sketch-polygon',
         name: 'polygon',
         owner: 'Sketch',
@@ -1249,6 +1265,152 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
         name: 'Sketch',
         signature: 'Sketch',
         summary: 'The class of sketches, exported for `instanceof` checks. Make sketches with `sketch`, not with `new`.',
+      },
+    ],
+  },
+  {
+    id: 'paths',
+    title: 'Paths',
+    intro: 'A path draws an outline piece by piece from a starting point: straight lines, Bézier curves, arcs and smooth splines through points, each starting where the last one ended. `close()` makes it a 2D shape; an open path gives its points to `sweep()`. Curves are cut into segments by `fn` and `fa`, as circles are. A path is built in place: every piece returns the same path.',
+    entries: [
+      {
+        id: 'path',
+        name: 'path',
+        signature: 'path(start, options)',
+        summary: 'Starts a path at a point.',
+        params: [
+          { name: 'start', type: '[x, y]', text: 'Where it starts: join 0.' },
+          fn,
+        ],
+        returns: 'Path',
+        example: `// A rocket's nose, to revolve: up the side, then curving in to the tip
+const nose = path([0, 0]).line([12, 0]).line([12, 20]).curve([12, 32], [6, 38], [0, 44]).close()
+nose.revolve()`,
+      },
+      {
+        id: 'spline',
+        name: 'spline',
+        signature: 'spline(points, options)',
+        summary: 'A smooth curve through points: a centripetal Catmull-Rom spline, which makes no loops or overshoot where the points are unevenly spaced. Closed, it is a 2D shape; open, a path to carry on or take the points of.',
+        params: [
+          { name: 'points', type: '[x, y][]', text: 'The points it passes through, at least 2, or 3 when closed.' },
+          { name: 'options.closed', type: 'boolean', default: 'false', text: 'Join the last point back to the first, smoothly, and return a `Shape2`.' },
+          { name: 'options.start', type: 'number', text: 'Optional, open only. The direction it leaves the first point, degrees counter-clockwise from +X. Without it the curve starts along its first chord.' },
+          { name: 'options.end', type: 'number', text: 'Optional, open only. The direction it arrives at the last point.' },
+          fn,
+        ],
+        returns: 'Shape2 when closed, else Path',
+        example: `const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: true })
+// A vase wall that leaves the base and meets the rim horizontally, to revolve
+const wall = spline([[30, 0], [42, 40], [26, 90], [34, 120]], { start: 0, end: 0 })`,
+      },
+      {
+        id: 'path-line',
+        name: 'line',
+        owner: 'Path',
+        signature: '.line(to)',
+        summary: 'A straight line to a point, or from here at an angle for a length.',
+        params: [{ name: 'to', type: '[x, y] | { angle, length }', text: 'The end, or degrees counter-clockwise from +X and how far.' }],
+        returns: 'Path',
+      },
+      {
+        id: 'path-curve',
+        name: 'curve',
+        owner: 'Path',
+        signature: '.curve(c1, c2, to)',
+        summary: 'A cubic Bézier curve to `to`, leaving towards `c1` and arriving from `c2`.',
+        params: [
+          { name: 'c1', type: '[x, y]', text: 'The control point the curve leaves towards.' },
+          { name: 'c2', type: '[x, y]', text: 'The control point it arrives from.' },
+          { name: 'to', type: '[x, y]', text: 'The end.' },
+        ],
+        returns: 'Path',
+      },
+      {
+        id: 'path-quad',
+        name: 'quad',
+        owner: 'Path',
+        signature: '.quad(c, to)',
+        summary: 'A quadratic Bézier curve to `to`, pulled towards one control point.',
+        params: [
+          { name: 'c', type: '[x, y]', text: 'The control point.' },
+          { name: 'to', type: '[x, y]', text: 'The end.' },
+        ],
+        returns: 'Path',
+      },
+      {
+        id: 'path-smooth',
+        name: 'smooth',
+        owner: 'Path',
+        signature: '.smooth(c2, to)',
+        summary: 'A cubic Bézier curve that carries on smoothly from the last one: its first control point mirrors the last curve\'s second through the current point, like SVG\'s `S`. After a piece that is not a cubic curve, the first control point is the current point.',
+        params: [
+          { name: 'c2', type: '[x, y]', text: 'The control point it arrives from.' },
+          { name: 'to', type: '[x, y]', text: 'The end.' },
+        ],
+        returns: 'Path',
+      },
+      {
+        id: 'path-arc',
+        name: 'arc',
+        owner: 'Path',
+        signature: '.arc(to, options)',
+        summary: 'A circular arc to `to`: carrying on along the direction the path is heading, tangent to it, or through a third point. Straight ahead, it is a line.',
+        params: [
+          { name: 'to', type: '[x, y]', text: 'The end.' },
+          { name: 'options.through', type: '[x, y]', text: 'Optional. A point the arc passes through, instead of carrying on tangent. The first piece of a path needs it, having no direction yet.' },
+        ],
+        returns: 'Path',
+        example: `path([0, 0]).line([20, 0]).arc([20, 10]).line([0, 10]).close()   // a D: the arc carries on from the line`,
+      },
+      {
+        id: 'path-spline',
+        name: 'spline',
+        owner: 'Path',
+        signature: '.spline(through, options)',
+        summary: 'A smooth curve through points, carrying on along the direction the path is heading.',
+        params: [
+          { name: 'through', type: '[x, y][]', text: 'The points to pass through, the last one where the piece ends.' },
+          { name: 'options.start', type: 'number', text: 'Optional. The direction to leave in, degrees from +X, when this is the path\'s first piece.' },
+          { name: 'options.end', type: 'number', text: 'Optional. The direction to arrive in.' },
+        ],
+        returns: 'Path',
+      },
+      {
+        id: 'path-close',
+        name: 'close',
+        owner: 'Path',
+        signature: '.close(options)',
+        summary: 'Closes the path back to its start with a straight line, if it is not there already, and makes it a 2D shape. `round` and `chamfer` soften the corners where pieces meet, as for `polygon`, by the index of the join: 0 is the start, then the end of each piece in order.',
+        params: [
+          { name: 'options.round', type: 'number | { [join]: r } | (join, point) => r', text: 'Optional. Rounds joins. The sides either side need room for it: between two lines it always works, next to a curve the curve\'s own short segments may be too short and it throws.' },
+          { name: 'options.chamfer', type: 'number | { [join]: c } | (join, point) => c', text: 'Optional. Cuts joins, as for `round`.' },
+        ],
+        returns: 'Shape2',
+      },
+      {
+        id: 'path-points',
+        name: 'points',
+        owner: 'Path',
+        signature: '.points()',
+        summary: 'The points along the path so far, from its start, curves cut into segments: a path to `sweep()` along.',
+        returns: '[x, y][]',
+        example: `const handle = path([0, 0]).curve([0, 30], [40, 30], [40, 0]).points()
+circle(3).sweep(handle.map(([x, y]) => [x, 0, y]))`,
+      },
+      {
+        id: 'path-end',
+        name: 'end',
+        owner: 'Path',
+        signature: '.end',
+        summary: 'Where the path is now: the end of its last piece.',
+        returns: '[x, y]',
+      },
+      {
+        id: 'Path',
+        name: 'Path',
+        signature: 'Path',
+        summary: 'The class of paths, exported for `instanceof` checks. Start paths with `path`, not with `new`.',
       },
     ],
   },

@@ -164,6 +164,10 @@ lid().layFlat('+Z')], { gap: 6 })` — `layFlat(side)` turns that side down onto
 stands a pad centered on a floor; `'before'`/`'after'` put a part wholly past the target's side, `'min'`/`'max'`
 flush with it, `gap` adds clearance. `box.at('+Y')` is the center of a side, as a pivot or target.
 
+**Curved outlines are paths.** `path([0, 0]).line([12, 0]).curve(c1, c2, [0, 44]).close()` for a revolve profile,
+`.arc(to)` for an arc tangent to the last piece, `spline(points, { closed: true })` for an organic outline through
+points. Draw it as `s.path(...)` in a sketch to see the Bézier handles in the viewer.
+
 **Work points out with a sketch, not arithmetic.** `const s = sketch(frame)`; `s.line(a, b).parallel(d)`,
 `.perpendicular(p)`, `.intersect(other)`, `s.circle(c, r)` give `[x, y]` points for `s.polygon(...)` and
 `s.extrude(...)`. Add the sketch to the part's return (`[body, s]`) and its guides show in the viewer and in

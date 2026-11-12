@@ -25,6 +25,7 @@ export function checkCoverage() {
     ...methodsOf(lib.Shape2).map((name) => `Shape2.${name}`),
     ...methodsOf(lib.Frame).map((name) => `Frame.${name}`),
     ...methodsOf(lib.Sketch).map((name) => `Sketch.${name}`),
+    ...methodsOf(lib.Path).map((name) => `Path.${name}`),
     ...methodsOf(Line).map((name) => `Line.${name}`),
     ...methodsOf(Circle).map((name) => `Circle.${name}`),
   ];

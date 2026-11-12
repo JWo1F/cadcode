@@ -4,6 +4,7 @@
 
 import { plane } from './frame.js';
 import { polygon } from './shapes.js';
+import { sketchPath, splineIn } from './path.js';
 
 /** @typedef {[number, number]} Vec2 */
 
@@ -222,6 +223,8 @@ export class Sketch {
     this.points = [];
     /** @internal @type {import('./shapes.js').Shape2[]} */
     this.profiles = [];
+    /** @internal The curves of its paths, piece by piece, for the viewer. @type {Vec2[][]} */
+    this.traces = [];
   }
 
   /**
@@ -265,6 +268,27 @@ export class Sketch {
   }
 
   /**
+   * A path in the sketch, as `path()` makes one: the viewer draws its curve, its points and the handles of
+   * its Bézier curves, and its outline once it is closed.
+   * @param {number[]} start
+   * @param {{ fn?: number }} [options]
+   * @returns {import('./path.js').Path}
+   */
+  path(start, options = {}) {
+    return sketchPath(start, options, hooksFor(this));
+  }
+
+  /**
+   * A spline through points in the sketch, as `spline()` makes one, drawn with its points.
+   * @param {number[][]} points
+   * @param {import('./path.js').SplineOptions} [options]
+   * @returns {import('./shapes.js').Shape2 | import('./path.js').Path}
+   */
+  spline(points, options = {}) {
+    return splineIn(points, options, hooksFor(this));
+  }
+
+  /**
    * A polygon through points of the sketch, with the same arguments as `polygon()`. The viewer draws it
    * in place with the guides.
    * @param {number[][]} points
@@ -288,6 +312,22 @@ export class Sketch {
   extrude(shape, depth, options) {
     return this.frame.extrude(shape, depth, options);
   }
+}
+
+/**
+ * What a path tells its sketch as it grows, so the viewer can draw it.
+ * @param {Sketch} sketch
+ * @returns {import('./path.js').PathHooks}
+ */
+function hooksFor(sketch) {
+  return {
+    handle: (a, b) => {
+      if (Math.hypot(...sub(b, a)) > EPS) keep(new Line(sketch, a, b, false));
+    },
+    point: (p) => void mark(sketch, p),
+    trace: (points) => void sketch.traces.push(points),
+    profile: (shape) => void sketch.profiles.push(shape),
+  };
 }
 
 /**

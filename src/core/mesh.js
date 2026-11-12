@@ -88,6 +88,7 @@ function guideLines(sketch) {
     ...lines.flatMap((l) => (l.endless ? [l.start] : [l.start, l.end])),
     ...circles.flatMap(({ center: [x, y], r }) => [[x - r, y - r], [x + r, y + r]]),
     ...sketch.points,
+    ...sketch.traces.flat(),
     ...sketch.profiles.flatMap((p) => {
       const { min, max } = p.bounds();
       return p.isEmpty() ? [] : [min, max];
@@ -108,6 +109,9 @@ function guideLines(sketch) {
       const ends = across(line.start, line.direction, box);
       if (ends) segment(...ends);
     }
+  }
+  for (const trace of sketch.traces) {
+    for (let k = 1; k < trace.length; k++) segment(trace[k - 1], trace[k]);
   }
   for (const { center, r } of circles) {
     const at = (k) => [center[0] + r * Math.cos((2 * Math.PI * k) / CIRCLE_SEGMENTS), center[1] + r * Math.sin((2 * Math.PI * k) / CIRCLE_SEGMENTS)];

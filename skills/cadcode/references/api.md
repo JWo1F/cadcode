@@ -12,6 +12,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 - Functions
 - Frames
 - Sketches
+- Paths
 - Lofts and threads
 - Helpers
 
@@ -153,6 +154,22 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 | `s.point(p)` | Marks `p` in the viewer, returns it. Crossings are marked automatically. |
 | `s.polygon(...)` | Same args as `polygon()`; drawn in place. Returns `Shape2` in frame coords. |
 | `s.extrude(shape, depth, { through })` | `s.frame.extrude(...)`. |
+
+## Paths
+
+| API | Notes |
+| --- | --- |
+| `path(start, { fn })` | Mutable builder (each method returns the same `Path`); pieces start where the last ended. Curves: `fn` per full turn, else one segment per `fa` degrees of turning (no `fs`, like text). |
+| `.line(p)` / `.line({ angle, length })` | Straight piece. |
+| `.curve(c1, c2, p)` / `.quad(c, p)` / `.smooth(c2, p)` | Cubic / quadratic Bézier; `smooth` mirrors the last cubic's c2 (SVG `S`), else c1 = current point. |
+| `.arc(p)` / `.arc(p, { through: q })` | Tangent arc continuing the heading (first piece must use `through`); collinear = line. |
+| `.spline([p1, …, pn], { start, end })` | Centripetal Catmull-Rom through the points, starting tangent to the heading (`start` angle only for a first piece), `end` = arrival angle in degrees. |
+| `.close({ round, chamfer, fn })` | Adds a closing line if needed → `Shape2`. Corner options index **joins** (0 = start, then each piece's end), number/object/function as for `polygon`; next to a curve the facet is short and rounding may throw "does not fit". |
+| `.points()` / `.end` | `[x, y][]` from the start (for `sweep`, map to `[x, 0, y]` etc.) / current point. |
+| `spline(points, { closed, start, end, fn })` | Closed → `Shape2` (≥ 3 points), open → `Path` (≥ 2). |
+| `s.path(...)` / `s.spline(...)` | Same, in a sketch: viewer shows trace (dashed), piece ends, Bézier handles, and the closed outline. |
+
+Use paths for revolve profiles and organic outlines instead of hand-computed `cos`/`sin` arcs or hulls of circles.
 
 ## Lofts and threads
 
