@@ -157,6 +157,11 @@ surface (its normal square to it), `frameAt(point, normal)` one at any point, an
 for vertical corners, then `{ touching: '-Z' }` for the bottom rim (it runs round the rounded corners), `{ convex: false }`
 to fill inside edges. Check what a filter takes with `.edges(filter)`. Prefer `cube({ round })` when the part is a box.
 
+**Screws and parts come from the library.** `screwHole('M3', { length: 10, head: 'countersunk' })`, `boss('M3', { h: 14,
+hole: 'insert' })`, `nutTrap('M3')`, placed with `face.place(...)`; clearances from `fit('slide')`, not hand-picked numbers.
+For electronics, `usbC()`, `proMicro()`, `oled091()`, `ec11()`, `led5()`, `cell()` give a `body` for the assembly and a
+`cutout` for the enclosure that move together (`.align()`, `.place()`); their sizes are nominal — ask the user to measure.
+
 **Print layouts:** model parts where they sit in the assembly, then `print: () => arrange([box().layFlat(),
 lid().layFlat('+Z')], { gap: 6 })` — `layFlat(side)` turns that side down onto the bed, `arrange` spreads them out.
 

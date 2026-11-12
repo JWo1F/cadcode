@@ -179,7 +179,7 @@ Use paths for revolve profiles and organic outlines instead of hand-computed `co
 
 ## Hardware and components
 
-Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'`; others throw. Cutters start at z = 0, go down along -Z, and reach 1 above z = 0 — place them with `face.place(cutter)` (local -Z goes into the part on any face), never a hand-written `+1`.
+Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'`; others throw. Cutters start at z = 0, go down along -Z, and reach 1 above z = 0 — place them with `face.place(cutter)` (local -Z goes into the part on any face), never a hand-written `+1`. Hole polygons are circumscribed: flats ≥ the diameter at any `fn`.
 
 | API | Notes |
 | --- | --- |
