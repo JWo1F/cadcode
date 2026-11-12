@@ -9,6 +9,7 @@
 //                    section (the plane dragged), measure, measure-label
 
 import { groupBuffers } from './mesh-buffers.js';
+import { storage } from './storage.js';
 
 /** The event fields OrbitControls reads. */
 const FIELDS = ['pointerId', 'pointerType', 'button', 'buttons', 'clientX', 'clientY', 'pageX', 'pageY', 'deltaX', 'deltaY', 'deltaMode', 'ctrlKey', 'metaKey', 'shiftKey', 'altKey', 'key', 'code'];
@@ -186,16 +187,9 @@ export function bindDisplayButtons(view, buttons) {
   const apply = (mode) => {
     view.setDisplay(mode);
     for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.display === mode));
-    try {
-      localStorage.setItem(KEY, mode);
-    } catch {
-      // Storage unavailable (private window): the mode just isn't remembered.
-    }
+    storage.setText(KEY, mode);
   };
-  let saved = null;
-  try {
-    saved = localStorage.getItem(KEY);
-  } catch {}
+  const saved = storage.getText(KEY);
   let mode = buttons.some((button) => button.dataset.display === saved) ? saved : 'solid';
   for (const button of buttons) {
     button.addEventListener('click', () => {

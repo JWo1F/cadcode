@@ -5,6 +5,9 @@
 // Markup it expects: #download (with a [data-format-label] inside), #download-open
 // (popovertarget="download-menu") and #download-menu (a popover .menu).
 
+import { storage } from './storage.js';
+import { bindMenuKeys } from './menu-keys.js';
+
 const STORAGE_KEY = 'cadcode:download-format';
 
 const FORMATS = [
@@ -24,7 +27,7 @@ export function bindDownloadMenu(savers) {
   const menu = document.getElementById('download-menu');
   const formatLabel = main.querySelector('[data-format-label]');
 
-  let current = formats.find((f) => f.id === remembered()) ?? formats[0];
+  let current = formats.find((f) => f.id === storage.getText(STORAGE_KEY)) ?? formats[0];
 
   const items = formats.map((format) => {
     const item = Object.assign(document.createElement('button'), { type: 'button', textContent: format.label, title: format.title });
@@ -43,11 +46,7 @@ export function bindDownloadMenu(savers) {
     formatLabel.textContent = format.label;
     main.title = format.title;
     items.forEach((item, i) => item.setAttribute('aria-checked', String(formats[i] === format)));
-    try {
-      localStorage.setItem(STORAGE_KEY, format.id);
-    } catch {
-      // Private windows may refuse storage; the choice then lasts until the page reloads.
-    }
+    storage.setText(STORAGE_KEY, format.id);
   }
 
   async function save() {
@@ -76,19 +75,5 @@ export function bindDownloadMenu(savers) {
     items[formats.indexOf(current)].focus();
   });
 
-  // Arrows move through the menu; Escape closes it (the popover's own).
-  menu.addEventListener('keydown', (event) => {
-    const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-    if (!step) return;
-    event.preventDefault();
-    items[(items.indexOf(document.activeElement) + step + items.length) % items.length]?.focus();
-  });
-}
-
-function remembered() {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
+  bindMenuKeys(menu, () => items);
 }

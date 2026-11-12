@@ -8,6 +8,7 @@
 // overrides it ran with, and the panel follows them, except for the field being
 // typed in and while its own change is still on the way.
 
+import { bindMenuKeys } from './menu-keys.js';
 import { HEX, kindOf, stepOf, stable, same, formatJSON, followServer } from './params-values.js';
 
 /**
@@ -219,13 +220,7 @@ export function createParamsPanel({ form, resetAll, onChange, collapsed }) {
       event.preventDefault();
       menu.showPopover();
     });
-    menu.addEventListener('keydown', (event) => {
-      const at = items.indexOf(/** @type {HTMLButtonElement} */ (document.activeElement));
-      const next = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: items.length - 1 }[event.key];
-      if (next === undefined) return;
-      event.preventDefault();
-      items[(next + items.length) % items.length].focus();
-    });
+    bindMenuKeys(menu, () => items);
 
     row.append(trigger, menu);
     return { set };
