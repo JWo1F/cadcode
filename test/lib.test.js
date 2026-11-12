@@ -299,3 +299,10 @@ test('clip keeps what lies within ranges along the axes', () => {
   assert.throws(() => cube(1).clip({ x: [2, 1] }), /from < to/);
   assert.throws(() => square(1).clip({ z: [0, 1] }), /unknown axis "z"/);
 });
+
+test('clip with outside keeps what lies outside the ranges', () => {
+  near(cube(10).clip({ x: [2, 5] }, { outside: true }).volume(), 1000 - 300);
+  near(cube(10).clip({ x: [-Infinity, 5], y: [0, 3] }, { outside: true }).volume(), 1000 - 150);
+  near(cube(10).clip({ x: [20, 30] }, { outside: true }).volume(), 1000);
+  near(square(10).clip({ y: [5, Infinity] }, { outside: true }).area(), 50);
+});

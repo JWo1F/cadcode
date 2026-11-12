@@ -400,14 +400,18 @@ export class Solid {
   /**
    * Keeps the part of the solid within ranges along the axes: `dome.clip({ z: [0, Infinity] })` keeps
    * what is above the XY plane, `turret.clip({ x: [-9, 9] })` a slab. Axes left out are not cut. For a
-   * section to look inside, `part.clip({ x: [0, Infinity] })`.
+   * section to look inside, `part.clip({ x: [0, Infinity] })`. With `{ outside: true }` it keeps what
+   * lies outside that box instead: `base.clip({ x: [-20, 20], y: [-Infinity, 5] }, { outside: true })`
+   * cuts a notch.
    * @param {{ x?: [number, number], y?: [number, number], z?: [number, number] }} ranges
+   * @param {{ outside?: boolean }} [options]
    * @returns {Solid}
    */
-  clip(ranges) {
+  clip(ranges, options = {}) {
     const box = clipBox('clip()', this.bounds(), ranges ?? {}, ['x', 'y', 'z']);
-    if (box.some(([a, b]) => !(a < b))) return new Solid(Manifold.compose([]));
-    return this.intersect(new Solid(Manifold.cube(box.map(([a, b]) => b - a), false)).translate(box.map(([a]) => a)));
+    if (box.some(([a, b]) => !(a < b))) return options.outside ? this : new Solid(Manifold.compose([]));
+    const block = new Solid(Manifold.cube(box.map(([a, b]) => b - a), false)).translate(box.map(([a]) => a));
+    return options.outside ? this.subtract(block) : this.intersect(block);
   }
 
   /**
@@ -711,14 +715,16 @@ export class Shape2 {
 
   /**
    * Keeps the part of the shape within ranges along X and Y, as `Solid.clip` does:
-   * `arch.clip({ y: [0, Infinity] })` keeps what is above the X axis.
+   * `arch.clip({ y: [0, Infinity] })` keeps what is above the X axis; `{ outside: true }` keeps the rest.
    * @param {{ x?: [number, number], y?: [number, number] }} ranges
+   * @param {{ outside?: boolean }} [options]
    * @returns {Shape2}
    */
-  clip(ranges) {
+  clip(ranges, options = {}) {
     const box = clipBox('clip()', this.bounds(), ranges ?? {}, ['x', 'y']);
-    if (box.some(([a, b]) => !(a < b))) return new Shape2(new CrossSection([], 'Positive'));
-    return this.intersect(new Shape2(CrossSection.square([box[0][1] - box[0][0], box[1][1] - box[1][0]], false)).translate([box[0][0], box[1][0]]));
+    if (box.some(([a, b]) => !(a < b))) return options.outside ? this : new Shape2(new CrossSection([], 'Positive'));
+    const block = new Shape2(CrossSection.square([box[0][1] - box[0][0], box[1][1] - box[1][0]], false)).translate([box[0][0], box[1][0]]);
+    return options.outside ? this.subtract(block) : this.intersect(block);
   }
 
   /**

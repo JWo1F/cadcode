@@ -220,7 +220,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.minkowski(...shapes)` | Minkowski sum, like OpenSCAD's `minkowski()`: `.minkowski(sphere(1))` rounds every edge and grows the part by 1 on each side. Fast for convex shapes, seconds for a part with holes. The result is uncolored. |
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
-| `.clip({ x, y, z })` | Keeps what lies within `[from, to]` ranges along the axes (ends may be infinite): `dome.clip({ z: [0, Infinity] })`. |
+| `.clip({ x, y, z }, { outside })` | Keeps what lies within `[from, to]` ranges along the axes (ends may be infinite): `dome.clip({ z: [0, Infinity] })`. `outside: true` keeps the rest instead: a notch without a big cube. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
 | `.fillet(r, filter)`, `.chamfer(size, filter)` | Round or cut edges after the booleans: outside edges are cut, inside ones (wall meets floor) filled. `filter` picks them by the faces either side: `{ along: 'z' }`, `{ touching: '-Z' }`, `{ between: ['+Z', '-X'] }`, `{ convex: false }`, `{ where: (edge) => ... }`; none takes every edge. An edge follows one flat face, so a floor's rim runs on round rounded corners. Where rounds meet at a corner they overlap rather than blend. |
 | `.edges(filter)` | The edges a filter picks, to check before rounding them: `{ points, closed, length, normals, convex, angle, ... }`. |
@@ -234,8 +234,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | --- | --- |
 | `.translate([x, y])`, `.rotate(a)`, `.scale(s)`, `.mirror([nx, ny])` | |
 | `.rotate(a, { around })` | Around a `point`, another shape's bounding-box center, or `[x, y]`. |
-| `.ring(t, { outward })` | A wall `t` wide along the outline, inside it (or outside): a tube's section, a rim. |
-| `.clip({ x, y })` | Keeps what lies within ranges along X and Y. |
+| `.ring(t, { outward })` | A wall `t` wide along the outline, inside it (or outside): a tube's section, a rim. It runs all the way round, across an edge meant to stay open too: clip that side off. |
+| `.clip({ x, y }, { outside })` | Keeps what lies within ranges along X and Y, or outside them. |
 | `.offset(r)` | Grow (or shrink, when negative) with rounded corners. `.offset({ delta })` keeps corners sharp, and `.offset({ delta, chamfer: true })` cuts them. |
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | Same as for solids. |
 | `.extrude(h, { center, twist, scale, divisions })` | Extrudes along +Z, like `linear_extrude`. |
@@ -332,7 +332,7 @@ const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: 
 
 ### Hardware
 
-Sizes M2, M2.5, M3, M4, M5, M6, M8. Cutters are drawn at a surface at z = 0 going down along -Z and reach 1 above it; put one on a face with `box.face('+Z').place(cutter)`. A hole's polygon is drawn round its diameter, so even a coarse one takes its screw.
+Sizes M2, M2.5, M3, M4, M5, M6, M8 for machine screws, and W3, W3.5, W4, W4.5, W5, W6 for wood screws (no nut, no insert). Cutters are drawn at a surface at z = 0 going down along -Z and reach 1 above it; put one on a face with `box.face('+Z').place(cutter)`. A hole's polygon is drawn round its diameter, so even a coarse one takes its screw.
 
 | Function | Notes |
 | --- | --- |
@@ -349,10 +349,10 @@ Common parts as a `Component`: a colored `body`, the `cutout` to subtract from t
 | Function | Notes |
 | --- | --- |
 | `usbC()` | Receptacle with its mouth at x = 0 facing -X; the cutout runs out to x = -12. Point `mouth`. |
-| `proMicro()` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X. Cutout: the connector only. Point `usb`. |
-| `oled091()` | 0.91" OLED, board on z = 0, centered, seen from +Z. Cutout: pocket and window. |
-| `ec11({ shaft })` | Rotary encoder, mounting face at z = 0, shaft up. Cutout: the bushing's hole. Point `face`. |
-| `led5()` | 5 mm LED on z = 0. Cutout: the hole from the flange up. |
+| `proMicro({ length, width, thickness, usbDrop })` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X; sizes default to 34 × 17 × 1.6. Cutout: the connector only. Point `usb`. |
+| `oled091({ board, glass, active, glassShift, activeShift })` | 0.91" OLED, board on z = 0, centered, seen from +Z; shift the glass and active area if yours are off center. Cutout: pocket and window. |
+| `ec11({ shaft })` | Rotary encoder, mounting face at z = 0, shaft up. Cutout: the bushing's hole, through a panel on either side of the face. Point `face`. |
+| `led5({ d, h, flange })` | 5 mm LED on z = 0, or any size. Cutout: the hole from the flange up. |
 | `cell({ d, l })` | Cylindrical cell along +X resting on z = 0, an 18650 by default. Cutout: a cradle. |
 
 ### Lofts and threads

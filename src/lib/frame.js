@@ -86,9 +86,9 @@ export class Frame {
   }
 
   /**
-   * Moves a solid or point built around the origin onto the frame: its X and Y go to the frame's
-   * u and v, its Z along the normal.
-   * @template {import('./shapes.js').Solid | import('./shapes.js').Point} T
+   * Moves a solid, a point or a component built around the origin onto the frame: its X and Y go to
+   * the frame's u and v, its Z along the normal.
+   * @template {import('./shapes.js').Solid | import('./shapes.js').Point | import('./components.js').Component} T
    * @param {T} item
    * @returns {T}
    */

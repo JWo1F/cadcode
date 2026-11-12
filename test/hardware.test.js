@@ -145,3 +145,13 @@ test('a boss can leave a thinner floor, and a cell never digs into the floor it 
   const { cell } = await import('../src/lib/components.js');
   near(cell({ d: 12, l: 30 }).cutout.bounds().min[2], 0);
 });
+
+test('wood screws have holes and heads but no nut or insert', () => {
+  assert.equal(screw('W3.5').clearance, 4.0);
+  assert.equal(screw('W3.5').countersunk.d, 7);
+  const hole = screwHole('W3.5', { length: 5, head: 'countersunk', fn: 64 });
+  near(width(hole.slice(-1e-4)), 7, 1e-3);
+  assert.throws(() => nutTrap('W4'), /W4 is a wood screw, which has no nut/);
+  assert.throws(() => screwHole('W4', { hole: 'insert' }), /no heat-set insert/);
+  assert.throws(() => boss('W4', { h: 10, hole: 'insert' }), /no heat-set insert/);
+});

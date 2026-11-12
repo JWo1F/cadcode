@@ -33,10 +33,19 @@ const SIZES = {
   M5: { d: 5, clearance: 5.5, tap: 4.2, capHead: { d: 8.5, h: 5 }, countersunk: { d: 11.2 }, nut: { s: 8, h: 4.0 }, insert: { d: 6.4, depth: 9.5 } },
   M6: { d: 6, clearance: 6.6, tap: 5.0, capHead: { d: 10, h: 6 }, countersunk: { d: 13.44 }, nut: { s: 10, h: 5.0 }, insert: { d: 8.0, depth: 12.7 } },
   M8: { d: 8, clearance: 9.0, tap: 6.8, capHead: { d: 13, h: 8 }, countersunk: { d: 17.92 }, nut: { s: 13, h: 6.5 }, insert: { d: 9.7, depth: 12.7 } },
+  // Wood and chipboard screws (W for wood), to fix a printed part to wood: clearance half a millimetre
+  // over the thread, a 90° countersunk head twice the thread across, a pan head for `head: 'cap'`, and
+  // a pilot of three quarters of the thread for screwing into plastic. No nut and no insert.
+  W3: { d: 3, clearance: 3.5, tap: 2.2, capHead: { d: 6, h: 2.1 }, countersunk: { d: 6 }, nut: null, insert: null },
+  'W3.5': { d: 3.5, clearance: 4.0, tap: 2.6, capHead: { d: 7, h: 2.5 }, countersunk: { d: 7 }, nut: null, insert: null },
+  W4: { d: 4, clearance: 4.5, tap: 3.0, capHead: { d: 8, h: 2.8 }, countersunk: { d: 8 }, nut: null, insert: null },
+  'W4.5': { d: 4.5, clearance: 5.0, tap: 3.4, capHead: { d: 9, h: 3.2 }, countersunk: { d: 9 }, nut: null, insert: null },
+  W5: { d: 5, clearance: 5.5, tap: 3.8, capHead: { d: 10, h: 3.5 }, countersunk: { d: 10 }, nut: null, insert: null },
+  W6: { d: 6, clearance: 6.6, tap: 4.5, capHead: { d: 12, h: 4.2 }, countersunk: { d: 12 }, nut: null, insert: null },
 };
 
 /**
- * @typedef {'M2' | 'M2.5' | 'M3' | 'M4' | 'M5' | 'M6' | 'M8'} ScrewSize
+ * @typedef {'M2' | 'M2.5' | 'M3' | 'M4' | 'M5' | 'M6' | 'M8' | 'W3' | 'W3.5' | 'W4' | 'W4.5' | 'W5' | 'W6'} ScrewSize
  */
 
 /**
@@ -47,9 +56,9 @@ const SIZES = {
  * @property {number} tap pilot hole for a screw that cuts its own thread into printed plastic
  * @property {{ d: number, h: number }} capHead socket cap head (ISO 4762): diameter and height
  * @property {{ d: number }} countersunk countersunk head (ISO 10642, 90°): diameter at the top
- * @property {{ s: number, h: number }} nut hex nut (ISO 4032): across flats and thickness
- * @property {{ d: number, depth: number }} insert hole for a typical brass heat-set insert; inserts
- *   vary by brand, so check the datasheet of yours
+ * @property {{ s: number, h: number } | null} nut hex nut (ISO 4032): across flats and thickness; null for a wood screw
+ * @property {{ d: number, depth: number } | null} insert hole for a typical brass heat-set insert; inserts
+ *   vary by brand, so check the datasheet of yours; null for a wood screw
  */
 
 /**
@@ -64,11 +73,17 @@ function lookup(op, size) {
   return row;
 }
 
+/** The part of a size that a wood screw lacks, or an error saying so. @template T @param {string} op @param {string} size @param {T | null} part @param {string} what @returns {T} */
+function needs(op, size, part, what) {
+  if (!part) throw new Error(`${op}: ${size} is a wood screw, which has no ${what}`);
+  return part;
+}
+
 /**
  * The numbers for a metric screw size, in mm: its clearance and tap holes, cap and countersunk
  * heads, hex nut and heat-set insert hole. A fresh object each call, so changing it changes nothing else.
  * `screw('M3').capHead.d` is 5.5.
- * @param {ScrewSize} size `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'` or `'M8'`
+ * @param {ScrewSize} size `'M2'` … `'M8'` for machine screws, `'W3'` … `'W6'` for wood screws
  * @returns {ScrewData}
  */
 export function screw(size) {
@@ -167,11 +182,11 @@ export function screwHole(size, options = {}) {
   const { head = 'none', hole = 'clearance', fn } = options;
   if (!HEADS.includes(head)) throw new Error(`${op}: head must be one of ${HEADS.map((h) => `'${h}'`).join(', ')}, got ${JSON.stringify(head)}`);
   if (!HOLES.includes(hole)) throw new Error(`${op}: hole must be one of ${HOLES.map((h) => `'${h}'`).join(', ')}, got ${JSON.stringify(hole)}`);
-  const length = options.length ?? (hole === 'insert' ? s.insert.depth : undefined);
+  const length = options.length ?? (hole === 'insert' ? needs(op, size, s.insert, 'heat-set insert').depth : undefined);
   if (length === undefined) throw new Error(`${op}: give the hole's length, how deep it goes below z = 0`);
   positive(op, 'length', length);
 
-  const holeD = hole === 'clearance' ? s.clearance : hole === 'tap' ? s.tap : s.insert.d;
+  const holeD = hole === 'clearance' ? s.clearance : hole === 'tap' ? s.tap : needs(op, size, s.insert, 'heat-set insert').d;
   const shaft = rod(holeD, -length, OVERSHOOT, fn);
   if (head === 'none') return shaft;
 
@@ -219,7 +234,7 @@ export function boss(size, options) {
   if (!(typeof floor === 'number' && floor >= 0)) throw new Error(`${op}: floor must be 0 or more, got ${JSON.stringify(floor)}`);
   positive(op, 'h', h);
   if (!['tap', 'insert', 'clearance'].includes(hole)) throw new Error(`${op}: hole must be 'tap', 'insert' or 'clearance', got ${JSON.stringify(hole)}`);
-  const holeD = hole === 'clearance' ? s.clearance : hole === 'tap' ? s.tap : s.insert.d;
+  const holeD = hole === 'clearance' ? s.clearance : hole === 'tap' ? s.tap : needs(op, size, s.insert, 'heat-set insert').d;
   // Rounded up, so the wall is never thinner than BOSS_WALL; the small epsilon keeps 6.6 from becoming 6.7.
   const d = diameter ?? Math.ceil(Math.max(2.2 * s.d, holeD + 2 * BOSS_WALL) * 10 - 1e-9) / 10;
   positive(op, 'd', d);
@@ -252,11 +267,12 @@ export function boss(size, options) {
 export function nutTrap(size, options = {}) {
   const op = 'nutTrap()';
   const s = lookup(op, size);
-  const depth = options.depth ?? s.nut.h + 0.2;
+  const nut = needs(op, size, s.nut, 'nut');
+  const depth = options.depth ?? nut.h + 0.2;
   const clearance = options.fit ?? fit('slide');
   positive(op, 'depth', depth);
   if (!(typeof clearance === 'number' && clearance >= 0)) throw new Error(`${op}: fit must be 0 or more, got ${JSON.stringify(clearance)}`);
   // A six-sided cylinder has a corner on +X; across its corners is 2 / √3 times across its flats.
-  const acrossCorners = ((s.nut.s + 2 * clearance) * 2) / Math.sqrt(3);
+  const acrossCorners = ((nut.s + 2 * clearance) * 2) / Math.sqrt(3);
   return cylinder({ d: acrossCorners, h: depth + OVERSHOOT, fn: 6 }).translate([0, 0, -depth]);
 }

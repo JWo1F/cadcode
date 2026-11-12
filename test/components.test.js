@@ -51,7 +51,7 @@ test('ec11: mounting face on z = 0, body below, shaft up to `shaft`', () => {
   close(enc.points.face.toArray(), [0, 0, 0]);
   const { min, max } = enc.cutout.bounds();
   near(max[0] - min[0], 7.4, 1e-3);
-  near(min[2], -1);
+  near(min[2], -6.5); // from the body's bottom, through a panel on either side of the face
   near(max[2], 12);
   // The D flat leaves 4.5 across the shaft.
   const shaft = enc.body.slice(15).bounds();
@@ -94,7 +94,7 @@ test('body, cutout and points move together', () => {
 
   const placed = ec11().place(plane.XY.offset(5));
   close(placed.points.face.toArray(), [0, 0, 5]);
-  near(placed.cutout.bounds().min[2], 4);
+  near(placed.cutout.bounds().min[2], 5 - 6.5);
 });
 
 test('align moves everything by the body\'s bounds', () => {
@@ -116,4 +116,22 @@ test('a component is built from solids and points, and never changes', () => {
   close(moved.points.tip.toArray(), [2, 1, 2]);
   assert.throws(() => new Component({ body: cube(1) }), /cutout must be a solid/);
   assert.throws(() => new Component({ body: cube(1), cutout: cube(1), points: { a: [0, 0, 0] } }), /point "a" must be a point/);
+});
+
+test('components take their sizes as options, and frames place them', async () => {
+  const { proMicro, oled091, led5, ec11 } = await import('../src/lib/components.js');
+  const { plane } = await import('../src/lib/frame.js');
+  const board = proMicro({ length: 33, width: 18, fn: 32 });
+  assert.ok(Math.abs(board.body.bounds().max[0] - 33) < 1e-6);
+  assert.ok(Math.abs(board.body.bounds().max[1] - 9) < 1e-6);
+  const shifted = oled091({ activeShift: [2, 0] });
+  const plain = oled091();
+  assert.ok(Math.abs(shifted.cutout.clip({ z: [3, 20] }).bounds().min[0] - plain.cutout.clip({ z: [3, 20] }).bounds().min[0] - 2) < 1e-6);
+  const three = led5({ d: 3, h: 5.3, flange: [3.8, 1], fn: 32 });
+  assert.ok(Math.abs(three.body.bounds().max[2] - 5.3) < 1e-6);
+  // The encoder's hole goes through a panel on either side of its mounting face.
+  const e = ec11({ fn: 32 });
+  assert.ok(e.cutout.bounds().min[2] <= -6.5 + 1e-9 && e.cutout.bounds().max[2] >= 12 - 1e-9);
+  const placed = plane.XZ.offset(5).place(e);
+  assert.ok(Math.abs(placed.points.face.y - 5) < 1e-9);
 });

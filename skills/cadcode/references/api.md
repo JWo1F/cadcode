@@ -78,7 +78,7 @@ booleans or a part's export.
 | `.project()` | `Shape2` outline projected onto XY. |
 | `.volume()`, `.surfaceArea()` | |
 | `.bounds()` | `{ min: [x, y, z], max: [x, y, z] }` |
-| `.clip({ x, y, z })` | Intersect with a box: each given axis `[from, to]` (±Infinity ok), others unbounded. Replaces BIG-cube half-spaces and slabs. |
+| `.clip({ x, y, z }, { outside = false })` | Intersect with a box: each given axis `[from, to]` (±Infinity ok), others unbounded; `outside: true` subtracts the box instead. Replaces BIG-cube half-spaces, slabs and notches. |
 | `.isEmpty()` | |
 | `.fillet(r, { between, touching, along, convex, where, fn })` / `.chamfer(size, filter)` | Post-boolean edge rounding. Edge = run of mesh edges with > 20° turn, chained along ONE flat face (base) through points where it bends ≤ 60° (rims round rounded corners and cylinder rims are single closed edges; box corners end a run). Outside (convex) edges: subtract swept sliver; inside: union filler (stops at open ends). Filters (all must hold): `between: [dirA, dirB]` (faces at the edge's start, either order), `touching: dir`, `along: 'x'\|'y'\|'z'\|vec` (straight only), `convex: bool`, `where: fn(edge)`. No filter = every edge; zero matches throws. Rounds overlap at corners (no ball blends). Keep r below the adjacent faces' sizes. Order matters: fillet vertical corners first, then rims (they then run round). |
 | `.edges(filter)` | `{ points, closed, from, to, direction (null if not straight), length, normals: [base, side at start], convex, angle }[]` — inspect before filleting. |
@@ -99,7 +99,7 @@ booleans or a part's export.
 | `.revolve({ angle = 360, fn })` | `rotate_extrude`: the shape's X becomes the radius, Y becomes Z. |
 | `.sweep(path, { closed = false, twist = 0, scale = 1, up })` | Along `path`, `[x, y, z]` points. The drawing's +Z follows the path, carried without twist (rotation-minimizing); `up: v` keeps its +Y toward `v` instead. Starts as `extrude` would on a path along +Z. `closed` loops back to the first point (no scale; twist only in whole turns). Corners mitered. A path tighter than the profile self-intersects: no check. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
-| `.ring(t, { outward = false })` | `shape − shape.offset({ delta: −t })` (or `offset(+t) − shape`): a wall along the outline. |
+| `.ring(t, { outward = false })` | `shape − shape.offset({ delta: −t })` (or `offset(+t) − shape`): a wall along the whole outline, including an edge meant to stay open — clip it off. |
 | `.clip({ x, y })` | As for Solid. |
 | `.at(side)`, `.align(target, { x, y, gap })` | As for `Solid`, X/Y only; `at` returns `[x, y]`. |
 
@@ -136,7 +136,7 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 | `frame.extrude(shape2, depth, { through = false, center = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through: true` adds 1 at both ends (cuts through a wall); `through: 'start'` adds 1 back past the plane only (a blind pocket from a face, or a boss sunk into its base) — never a hand-written `+1`. `center`: plane in the middle, `|depth|` thick; not with `'start'`. |
 | `frame.offset(d)` | Moved along the normal. |
 | `frame.flip()` | Normal reversed, u/v kept (det flips). For −Z cutters on a frame whose normal points into the part. |
-| `frame.place(solid \| point)` | Local X, Y → u, v; local Z → normal. |
+| `frame.place(solid \| point \| component)` | Local X, Y → u, v; local Z → normal. |
 | `frame.origin`, `frame.normal` | `[x, y, z]`. |
 
 `toFront(shape, depth, y0)` (extrude towards -Y from y = y0) is `plane.XZ.offset(y0).extrude(shape, -depth)`.
@@ -180,7 +180,7 @@ Use paths for revolve profiles and organic outlines instead of hand-computed `co
 
 ## Hardware and components
 
-Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'`; others throw. Cutters start at z = 0, go down along -Z, and reach 1 above z = 0 — place them with `face.place(cutter)` (local -Z goes into the part on any face), never a hand-written `+1`. Hole polygons are circumscribed: flats ≥ the diameter at any `fn`.
+Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'` (machine) and `'W3'`, `'W3.5'`, `'W4'`, `'W4.5'`, `'W5'`, `'W6'` (wood/chipboard: clearance d + 0.5, 90° countersunk 2d, pan head as capHead, tap 0.75d, nut/insert null → nutTrap/insert throw); others throw. Cutters start at z = 0, go down along -Z, and reach 1 above z = 0 — place them with `face.place(cutter)` (local -Z goes into the part on any face), never a hand-written `+1`. Hole polygons are circumscribed: flats ≥ the diameter at any `fn`.
 
 | API | Notes |
 | --- | --- |
@@ -191,10 +191,10 @@ Sizes `'M2'`, `'M2.5'`, `'M3'`, `'M4'`, `'M5'`, `'M6'`, `'M8'`; others throw. Cu
 | `nutTrap(size, { depth, fit })` | Hex pocket cutter, across flats s + 2·fit (default slide), depth nut h + 0.2. Corners on ±X. |
 | `Component` | `{ body, cutout, points }`; `translate`, `rotate`, `mirror`, `transform`, `place(frame)`, `align(target, opts)` (by the body's bbox) move all three and return a new one; `at(side)` from the body. `new Component({ body, cutout, points })` for your own. |
 | `usbC({ clearance, fn })` | Mouth at x = 0 facing -X, body along +X, centered y = z = 0, 8.94 × 3.26 × 7.35. Cutout from x = 0.5 to -12. Point `mouth`. |
-| `proMicro({ clearance, fn })` | PCB 34 × 17 × 1.6, x 0..34, y centered, z 0..1.6; USB-C mouth at x = -0.5, center z = 2.23. Cutout: connector only. Point `usb`. |
-| `oled091({ clearance })` | Board 38 × 12 × 1.2 on z = 0 centered, glass 30 × 11.5 × 1.4 on top, view +Z. Cutout: pocket + window (active 22.4 × 5.6 + 0.6) up 10 from the glass. |
-| `ec11({ clearance, shaft = 20, fn })` | Mounting face z = 0, body 12 × 12 below, bushing d 7 to z 7, D-shaft d 6 to `shaft`. Cutout: d 7 + 2·clearance, z -1..12. Point `face`. |
-| `led5({ clearance, fn })` | Flange 5.8 × 1 on z = 0, 8.6 tall. Cutout: d 5 + 2·clearance from z 1 up 20. |
+| `proMicro({ clearance, length, width, thickness, usbDrop, usbOverhang, fn })` | PCB 34 × 17 × 1.6 by default (pass the model's params so the dummy follows them), x 0..34, y centered, z 0..1.6; USB-C mouth at x = -0.5, center z = 2.23. Cutout: connector only. Point `usb`. |
+| `oled091({ clearance, board, glass, active, glassShift, activeShift })` | Board 38 × 12 × 1.2 on z = 0 centered, glass 30 × 11.5 × 1.4 on top, view +Z. Cutout: pocket + window (active 22.4 × 5.6 + 0.6) up 10 from the glass. |
+| `ec11({ clearance, shaft = 20, fn })` | Mounting face z = 0, body 12 × 12 below, bushing d 7 to z 7, D-shaft d 6 to `shaft`. Cutout: d 7 + 2·clearance, z -6.5..12 (cuts the panel with the face on either side of it). Point `face`. |
+| `led5({ clearance, d = 5, h = 8.6, flange = [5.8, 1], fn })` | Flange on z = 0, `h` tall in all. Cutout: d 5 + 2·clearance from z 1 up 20. |
 | `cell({ d = 18.4, l = 65.2, clearance, fn })` | Along +X from 0 to l, axis y = 0, z = d/2. Cutout: grown by clearance all round, clipped at z = 0 so it never digs into the floor. |
 
 Component dimensions are nominal — tell the user to measure their part.

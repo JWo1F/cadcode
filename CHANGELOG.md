@@ -6,10 +6,14 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ### Added
 
+- Wood screw sizes `W3` to `W6` for `screw()`, `screwHole()` and `boss()`.
+- `clip(ranges, { outside: true })` keeps what lies outside the ranges, for a notch without a big cube.
+- `proMicro()`, `oled091()` and `led5()` take their sizes as options, so a model's own params can drive them; `oled091()` shifts an off-center glass or active area. `frame.place()` takes a component.
 - `frame.flip()` turns a frame to face the other way, for a cutter on a plane whose normal points into the part, and `boss()` takes a `floor`.
 
 ### Changed
 
+- `ec11().cutout` reaches down to the body's bottom, so it cuts the panel whichever side of it the mounting face is put.
 - The examples take holes, standoffs and fits from the hardware library and use `clip`, `ring`, `polarPoint` and cylinder axes. The bracket and hook's M4 countersinks are 8.96 across, and the sensor case's battery rests 0.25 lower.
 
 ### Fixed

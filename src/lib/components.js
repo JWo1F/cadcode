@@ -173,6 +173,9 @@ export function usbC(options = {}) {
   return new Component({ body, cutout, points: { mouth: point([0, 0, 0]) } });
 }
 
+/** The options that are set, so `{ length: undefined }` keeps the default. @param {Record<string, unknown>} o */
+const definedOnly = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+
 // ---------------------------------------------------------------------------
 // nRF52840 Pro Micro
 
@@ -183,12 +186,15 @@ const PRO_MICRO = { length: 34, width: 17, thickness: 1.6, usbDrop: 1.0, usbOver
  * y = 0, with its mid-mount USB-C at the -X edge, the mouth 0.5 past it at x = -0.5 and the
  * connector's bottom 1 below the PCB's top. The cutout is the connector's only: the board sits
  * inside the enclosure. Point `usb` is the center of the connector's mouth.
- * Nominal dimensions: measure yours.
- * @param {ClearanceOptions} [options]
+ * Nominal dimensions, each an option: measure yours, or pass a model's own params so the board
+ * follows them.
+ * @param {ClearanceOptions & { length?: number, width?: number, thickness?: number, usbDrop?: number, usbOverhang?: number }} [options]
+ *   `usbDrop` how far the connector's bottom is below the PCB's top, `usbOverhang` how far its mouth reaches past the edge
  * @returns {Component}
  */
 export function proMicro(options = {}) {
-  const { length, width, thickness, usbDrop, usbOverhang } = PRO_MICRO;
+  const { length, width, thickness, usbDrop, usbOverhang } = { ...PRO_MICRO, ...definedOnly(options) };
+  for (const [name, v] of Object.entries({ length, width, thickness })) if (!(typeof v === 'number' && v > 0)) throw new Error(`proMicro(): ${name} must be a positive number, got ${JSON.stringify(v)}`);
   const board = cube([length, width, thickness]).translate([0, -width / 2, 0]).color(PCB);
   const usb = usbC(options).translate([-usbOverhang, 0, thickness - usbDrop + USBC.h / 2]);
   return new Component({ body: board.union(usb.body), cutout: usb.cutout, points: { usb: usb.points.mouth } });
@@ -204,23 +210,26 @@ const OLED = { board: [38, 12, 1.2], glass: [30, 11.5, 1.4], active: [22.4, 5.6]
  * origin in XY, and 30 × 11.5 × 1.4 of glass centered on top; it is seen from +Z. The cutout is a
  * pocket for the board and glass, `clearance` bigger on every side, and a window over the 22.4 × 5.6
  * active area, 0.6 bigger on each side, reaching 10 up from the glass's top.
- * Nominal dimensions: measure yours; the glass and the active area are often off center.
- * @param {ClearanceOptions} [options]
+ * Nominal dimensions, each an option: measure yours. The glass and the active area are often off
+ * center: `glassShift` and `activeShift` move them, as `[x, y]` from the board's center.
+ * @param {ClearanceOptions & { board?: number[], glass?: number[], active?: number[], glassShift?: number[], activeShift?: number[] }} [options]
  * @returns {Component}
  */
 export function oled091(options = {}) {
   const c = checkClearance('oled091()', options.clearance ?? fit('slide'));
-  const [bw, bd, bh] = OLED.board;
-  const [gw, gd, gh] = OLED.glass;
-  const [aw, ad] = OLED.active;
+  const [bw, bd, bh] = options.board ?? OLED.board;
+  const [gw, gd, gh] = options.glass ?? OLED.glass;
+  const [aw, ad] = options.active ?? OLED.active;
+  const [gx, gy] = options.glassShift ?? [0, 0];
+  const [ax, ay] = options.activeShift ?? [0, 0];
   const top = bh + gh;
   const board = cube([bw, bd, bh], { center: true }).translate([0, 0, bh / 2]).color(PCB);
-  const glass = cube([gw, gd, gh], { center: true }).translate([0, 0, bh + gh / 2]).color(GLASS);
+  const glass = cube([gw, gd, gh], { center: true }).translate([gx, gy, bh + gh / 2]).color(GLASS);
   /** A box `w` × `d` centered on the Z axis, from z = `from` to `to`. @type {(w: number, d: number, from: number, to: number) => Solid} */
   const box = (w, d, from, to) => cube([w, d, to - from], { center: true }).translate([0, 0, (from + to) / 2]);
   const cutout = box(bw + 2 * c, bd + 2 * c, -c, bh + c).union(
-    box(gw + 2 * c, gd + 2 * c, -c, top + c),
-    box(aw + 2 * OLED.windowGrow, ad + 2 * OLED.windowGrow, bh, top + OLED.windowHeight),
+    box(gw + 2 * c, gd + 2 * c, -c, top + c).translate([gx, gy, 0]),
+    box(aw + 2 * OLED.windowGrow, ad + 2 * OLED.windowGrow, bh, top + OLED.windowHeight).translate([ax, ay, 0]),
   );
   return new Component({ body: board.union(glass), cutout });
 }
@@ -241,7 +250,9 @@ const EC11 = { body: [12, 12, 6.5], bushing: { d: 7, h: 7 }, shaft: { d: 6, flat
  * An EC11 rotary encoder, mounted from behind a panel: its mounting face is z = 0, the 12 × 12 ×
  * 6.5 body below it, the 7 thick M7 bushing from 0 to 7 above, and the 6 shaft with a D flat (4.5
  * across) up to `shaft`, centered on the Z axis. The cutout is the bushing's hole, `clearance`
- * bigger, from z = -1 to 12. Point `face` is the center of the mounting face.
+ * bigger, from the body's bottom at z = -6.5 up to 12, so it goes through the panel whether the
+ * mounting face is put against the panel's back or its front. Point `face` is the center of the
+ * mounting face.
  * Nominal dimensions: measure yours.
  * @param {EncoderOptions} [options]
  * @returns {Component}
@@ -256,7 +267,7 @@ export function ec11(options = {}) {
   // The D: a circle with the side beyond `flat` from the far edge cut off, on +Y.
   const dShape = circle({ d: shaft.d, fn }).intersect(square([shaft.d, shaft.flat]).translate([-shaft.d / 2, -shaft.d / 2]));
   const stem = dShape.extrude(shaftTop - bushing.h).translate([0, 0, bushing.h]).color(METAL);
-  const cutout = cylinder({ d: bushing.d + 2 * c, h: 13, fn }).translate([0, 0, -1]);
+  const cutout = cylinder({ d: bushing.d + 2 * c, h: 12 + bh, fn }).translate([0, 0, -bh]);
   return new Component({ body: housing.union(collar, stem), cutout, points: { face: point([0, 0, 0]) } });
 }
 
@@ -269,19 +280,21 @@ const LED5 = { d: 5, h: 8.6, flange: { d: 5.8, h: 1 }, reach: 20 };
  * A 5 mm LED standing on z = 0: a 5.8 × 1 flange at the bottom and a 5 cylinder with a round top,
  * 8.6 tall in all. The cutout is a hole `clearance` bigger, from the flange's top at z = 1 up 20,
  * so the flange stops it against the inside of a wall.
- * Nominal dimensions: measure yours.
- * @param {ClearanceOptions} [options]
+ * Nominal dimensions: measure yours. `d`, `h` and `flange` (`[d, h]`) make a 3 mm LED or any other.
+ * @param {ClearanceOptions & { d?: number, h?: number, flange?: number[] }} [options]
  * @returns {Component}
  */
 export function led5(options = {}) {
   const c = checkClearance('led5()', options.clearance ?? fit('slide'));
-  const { fn } = options;
-  const r = LED5.d / 2;
-  const flange = cylinder({ d: LED5.flange.d, h: LED5.flange.h, fn });
-  const barrel = cylinder({ d: LED5.d, h: LED5.h - r, fn });
-  const dome = sphere({ r, fn }).translate([0, 0, LED5.h - r]).intersect(cube([LED5.d, LED5.d, r]).translate([-r, -r, LED5.h - r]));
+  const { fn, d = LED5.d, h = LED5.h } = options;
+  const [fd, fh] = options.flange ?? [LED5.flange.d, LED5.flange.h];
+  if (!(d > 0 && h > d / 2 && fd >= d && fh >= 0)) throw new Error(`led5(): want d > 0, h > d / 2 and a flange at least d across, got d ${d}, h ${h}, flange [${fd}, ${fh}]`);
+  const r = d / 2;
+  const flange = cylinder({ d: fd, h: Math.max(fh, 1e-3), fn });
+  const barrel = cylinder({ d, h: h - r, fn });
+  const dome = sphere({ r, fn }).translate([0, 0, h - r]).intersect(cube([d, d, r]).translate([-r, -r, h - r]));
   const body = flange.union(barrel, dome).color(LED);
-  const cutout = cylinder({ d: LED5.d + 2 * c, h: LED5.reach, fn }).translate([0, 0, LED5.flange.h]);
+  const cutout = cylinder({ d: d + 2 * c, h: LED5.reach, fn }).translate([0, 0, fh]);
   return new Component({ body, cutout });
 }
 
