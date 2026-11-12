@@ -4,14 +4,16 @@ import { createAxisGizmo } from './gizmo.js';
 import { bindViewTools } from './view-tools.js';
 import { bindDownloadMenu } from './download-menu.js';
 import { decodeFrame } from './frame-codec.js';
+import { storage } from './storage.js';
+import { showError as showErrorIn, showLogs as showLogsIn, showReadout, createPartPill } from './page-ui.js';
+import { bindPanelLayout } from './panel-layout.js';
 
 const canvas = document.getElementById('view');
 const stage = document.getElementById('stage');
 const statusEl = document.getElementById('status');
 const fileEl = document.getElementById('file');
 const emptyEl = document.getElementById('empty');
-const errorEl = document.getElementById('error');
-const errorText = document.getElementById('error-text');
+const errorBox = { error: document.getElementById('error'), text: document.getElementById('error-text') };
 const logsEl = document.getElementById('logs');
 const readout = {
   size: document.getElementById('readout-size'),
@@ -38,23 +40,6 @@ const updateGizmo = createAxisGizmo(document.getElementById('gizmo'), view);
 
 let fileKey = null;
 let camera = null; // the latest from the view: { position, target, zoom }
-
-const storage = {
-  get(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key));
-    } catch {
-      return null;
-    }
-  },
-  set(key, value) {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Storage unavailable (private window): the view just isn't remembered.
-    }
-  },
-};
 
 function saveCamera() {
   if (!fileKey || !camera) return;
@@ -108,7 +93,7 @@ async function showModel({ header, groups }) {
   }
   if (shown !== header) return; // a newer frame arrived meanwhile
   delete stage.dataset.empty;
-  showReadout(mesh, header.ms);
+  showReadout(readout, mesh, header.ms);
   setStatus('ready');
 }
 
@@ -137,81 +122,20 @@ function toggleFlag(name, on) {
   else delete stage.dataset[name];
 }
 
-function showError(message) {
-  errorText.textContent = message;
-  errorEl.hidden = !message;
-}
-
-function showLogs(logs = []) {
-  logsEl.replaceChildren(
-    ...logs.map(({ level, text }) => {
-      const line = document.createElement('div');
-      line.className = `log-${level}`;
-      line.textContent = text;
-      return line;
-    }),
-  );
-  logsEl.hidden = logs.length === 0;
-}
-
-const formatMm = (n) => (Math.round(n * 10) / 10).toLocaleString();
-
-/** Fills the readout: the model's overall size, large, then its mesh and how long the program took. */
-function showReadout({ triangles, size }, ms) {
-  readout.size.replaceChildren(size ? size.map(formatMm).join(' × ') : 'Empty');
-  if (size) readout.size.append(Object.assign(document.createElement('small'), { textContent: 'mm' }));
-  readout.mesh.textContent = `${triangles.toLocaleString()} triangles`;
-  readout.time.textContent = `${ms.toLocaleString()} ms`;
-}
+const showError = (message) => showErrorIn(errorBox, message);
+const showLogs = (logs) => showLogsIn(logsEl, logs);
 
 // --- Parts -------------------------------------------------------------------
-// A pill naming the part on screen; it opens a menu of the program's parts. A
-// program with one part has no pill.
+// The part chosen is remembered per file, and asked for again on the next visit.
 
-const partOpen = document.getElementById('part-open');
-const partMenu = document.getElementById('part-menu');
-let currentPart = '';
-
-function showParts(names, current) {
-  currentPart = current;
-  document.getElementById('part-title').textContent = current;
-  partMenu.replaceChildren(
-    ...names.map((name) => {
-      const item = Object.assign(document.createElement('button'), { type: 'button', textContent: name });
-      item.setAttribute('role', 'menuitemradio');
-      item.setAttribute('aria-checked', String(name === current));
-      item.addEventListener('click', () => choosePart(name));
-      return item;
-    }),
-  );
-  partOpen.hidden = names.length < 2;
-}
-
-function choosePart(name) {
-  partMenu.hidePopover();
-  if (name === currentPart) return;
-  currentPart = name;
-  storage.set(`cadcode:part:${fileKey}`, name);
-  requestPart(name);
-}
-
-partMenu.addEventListener('toggle', (event) => {
-  partOpen.setAttribute('aria-expanded', String(event.newState === 'open'));
-  if (event.newState !== 'open') return;
-  const box = partOpen.getBoundingClientRect();
-  partMenu.style.left = `${box.left}px`;
-  partMenu.style.top = `${box.bottom + 8}px`;
-  const items = [...partMenu.children];
-  (items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus();
-});
-
-// Arrows move through the menu; Escape closes it (the popover's own).
-partMenu.addEventListener('keydown', (event) => {
-  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-  if (!step) return;
-  event.preventDefault();
-  const items = [...partMenu.children];
-  items[(items.indexOf(document.activeElement) + step + items.length) % items.length]?.focus();
+const parts = createPartPill({
+  open: document.getElementById('part-open'),
+  menu: document.getElementById('part-menu'),
+  title: document.getElementById('part-title'),
+  onChoose(name) {
+    storage.set(`cadcode:part:${fileKey}`, name);
+    requestPart(name);
+  },
 });
 
 // --- Download ----------------------------------------------------------------
@@ -220,7 +144,7 @@ partMenu.addEventListener('keydown', (event) => {
 
 async function downloadPart(format) {
   try {
-    const response = await fetch(`/${format}?part=${encodeURIComponent(currentPart)}`);
+    const response = await fetch(`/${format}?part=${encodeURIComponent(parts.current)}`);
     if (!response.ok) throw new Error(await response.text());
     saveBlob(await response.blob(), response.headers.get('Content-Disposition').match(/filename="(.+)"/)[1]);
   } catch (error) {
@@ -287,7 +211,7 @@ function connect() {
       fileEl.hidden = false;
       document.title = `${header.file} · cadcode`;
     }
-    showParts(header.partNames, header.part);
+    parts.show(header.partNames, header.part);
     showParams(header);
     showError('');
     showLogs(header.logs);
@@ -343,73 +267,25 @@ function showParams(header) {
   paramsButton.hidden = !hasParams;
   panel.hidden = !hasParams;
   paramsPanel.show(header.params, header.overrides, header.sections);
-  measurePanel();
+  panelLayout.measure();
 }
 
 // --- Panel layout ---------------------------------------------------------------
-// The panel floats on the right, or across the bottom on phones. Its edge resizes
-// it and the Parameters button hides it; both are remembered. The view is told how
-// much of the canvas the panel covers, and centres the model on the rest.
+// The panel's width is in pixels, at least 260 and at most 60% of the window.
 
-const LAYOUT_KEY = 'cadcode:params-panel';
 const panel = document.getElementById('panel');
-const grip = document.getElementById('grip');
 const paramsButton = document.getElementById('toggle-params');
-const stacked = matchMedia('(max-width: 720px)');
-
-const DEFAULT_LAYOUT = { width: 340, height: 0.42, open: true }; // px; share of the window on phones
-let layout = { ...DEFAULT_LAYOUT, ...storage.get(LAYOUT_KEY) };
-
-/** Tells the stylesheet and the view how much of the stage the panel covers. */
-function measurePanel() {
-  const shown = !panel.hidden && layout.open;
-  const box = panel.getBoundingClientRect();
-  const right = shown && !stacked.matches ? Math.round(innerWidth - box.left) : 0;
-  const bottom = shown && stacked.matches ? Math.round(innerHeight - box.top) : 0;
-  stage.style.setProperty('--panel-cover', `${right}px`);
-  stage.style.setProperty('--panel-cover-bottom', `${bottom}px`);
-  // On phones the readout stands above the panel, across the whole width.
-  const footer = stacked.matches && bottom ? document.querySelector('.bottom-left').offsetHeight + 12 : 0;
-  view.setInset({ right, bottom: bottom + footer });
-}
-
-function applyLayout() {
-  stage.style.setProperty('--panel-width', `${layout.width}px`);
-  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
-  stage.dataset.panel = layout.open ? 'shown' : 'hidden';
-  paramsButton.setAttribute('aria-pressed', String(layout.open));
-  measurePanel();
-  storage.set(LAYOUT_KEY, layout);
-}
-
-paramsButton.addEventListener('click', () => {
-  layout.open = !layout.open;
-  applyLayout();
+const panelLayout = bindPanelLayout({
+  stage,
+  panel,
+  grip: document.getElementById('grip'),
+  button: paramsButton,
+  view,
+  storageKey: 'cadcode:params-panel',
+  defaults: { width: 340, height: 0.42, open: true },
+  attribute: 'panel',
+  cssWidth: (width) => `${width}px`,
+  widthAt: (clientX) => Math.round(Math.min(Math.max(innerWidth - clientX - 20, 260), Math.max(260, innerWidth * 0.6))),
 });
-
-grip.addEventListener('pointerdown', (event) => {
-  grip.setPointerCapture(event.pointerId);
-  stage.classList.add('dragging');
-});
-grip.addEventListener('pointermove', (event) => {
-  if (!grip.hasPointerCapture(event.pointerId)) return;
-  if (stacked.matches) layout.height = Math.min(Math.max((innerHeight - event.clientY) / innerHeight, 0.2), 0.8);
-  else layout.width = Math.round(Math.min(Math.max(innerWidth - event.clientX - 20, 260), Math.max(260, innerWidth * 0.6)));
-  stage.style.setProperty('--panel-width', `${layout.width}px`);
-  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
-  measurePanel();
-});
-grip.addEventListener('lostpointercapture', () => {
-  stage.classList.remove('dragging');
-  applyLayout();
-});
-grip.addEventListener('dblclick', () => {
-  layout = { ...DEFAULT_LAYOUT };
-  applyLayout();
-});
-
-window.addEventListener('resize', measurePanel);
-stacked.addEventListener('change', measurePanel);
-applyLayout();
 
 connect();

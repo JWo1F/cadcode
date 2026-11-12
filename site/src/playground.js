@@ -3,6 +3,9 @@ import { bindDisplayButtons, createScene, saveBlob } from '../../client/scene.js
 import { createAxisGizmo } from '../../client/gizmo.js';
 import { bindViewTools } from '../../client/view-tools.js';
 import { bindDownloadMenu } from '../../client/download-menu.js';
+import { storage } from '../../client/storage.js';
+import { showError as showErrorIn, showLogs as showLogsIn, showReadout, createPartPill } from '../../client/page-ui.js';
+import { bindPanelLayout } from '../../client/panel-layout.js';
 import examples from 'virtual:examples';
 import catalog from 'virtual:catalog'; // { name: { title, description } }
 import typings from 'virtual:typings';
@@ -16,8 +19,7 @@ const EVALUATE_DELAY = 350;
 
 const canvas = document.getElementById('view');
 const statusEl = document.getElementById('status');
-const errorEl = document.getElementById('error');
-const errorText = document.getElementById('error-text');
+const errorBox = { error: document.getElementById('error'), text: document.getElementById('error-text') };
 const logsEl = document.getElementById('logs');
 const stage = document.getElementById('stage');
 const readout = { size: document.getElementById('readout-size'), mesh: document.getElementById('readout-mesh') };
@@ -109,19 +111,7 @@ document.fonts.ready.then(() => monaco.editor.remeasureFonts());
 const DRAFT_KEY = 'cadcode:playground';
 
 function saveDraft() {
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ code: model.getValue(), example: currentExample, part: currentPart }));
-  } catch {
-    // Storage unavailable (private window): the code just isn't kept across reloads.
-  }
-}
-
-function loadDraft() {
-  try {
-    return JSON.parse(localStorage.getItem(DRAFT_KEY));
-  } catch {
-    return null;
-  }
+  storage.set(DRAFT_KEY, { code: model.getValue(), example: currentExample, part: currentPart });
 }
 
 const toBase64Url = (bytes) => btoa(Array.from(bytes, (b) => String.fromCharCode(b)).join('')).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
@@ -156,77 +146,19 @@ function setBusy(busy) {
   else delete stage.dataset.busy;
 }
 
-function showError(message) {
-  errorText.textContent = message;
-  errorEl.hidden = !message;
-}
-
-function showLogs(logs = []) {
-  logsEl.replaceChildren(
-    ...logs.map(({ level, text }) => {
-      const line = document.createElement('div');
-      line.className = `log-${level}`;
-      line.textContent = text;
-      return line;
-    }),
-  );
-  logsEl.hidden = logs.length === 0;
-}
-
-const formatMm = (n) => (Math.round(n * 10) / 10).toLocaleString();
-
-/** Fills the readout: the model's overall size, large, and its mesh. */
-function showReadout({ triangles, size }) {
-  readout.size.replaceChildren(size ? size.map(formatMm).join(' × ') : 'Empty');
-  if (size) readout.size.append(Object.assign(document.createElement('small'), { textContent: 'mm' }));
-  readout.mesh.textContent = `${triangles.toLocaleString()} triangles`;
-}
+const showError = (message) => showErrorIn(errorBox, message);
+const showLogs = (logs) => showLogsIn(logsEl, logs);
 
 // --- Parts -------------------------------------------------------------------
-// A pill naming the part on screen; it opens a menu of the program's parts.
 
-const partOpen = document.getElementById('part-open');
-const partMenu = document.getElementById('part-menu');
-
-function showParts(names, current) {
-  currentPart = current;
-  document.getElementById('part-title').textContent = current;
-  partMenu.replaceChildren(
-    ...names.map((name) => {
-      const item = Object.assign(document.createElement('button'), { type: 'button', textContent: name });
-      item.setAttribute('role', 'menuitemradio');
-      item.setAttribute('aria-checked', String(name === current));
-      item.addEventListener('click', () => choosePart(name));
-      return item;
-    }),
-  );
-  partOpen.hidden = names.length < 2;
-}
-
-function choosePart(name) {
-  partMenu.hidePopover();
-  if (name === currentPart) return;
-  currentPart = name;
-  evaluate();
-}
-
-partMenu.addEventListener('toggle', (event) => {
-  partOpen.setAttribute('aria-expanded', String(event.newState === 'open'));
-  if (event.newState !== 'open') return;
-  const box = partOpen.getBoundingClientRect();
-  partMenu.style.left = `${box.left}px`;
-  partMenu.style.top = `${box.bottom + 8}px`;
-  const items = [...partMenu.children];
-  (items.find((item) => item.getAttribute('aria-checked') === 'true') ?? items[0])?.focus();
-});
-
-// Arrows move through the menu; Escape closes it (the popover's own).
-partMenu.addEventListener('keydown', (event) => {
-  const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
-  if (!step) return;
-  event.preventDefault();
-  const items = [...partMenu.children];
-  items[(items.indexOf(document.activeElement) + step + items.length) % items.length]?.focus();
+const parts = createPartPill({
+  open: document.getElementById('part-open'),
+  menu: document.getElementById('part-menu'),
+  title: document.getElementById('part-title'),
+  onChoose(name) {
+    currentPart = name;
+    evaluate();
+  },
 });
 
 /** Underlines the line a runtime error points at, when its stack names one. */
@@ -294,7 +226,8 @@ async function evaluate() {
   showError(notice);
   notice = '';
   markError(null);
-  showParts(result.partNames, result.part);
+  parts.show(result.partNames, result.part);
+  currentPart = result.part;
   let mesh;
   try {
     mesh = await view.showModel(result.groups); // the view's worker builds the meshes
@@ -308,7 +241,7 @@ async function evaluate() {
   if (shown !== result || preview) return; // a newer run was shown meanwhile, or is under way
   setBusy(false);
   delete stage.dataset.empty;
-  showReadout(mesh);
+  showReadout(readout, mesh);
   setStatus('ready', `${result.ms} ms`);
   if (fitNext) {
     fitNext = false;
@@ -403,79 +336,21 @@ picker.addEventListener('toggle', (event) => {
 });
 
 // --- Code panel ----------------------------------------------------------------
-// The code floats on the stage: on the right, or across the bottom on phones. Its
-// edge resizes it and the Code button hides it; both are remembered. The view is
-// told how much of the canvas the panel covers, and centres the model on the rest.
+// The code's width is a share of the window, from a quarter to three quarters.
 
-const LAYOUT_KEY = 'cadcode:playground:panel';
-const panel = document.getElementById('panel');
-const grip = document.getElementById('grip');
-const codeButton = document.getElementById('toggle-code');
-const stacked = matchMedia('(max-width: 720px)'); // phones lay the code across the bottom
-
-const DEFAULT_LAYOUT = { width: 0.44, height: 0.48, code: true }; // shares of the window
-let layout = { ...DEFAULT_LAYOUT };
-try {
-  layout = { ...layout, ...JSON.parse(localStorage.getItem(LAYOUT_KEY)) };
-} catch {
-  // No saved layout: the defaults.
-}
-
-/** Tells the stylesheet and the view how much of the stage the panel covers. */
-function measurePanel() {
-  const box = panel.getBoundingClientRect();
-  const right = layout.code && !stacked.matches ? Math.round(innerWidth - box.left) : 0;
-  const bottom = layout.code && stacked.matches ? Math.round(innerHeight - box.top) : 0;
-  stage.style.setProperty('--panel-cover', `${right}px`);
-  stage.style.setProperty('--panel-cover-bottom', `${bottom}px`);
-  // On phones the readout and tools stand above the panel, across the whole width.
-  const footer = stacked.matches ? document.querySelector('.bottom-left').offsetHeight + 12 : 0;
-  view.setInset({ right, bottom: bottom + footer });
-}
-
-function applyLayout() {
-  stage.style.setProperty('--panel-width', `${layout.width * 100}vw`);
-  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
-  stage.dataset.code = layout.code ? 'shown' : 'hidden';
-  codeButton.setAttribute('aria-pressed', String(layout.code));
-  measurePanel();
-  try {
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
-  } catch {
-    // Storage unavailable: the layout just isn't remembered.
-  }
-}
-
-codeButton.addEventListener('click', () => {
-  layout.code = !layout.code;
-  applyLayout();
-  if (layout.code) editor.focus();
+bindPanelLayout({
+  stage,
+  panel: document.getElementById('panel'),
+  grip: document.getElementById('grip'),
+  button: document.getElementById('toggle-code'),
+  view,
+  storageKey: 'cadcode:playground:panel',
+  defaults: { width: 0.44, height: 0.48, open: true },
+  attribute: 'code',
+  cssWidth: (width) => `${width * 100}vw`,
+  widthAt: (clientX) => Math.min(Math.max((innerWidth - clientX) / innerWidth, 0.25), 0.75),
+  onToggle: (open) => open && editor.focus(),
 });
-
-grip.addEventListener('pointerdown', (event) => {
-  grip.setPointerCapture(event.pointerId);
-  stage.classList.add('dragging');
-});
-grip.addEventListener('pointermove', (event) => {
-  if (!grip.hasPointerCapture(event.pointerId)) return;
-  if (stacked.matches) layout.height = Math.min(Math.max((innerHeight - event.clientY) / innerHeight, 0.2), 0.8);
-  else layout.width = Math.min(Math.max((innerWidth - event.clientX) / innerWidth, 0.25), 0.75);
-  stage.style.setProperty('--panel-width', `${layout.width * 100}vw`);
-  stage.style.setProperty('--panel-height', `${layout.height * 100}dvh`);
-  measurePanel();
-});
-grip.addEventListener('lostpointercapture', () => {
-  stage.classList.remove('dragging');
-  applyLayout();
-});
-grip.addEventListener('dblclick', () => {
-  layout = { ...DEFAULT_LAYOUT, code: true };
-  applyLayout();
-});
-
-window.addEventListener('resize', measurePanel);
-stacked.addEventListener('change', measurePanel);
-applyLayout();
 
 // --- Toolbar -----------------------------------------------------------------
 
@@ -542,7 +417,7 @@ function loadCode(code, part) {
 
 const hash = new URLSearchParams(location.hash.slice(1));
 const requested = new URLSearchParams(location.search).get('example');
-const draft = loadDraft();
+const draft = storage.get(DRAFT_KEY);
 history.replaceState(null, '', location.pathname);
 
 if (hash.has('code')) {
