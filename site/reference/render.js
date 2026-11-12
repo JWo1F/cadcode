@@ -1,6 +1,7 @@
 // Renders site/reference/content.js into the Reference page's index and body,
 // after checking that every library export and every Solid / Shape2 method has an entry.
 import * as lib from '../../src/lib/index.js';
+import { Line, Circle } from '../../src/lib/sketch.js';
 import { sections } from './content.js';
 
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -23,6 +24,9 @@ export function checkCoverage() {
     ...methodsOf(lib.Solid).map((name) => `Solid.${name}`),
     ...methodsOf(lib.Shape2).map((name) => `Shape2.${name}`),
     ...methodsOf(lib.Frame).map((name) => `Frame.${name}`),
+    ...methodsOf(lib.Sketch).map((name) => `Sketch.${name}`),
+    ...methodsOf(Line).map((name) => `Line.${name}`),
+    ...methodsOf(Circle).map((name) => `Circle.${name}`),
   ];
   const missing = required.filter((name) => !documented.has(name));
   if (missing.length) throw new Error(`site/reference/content.js does not describe: ${missing.join(', ')}`);

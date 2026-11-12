@@ -11,6 +11,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 - `Shape2` methods
 - Functions
 - Frames
+- Sketches
 - Lofts and threads
 - Helpers
 
@@ -125,6 +126,26 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 
 `toFront(shape, depth, y0)` (extrude towards -Y from y = y0) is `plane.XZ.offset(y0).extrude(shape, -depth)`.
 
+## Sketches
+
+Construction geometry in a frame's 2D coordinates. Points are plain `[x, y]` (feed them to `polygon`,
+`.translate`). Return the sketch in a part to see the guides (dashed, crossings marked) — debugging aid only:
+never exported, and passing a sketch, line or circle to a boolean throws.
+
+| API | Notes |
+| --- | --- |
+| `sketch(frame = plane.XY)` | `Sketch` on a frame (`box.face('-X')`, `plane.XZ.offset(y)`, `frameAt`). `s.frame` reads it. |
+| `s.line(a, b)` / `s.line(a, { angle })` | Segment for drawing, **endless for crossings**; the angle form is endless (drawn across the sketch). Props: `start`, `end`, `endless`, `direction`, `angle`, `length`, `mid`; `at(t)` (t may go past 0..1). |
+| `line.parallel(d)` | `+d` left looking start→end, `-d` right; same stretch; endless stays endless. |
+| `line.perpendicular(p)` | Through `p`; off the line: from `p` to the foot (`.end` = foot); on the line: endless. |
+| `line.intersect(line)` | `[x, y]`; parallel throws. |
+| `line.intersect(circle)` / `circle.intersect(line)` | `[]`, `[touch]` or `[p1, p2]` ordered along the line's direction. |
+| `circle.intersect(circle)` | Ordered: left of the line from this center to the other first. Same circle throws. |
+| `s.circle(c, r)` | Guide circle (`center`, `r`, `at(deg)`). Not `circle()` the shape. |
+| `s.point(p)` | Marks `p` in the viewer, returns it. Crossings are marked automatically. |
+| `s.polygon(...)` | Same args as `polygon()`; drawn in place. Returns `Shape2` in frame coords. |
+| `s.extrude(shape, depth, { through })` | `s.frame.extrude(...)`. |
+
 ## Lofts and threads
 
 | Function | Notes |
@@ -142,4 +163,4 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 | `memo(fn)` | Same function, remembering its result per arguments. Key = fn source + JSON args + resolution; in `cadcode dev`/playground it survives across saves (not the CLI). Args: plain data only (no shapes). Result: shapes or nested arrays, may be async. Closure variables (`p`!) and called helpers are NOT in the key: pass them as args or results go stale. |
 | `setResolution({ fn, fa, fs })` | Defaults for curves, OpenSCAD rules. `fn > 0` wins; else `ceil(max(min(360/fa, 2πr/fs), 5))`. |
 | `parseColor(c, alpha?)` | Returns `[r, g, b, a]`. |
-| `Solid`, `Shape2`, `Frame` | Classes, for `instanceof`. |
+| `Solid`, `Shape2`, `Frame`, `Sketch` | Classes, for `instanceof`. |

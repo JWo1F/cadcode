@@ -1,23 +1,27 @@
 // Turns a loaded program module into the solids of one part. Free of Node APIs:
 // the CLI and dev server reach it through program.js, the site's playground directly.
-import { Solid, Shape2, Point } from '../lib/index.js';
+import { Solid, Shape2, Point, Sketch } from '../lib/index.js';
+import { Line, Circle } from '../lib/sketch.js';
 import { POINT_IS_NOT_A_SHAPE } from '../lib/shapes.js';
 
 function flattenModel(model, partName) {
   const solids = [];
   const shapes = [];
+  const sketches = [];
   const walk = (item) => {
     if (Array.isArray(item)) item.forEach(walk);
     else if (item instanceof Solid) solids.push(item);
     else if (item instanceof Shape2) shapes.push(item);
+    else if (item instanceof Sketch) sketches.push(item);
+    else if (item instanceof Line || item instanceof Circle) throw new Error(`Part "${partName}" contains a line or circle of a sketch; return the sketch itself to see its guides`);
     else if (item instanceof Point) throw new Error(`Part "${partName}" contains a point. ${POINT_IS_NOT_A_SHAPE}`);
-    else if (item) throw new Error(`Part "${partName}" contains ${typeof item} ${String(item)}, not a solid or a 2D shape`);
+    else if (item) throw new Error(`Part "${partName}" contains ${typeof item} ${String(item)}, not a solid, a 2D shape or a sketch`);
   };
   walk(model);
-  return { solids, shapes };
+  return { solids, shapes, sketches };
 }
 
-const isModel = (value) => value instanceof Solid || value instanceof Shape2 || Array.isArray(value);
+const isModel = (value) => value instanceof Solid || value instanceof Shape2 || value instanceof Sketch || Array.isArray(value);
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -97,7 +101,7 @@ function readParams(params) {
  *
  * @param {{ default?: unknown, params?: unknown }} mod
  * @param {{ part?: string, overrides?: Record<string, unknown>, fallbackToFirst?: boolean, ignoreUnknown?: boolean }} [options]
- * @returns the part's solids and 2D shapes, the part names, the param values it ran with (`params`) and the
+ * @returns the part's solids, 2D shapes and sketches, the part names, the param values it ran with (`params`) and the
  *   declared `{ value, name, description }` entries by key (`declared`) and their `sections`
  */
 export async function evaluateModule(mod, { part, overrides = {}, fallbackToFirst = false, ignoreUnknown = false } = {}) {

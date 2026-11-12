@@ -270,6 +270,30 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 | `frame.extrude(shape, depth, { through })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin. |
 | `frame.offset(d)`, `frame.place(solidOrPoint)` | The plane moved along its normal; a solid or point built at the origin moved onto the frame (Z along the normal). `.origin` and `.normal` read it. |
 
+### Sketches
+
+A sketch is construction geometry on a frame, to work out the points of an outline as on paper: lines, parallels, perpendiculars, circles and where they cross. Points are plain `[x, y]` in the frame's coordinates. Return the sketch in a part and the viewer draws its guides in place, dashed, with the crossings marked; it never reaches an STL and cannot go into a boolean.
+
+```js
+const s = sketch(box.face('+Z'));
+const base = s.line([0, 0], [60, 0]);
+const top = base.parallel(12);                 // 12 to the left of base
+const tip = top.intersect(s.line([10, 0], { angle: 60 }));
+const plate = s.polygon([base.start, base.end, top.end, tip], { round: { 3: 2 } });
+return { part: () => [box.union(s.extrude(plate, 3)), s] };
+```
+
+| Function | Notes |
+| --- | --- |
+| `sketch(frame = plane.XY)` | A new sketch on a frame. |
+| `s.line(a, b)`, `s.line(a, { angle })` | A guide through two points, or endless at an angle (degrees from +u). Crossings treat every line as endless. A line has `.start`, `.end`, `.direction`, `.angle`, `.length`, `.mid`, `.at(t)`. |
+| `line.parallel(d)` | `d` to the left looking from start to end (negative: right), over the same stretch. |
+| `line.perpendicular(p)` | Through `p` at right angles; from a point off the line it ends at its foot (`.end`). |
+| `line.intersect(other)` | One point with a line (parallel lines throw); with a circle a list of 0, 1 or 2, from the line's start towards its end. |
+| `s.circle(center, r)` | A guide circle, with `.at(degrees)` and `.intersect(lineOrCircle)`. |
+| `s.point(p)` | Marks a point for the viewer. |
+| `s.polygon(points, paths?, options?)`, `s.extrude(shape, depth, { through })` | `polygon()` drawn in place with the guides; `frame.extrude()` from the sketch's frame. |
+
 ### Lofts and threads
 
 | Function | Notes |

@@ -80,13 +80,25 @@ export function colorOfId(id) {
 export const POINT_IS_NOT_A_SHAPE =
   'A point has no geometry, so it cannot be combined with shapes or exported. Use it as a pivot (`rotate(a, { around: p })`) or read its coordinates with `.toArray()`.';
 
+/** @internal */
+export const SKETCH_IS_NOT_A_SHAPE =
+  'A sketch and its lines and circles are guides, not shapes: return the sketch in a part to see it, and extrude an outline made from its points (`s.polygon()`, `s.extrude()`) to build with it.';
+
+/** Why `item` cannot go where shapes are expected. @param {unknown} item */
+function notAShape(item) {
+  const name = /** @type {any} */ (item)?.constructor?.name;
+  if (['Sketch', 'Line', 'Circle'].includes(name)) return SKETCH_IS_NOT_A_SHAPE;
+  return `Expected a solid or a 2D shape, got ${name && name !== 'Object' ? `a ${name}` : JSON.stringify(item)}`;
+}
+
 /** @param {ShapeItems[]} items @returns {any[]} */
 function flatten(items) {
   const out = [];
   const walk = (item) => {
     if (Array.isArray(item)) item.forEach(walk);
     else if (item instanceof Point) throw new Error(POINT_IS_NOT_A_SHAPE);
-    else if (item) out.push(item);
+    else if (item instanceof Solid || item instanceof Shape2) out.push(item);
+    else if (item) throw new Error(notAShape(item));
   };
   items.forEach(walk);
   return out;
