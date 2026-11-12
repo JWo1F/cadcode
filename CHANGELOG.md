@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-12
+
 ### Added
 
 - Frames: `solid.face('-X')`, `plane.XZ` and `frameAt(point, normal)` are planes to draw 2D shapes on and extrude them from with `frame.extrude(shape, depth, { through })`, instead of rotating them into place. Positions on a face are world coordinates. `frame.place(solid)` puts a solid built at the origin onto a frame. `through: 'start'` reaches past the face only, for a pocket, and `center: true` straddles the plane.
@@ -131,7 +133,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/c49acef...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/499707c...HEAD
+[0.12.0]: https://github.com/JWo1F/cadcode/compare/c49acef...499707c
 [0.11.1]: https://github.com/JWo1F/cadcode/compare/599b817...c49acef
 [0.11.0]: https://github.com/JWo1F/cadcode/compare/89058c4...599b817
 [0.10.0]: https://github.com/JWo1F/cadcode/compare/a2de021...89058c4
