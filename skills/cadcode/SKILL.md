@@ -149,8 +149,8 @@ use a frame instead of rotating it into place (below).
 with **world coordinates** in it (y, z on an X side; x, z on a Y side; x, y on a Z side), so nothing needs
 rotating: `box.subtract(box.face('-X').extrude(window.translate([y, z]), -wall, { through: true }))` cuts a
 window through the wall. Negative depth goes into the part, positive out of it; `through: true` is the
-overshoot of 1 at both ends. `plane.XZ.offset(y0)` is a plane through y = y0, `frameAt(point, normal)` one on
-a curved surface, and `frame.place(solid)` puts a solid built at the origin onto any of them (Z along the normal).
+overshoot of 1 at both ends. `plane.XZ.offset(y0)` is a plane through y = y0, `dome.surfaceAt('+Z', [x, y])` the frame on a curved
+surface (its normal square to it), `frameAt(point, normal)` one at any point, and `frame.place(solid)` puts a solid built at the origin onto any of them (Z along the normal).
 
 **Work points out with a sketch, not arithmetic.** `const s = sketch(frame)`; `s.line(a, b).parallel(d)`,
 `.perpendicular(p)`, `.intersect(other)`, `s.circle(c, r)` give `[x, y]` points for `s.polygon(...)` and

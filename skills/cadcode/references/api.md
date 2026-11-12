@@ -117,6 +117,7 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 | Function | Notes |
 | --- | --- |
 | `solid.face('+X' \| '-X' \| '+Y' \| '-Y' \| '+Z' \| '-Z')` | Side of the **bounding box** (not mesh faces), normal outward. u, v = **world coordinates** of the other two axes in order: X side → (y, z), Y side → (x, z), Z side → (x, y). So a hole at world `[y, z]` on either X side is drawn at `[y, z]`. Text drawn on a `-X`, `+Y` or `-Z` side reads mirrored from outside. |
+| `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at world `[u, v]` straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (facet normal: coarse `fn` = coarse normal). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
 | `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, +Y, +X. |
 | `frameAt(origin, normal)` | Any point/normal (e.g. on a dome). Right-handed: v toward +Z (or +Y when the normal is vertical), u = v × normal. |
 | `frame.extrude(shape2, depth, { through = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through` adds 1 at both ends — use it for cuts through a wall instead of a hand-written `+1`. |

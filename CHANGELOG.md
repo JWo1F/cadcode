@@ -7,6 +7,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 ### Added
 
 - Frames: `solid.face('-X')`, `plane.XZ` and `frameAt(point, normal)` are planes to draw 2D shapes on and extrude them from with `frame.extrude(shape, depth, { through })`, instead of rotating them into place. Positions on a face are world coordinates. `frame.place(solid)` puts a solid built at the origin onto a frame.
+- `solid.surfaceAt(side, [u, v])` is the frame where the solid is first met looking in from a side, with the surface's normal: for a hole or a boss square to a dome.
 - `polygon(points, { round, chamfer })` rounds or cuts its corners: every one, or some by index. An inside corner rounds into a fillet.
 - `sketch(frame)` gives construction geometry to work points out with: lines through points or at an angle, `parallel`, `perpendicular`, circles, and `intersect`. A sketch returned in a part is drawn in place in the viewer and in PNGs, and never exported.
 

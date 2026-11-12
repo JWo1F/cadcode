@@ -887,6 +887,24 @@ export default [bolt, nut];`,
 box.subtract(box.face('-X').extrude(usb, -wall, { through: true }))`,
       },
       {
+        id: 'solid-surfaceAt',
+        name: 'surfaceAt',
+        owner: 'Solid',
+        signature: '.surfaceAt(side, at)',
+        summary: 'The frame on the solid\'s surface where it is first met looking in from a side: from `at` on `face(side)` straight into the part. Its normal is the surface\'s, pointing out, so a hole or a boss on a dome or a sloped wall goes in square to it. Its u and v turn as `frameAt` says.',
+        params: [
+          { name: 'side', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side to look in from, as for `face`.' },
+          { name: 'at', type: '[u, v]', text: 'Where on that side, in world coordinates as for `face`: `[x, y]` on a Z side.' },
+        ],
+        returns: 'Frame',
+        notes: [
+          'On a curve the normal is that of the mesh triangle met, so it is as true as the solid\'s `fn` makes it.',
+          'Throws when nothing of the solid lies under `at`, such as over a hole.',
+        ],
+        example: `const knob = dome.surfaceAt('+Z', [42, 0])
+dome.subtract(knob.extrude(circle({ d: 7.4 }), -10, { through: true }))`,
+      },
+      {
         id: 'plane',
         name: 'plane',
         signature: 'plane.XY | plane.XZ | plane.YZ',

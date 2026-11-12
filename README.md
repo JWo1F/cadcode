@@ -265,6 +265,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 | Function | Notes |
 | --- | --- |
 | `solid.face(name)` | The side `'+X'`, `'-X'`, `'+Y'`, `'-Y'`, `'+Z'` or `'-Z'` of the bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. |
+| `solid.surfaceAt(side, [u, v])` | The frame where the solid is first met looking in from `face(side)` at `[u, v]`, with the surface's normal: a hole or a boss square to a dome or a slope. On a curve the normal is the mesh triangle's, as fine as the solid's `fn`. Throws when nothing lies under `[u, v]`. |
 | `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
 | `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
 | `frame.extrude(shape, depth, { through })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin. |

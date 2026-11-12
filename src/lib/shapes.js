@@ -2,7 +2,7 @@ import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
 import { range } from './util.js';
 import { sweepPolygons } from './sweep.js';
-import { faceFrame } from './frame.js';
+import { faceFrame, frameAt } from './frame.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -298,6 +298,67 @@ export class Solid {
   face(name) {
     return faceFrame(name, this.bounds());
   }
+
+  /**
+   * The frame on the solid's surface where it is first met looking in from a side: from `at` on
+   * `face(side)` straight into the part. Its normal is the surface's, pointing out, so a hole or a
+   * boss on a dome or a sloped wall goes in square to it. On a curve the normal is that of the mesh
+   * triangle met, so it follows the curve as finely as the solid's `fn`.
+   * `dome.surfaceAt('+Z', [42, 0])` is the point on top of the dome above x = 42, y = 0.
+   * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} side
+   * @param {number[]} at world coordinates on that side, as for `face()`
+   */
+  surfaceAt(side, at) {
+    const face = faceFrame(side, this.bounds());
+    const m = face.matrix;
+    const [u, v] = [at[0] ?? 0, at[1] ?? 0];
+    // Start a little outside the face, so a surface lying on it is met too.
+    const origin = [0, 1, 2].map((k) => m[k] * u + m[4 + k] * v + m[8 + k] + m[12 + k]);
+    const dir = [-m[8], -m[9], -m[10]];
+    const hit = firstHit(this.manifold.getMesh(), origin, dir);
+    if (!hit) throw new Error(`surfaceAt(): nothing of the solid lies under [${u}, ${v}] on its ${side} side`);
+    return frameAt(hit.point, hit.normal);
+  }
+}
+
+/**
+ * Where a ray from `origin` along `dir` first meets a mesh, with the outward normal of the triangle
+ * met, or null if it misses (Möller–Trumbore against every triangle).
+ * @param {{ numProp: number, vertProperties: Float32Array, triVerts: Uint32Array }} mesh
+ * @param {number[]} origin
+ * @param {number[]} dir
+ * @returns {{ point: Vec3, normal: Vec3 } | null}
+ */
+function firstHit({ numProp, vertProperties, triVerts }, origin, dir) {
+  const vertex = (i) => [vertProperties[i * numProp], vertProperties[i * numProp + 1], vertProperties[i * numProp + 2]];
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  let best = null;
+  for (let t = 0; t < triVerts.length; t += 3) {
+    const [a, b, c] = [vertex(triVerts[t]), vertex(triVerts[t + 1]), vertex(triVerts[t + 2])];
+    const e1 = sub(b, a);
+    const e2 = sub(c, a);
+    const p = cross(dir, e2);
+    const det = dot(e1, p);
+    if (Math.abs(det) < 1e-12) continue;
+    const s = sub(origin, a);
+    const w1 = dot(s, p) / det;
+    if (w1 < -1e-9 || w1 > 1 + 1e-9) continue;
+    const q = cross(s, e1);
+    const w2 = dot(dir, q) / det;
+    if (w2 < -1e-9 || w1 + w2 > 1 + 1e-9) continue;
+    const distance = dot(e2, q) / det;
+    if (distance < 0 || (best && distance >= best.distance)) continue;
+    best = { distance, normal: cross(e1, e2) };
+  }
+  if (!best) return null;
+  const n = best.normal;
+  const length = Math.hypot(n[0], n[1], n[2]);
+  return {
+    point: [origin[0] + dir[0] * best.distance, origin[1] + dir[1] * best.distance, origin[2] + dir[2] * best.distance],
+    normal: [n[0] / length, n[1] / length, n[2] / length],
+  };
 }
 
 /**
