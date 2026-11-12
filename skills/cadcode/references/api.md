@@ -159,12 +159,12 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 
 | API | Notes |
 | --- | --- |
-| `path(start, { fn })` | Mutable builder (each method returns the same `Path`); pieces start where the last ended. Curves: `fn` per full turn, else one segment per `fa` degrees of turning (no `fs`, like text). |
+| `path(start, { fn })` | Mutable builder (each method returns the same `Path`); pieces start where the last ended. Curves: a point per `360/fn` degrees of turning, else per `fa` degrees but segments no shorter than `fs` — placed where the curve bends, not evenly in t. |
 | `.line(p)` / `.line({ angle, length })` | Straight piece. |
 | `.curve(c1, c2, p)` / `.quad(c, p)` / `.smooth(c2, p)` | Cubic / quadratic Bézier; `smooth` mirrors the last cubic's c2 (SVG `S`), else c1 = current point. |
-| `.arc(p)` / `.arc(p, { through: q })` | Tangent arc continuing the heading (first piece must use `through`); collinear = line. |
-| `.spline([p1, …, pn], { start, end })` | Centripetal Catmull-Rom through the points, starting tangent to the heading (`start` angle only for a first piece), `end` = arrival angle in degrees. |
-| `.close({ round, chamfer, fn })` | Adds a closing line if needed → `Shape2`. Corner options index **joins** (0 = start, then each piece's end), number/object/function as for `polygon`; next to a curve the facet is short and rounding may throw "does not fit". |
+| `.arc(p)` / `.arc(p, { start: deg })` / `.arc(p, { through: q })` | Tangent arc continuing the heading, or leaving at `start` degrees (a corner), or through q (first piece needs start or through); collinear = line. |
+| `.spline([p1, …, pn], { start, end })` | Centripetal Catmull-Rom through the points, starting tangent to the heading unless `start` (degrees) overrides it, `end` = arrival angle. |
+| `.close({ round, chamfer, fn })` | Adds a closing line if needed → `Shape2`. Corner options index **joins** (0 = start, then each piece's end), number/object/function as for `polygon`; cut-back measured along the outline (reaches over curve segments); tangent joins are skipped, cusps throw, each stretch between joins must fit both cut-backs. |
 | `.points()` / `.end` | `[x, y][]` from the start (for `sweep`, map to `[x, 0, y]` etc.) / current point. |
 | `spline(points, { closed, start, end, fn })` | Closed → `Shape2` (≥ 3 points), open → `Path` (≥ 2). |
 | `s.path(...)` / `s.spline(...)` | Same, in a sketch: viewer shows trace (dashed), piece ends, Bézier handles, and the closed outline. |

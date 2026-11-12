@@ -1,8 +1,7 @@
 // Paths: outlines drawn piece by piece — lines, Bézier curves, arcs and smooth splines through
 // points — closed into a 2D shape, or left open as the points of a path to sweep along.
 
-import { polygon, segmentsFor } from './shapes.js';
-import { flattenBezier } from './curves.js';
+import { polygon, segmentsFor, cornerSpecs, resolution } from './shapes.js';
 
 /** @typedef {[number, number]} Vec2 */
 
@@ -86,6 +85,135 @@ function append(path, op, points, heading, lastControl = null) {
 }
 
 /**
+ * Rounds or cuts a closed outline's joins. The cut-back is measured along the outline either side of a
+ * join, so a round next to a curve may reach over several of its short segments; the arc is tangent to
+ * the directions the outline leaves the join in, and meets the outline where the cut-back ends.
+ * @param {Vec2[]} pts the outline, not repeating its first point
+ * @param {number[]} joins indices of the joins in `pts`
+ * @param {({ kind: 'round' | 'chamfer', size: number } | undefined)[]} specs per join
+ * @param {number | undefined} fn
+ * @returns {Vec2[]}
+ */
+function softenJoins(pts, joins, specs, fn) {
+  if (!specs.some(Boolean)) return pts;
+  const n = pts.length;
+  // Distance along the outline to each point, and the whole way round.
+  const along = [0];
+  for (let i = 1; i < n; i++) along.push(along[i - 1] + dist(pts[i - 1], pts[i]));
+  const total = along[n - 1] + dist(pts[n - 1], pts[0]);
+  const wrap = (d) => ((d % total) + total) % total;
+  const pointAt = (d) => {
+    const s = wrap(d);
+    let i = 0;
+    while (i + 1 < n && along[i + 1] <= s) i++;
+    const [a, b] = [pts[i], pts[(i + 1) % n]];
+    const span = (i + 1 < n ? along[i + 1] : total) - along[i];
+    return span < EPS ? a : add(a, mul(sub(b, a), (s - along[i]) / span));
+  };
+  const cuts = joins.map((k, j) => {
+    const spec = specs[j];
+    if (!spec) return null;
+    const p = pts[k];
+    const u = unit(sub(pts[(k - 1 + n) % n], p)); // back along the way in
+    const v = unit(sub(pts[(k + 1) % n], p)); // on along the way out
+    const cos = Math.max(-1, Math.min(1, dot(u, v)));
+    if (cos < -1 + 1e-9) return null; // no corner here: the outline runs straight through
+    if (cos > 1 - 1e-9) throw new Error(`path.close(): join ${j} is a cusp, both sides leave it the same way, so it cannot be ${spec.kind === 'round' ? 'rounded' : 'cut'}`);
+    const half = Math.acos(cos) / 2;
+    const back = spec.kind === 'round' ? spec.size / Math.tan(half) : spec.size;
+    return { j, k, p, u, v, half, back, spec };
+  });
+  // Each stretch between joins needs room for the cut-backs at both its ends.
+  joins.forEach((k, j) => {
+    const next = (j + 1) % joins.length;
+    const room = wrap(along[joins[next]] - along[k]) || total;
+    const need = (cuts[j]?.back ?? 0) + (cuts[next]?.back ?? 0);
+    if (need > room + 1e-9) {
+      const c = cuts[j] ?? cuts[next];
+      throw new Error(`path.close(): ${c.spec.kind} ${c.spec.size} does not fit between joins ${j} and ${next}`);
+    }
+  });
+  // What replaces each cut: where it starts along the outline, and its points.
+  const inserts = cuts.filter(Boolean).map((c) => {
+    const [a, b] = [pointAt(along[c.k] - c.back), pointAt(along[c.k] + c.back)];
+    const out = [a];
+    if (c.spec.kind === 'round') {
+      const r = c.spec.size;
+      const bisector = unit(add(c.u, c.v));
+      const center = add(c.p, mul(bisector, r / Math.sin(c.half)));
+      const [ta, tb] = [add(c.p, mul(c.u, c.back)), add(c.p, mul(c.v, c.back))];
+      const from = Math.atan2(ta[1] - center[1], ta[0] - center[0]);
+      let turn = Math.atan2(tb[1] - center[1], tb[0] - center[0]) - from;
+      if (turn > Math.PI) turn -= 2 * Math.PI;
+      if (turn < -Math.PI) turn += 2 * Math.PI;
+      const steps = Math.max(1, Math.ceil((segmentsFor(r, fn) * Math.abs(turn)) / (2 * Math.PI)));
+      for (let i = 1; i < steps; i++) {
+        const t = from + (turn * i) / steps;
+        out.push(/** @type {Vec2} */ ([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]));
+      }
+    }
+    out.push(b);
+    return { from: wrap(along[c.k] - c.back), to: wrap(along[c.k] + c.back), points: out };
+  });
+  const inside = (d, { from, to }) => (from <= to ? d > from - 1e-9 && d < to + 1e-9 : d > from - 1e-9 || d < to + 1e-9);
+  // The outline's own points outside every cut, and each cut's points, in order round the outline.
+  const items = [];
+  pts.forEach((p, i) => {
+    if (!inserts.some((c) => inside(along[i], c))) items.push({ at: along[i], points: [p] });
+  });
+  for (const c of inserts) items.push({ at: c.from, points: c.points });
+  items.sort((x, y) => x.at - y.at);
+  return items.flatMap((item) => item.points);
+}
+
+/** Point on a Bézier curve of any degree at t, by de Casteljau. @param {Vec2[]} controls @param {number} t @returns {Vec2} */
+function bezierAt(controls, t) {
+  let row = controls;
+  while (row.length > 1) row = row.slice(1).map((p, i) => /** @type {Vec2} */ ([row[i][0] + (p[0] - row[i][0]) * t, row[i][1] + (p[1] - row[i][1]) * t]));
+  return row[0];
+}
+
+/** Samples per curve to find where it bends; the points kept are chosen among them. */
+const DENSE = 512;
+
+/**
+ * The points along a Bézier curve after its start, up to and including its end, placed where it bends:
+ * a point every `360 / fn` degrees of turning, or, without `fn`, every `fa` degrees but never closer
+ * than `fs` — the rules a circle follows. A curve that bends hard at one end gets its points there,
+ * not spread evenly along the parameter.
+ * @param {Vec2[]} controls the start, the control points and the end
+ * @param {number | undefined} fn
+ * @returns {Vec2[]}
+ */
+function flattenCurve(controls, fn) {
+  const f = fn ?? resolution.fn;
+  const step = ((f > 0 ? 360 / f : resolution.fa) * Math.PI) / 180;
+  const shortest = f > 0 ? 0 : resolution.fs;
+  const dense = Array.from({ length: DENSE + 1 }, (_, i) => bezierAt(controls, i / DENSE));
+  const out = [];
+  let turned = 0;
+  let travelled = 0;
+  let heading = null;
+  for (let i = 1; i < DENSE; i++) {
+    const d = sub(dense[i], dense[i - 1]);
+    const length = Math.hypot(d[0], d[1]);
+    if (length < EPS) continue;
+    const dir = mul(d, 1 / length);
+    if (heading) turned += Math.acos(Math.max(-1, Math.min(1, dot(heading, dir))));
+    heading = dir;
+    travelled += length;
+    if (turned >= step - 1e-9 && travelled >= shortest) {
+      out.push(dense[i]);
+      [turned, travelled] = [0, 0];
+    }
+  }
+  // A last point kept just short of the end would leave a sliver of a segment: let the end take its place.
+  if (out.length > 0 && turned < step / 2) out.pop();
+  out.push(dense[DENSE]);
+  return out;
+}
+
+/**
  * An outline built piece by piece from a starting point: `path([0, 0]).line([10, 0]).curve(...).close()`.
  * Every piece starts where the last one ended. `close()` makes a 2D shape; an open path gives its
  * points to `sweep()` with `points()`. A path is built in place: each piece returns the same path.
@@ -147,7 +275,7 @@ export class Path {
     this.hooks?.handle(start, a);
     this.hooks?.handle(p, b);
     const heading = dist(b, p) > EPS ? unit(sub(p, b)) : dist(a, p) > EPS ? unit(sub(p, a)) : unit(sub(p, start));
-    return append(this, 'path.curve()', flattenBezier([start, a, b, p], this.fn), heading, b);
+    return append(this, 'path.curve()', flattenCurve([start, a, b, p], this.fn), heading, b);
   }
 
   /**
@@ -162,7 +290,7 @@ export class Path {
     this.hooks?.handle(start, k);
     this.hooks?.handle(p, k);
     const heading = dist(k, p) > EPS ? unit(sub(p, k)) : unit(sub(p, start));
-    return append(this, 'path.quad()', flattenBezier([start, k, p], this.fn), heading);
+    return append(this, 'path.quad()', flattenCurve([start, k, p], this.fn), heading);
   }
 
   /**
@@ -180,10 +308,11 @@ export class Path {
   }
 
   /**
-   * A circular arc to `to`: carrying on along the direction the path is heading, or through a point
-   * with `{ through }`. The first piece of a path needs `through`, having no direction yet.
+   * A circular arc to `to`: carrying on along the direction the path is heading, leaving in a direction
+   * of its own with `{ start }` (degrees counter-clockwise from +X, which also turns a corner), or through
+   * a point with `{ through }`. The first piece of a path needs `start` or `through`, having no direction yet.
    * @param {number[]} to
-   * @param {{ through?: number[] }} [options]
+   * @param {{ through?: number[], start?: number }} [options]
    * @returns {Path}
    */
   arc(to, options = {}) {
@@ -192,6 +321,7 @@ export class Path {
     const b = vec2(op, to);
     let center;
     let turn; // signed angle swept, counter-clockwise positive
+    if (options.through !== undefined && options.start !== undefined) throw new Error(`${op}: give through or start, not both`);
     if (options.through !== undefined) {
       const q = vec2(op, options.through);
       // The circle through a, q and b.
@@ -212,8 +342,9 @@ export class Path {
       };
       turn = span(angle(a), angle(b));
     } else {
-      if (!this.heading) throw new Error(`${op}: the first piece of a path has no direction to carry on; give { through }`);
-      const n = left(this.heading);
+      const heading = options.start !== undefined ? fromAngle(options.start) : this.heading;
+      if (!heading) throw new Error(`${op}: the first piece of a path has no direction to carry on; give { start } or { through }`);
+      const n = left(heading);
       const chord = sub(b, a);
       const along = dot(chord, n);
       if (Math.abs(along) < EPS) return this.line(b); // straight ahead: a line
@@ -243,21 +374,21 @@ export class Path {
    * A smooth curve through points, carrying on along the direction the path is heading (a centripetal
    * Catmull-Rom spline, made of cubic Bézier pieces).
    * @param {number[][]} through the points to pass through, the last one where the piece ends
-   * @param {SplineEnds} [options] `start` only when the path has no direction yet; `end` the arrival direction
+   * @param {SplineEnds} [options] `start` to leave in a direction of its own instead, turning a corner; `end` the arrival direction
    * @returns {Path}
    */
   spline(through, options = {}) {
     const op = 'path.spline()';
     if (!Array.isArray(through) || through.length === 0) throw new Error(`${op}: give at least one point to pass through`);
     const knots = [this.end, ...through.map((p) => vec2(op, p))];
-    const start = this.heading ?? (options.start !== undefined ? fromAngle(options.start) : null);
+    const start = options.start !== undefined ? fromAngle(options.start) : this.heading;
     const end = options.end !== undefined ? fromAngle(options.end) : null;
     const pieces = catmullRom(knots, { start, end });
     let from = this.end;
     const points = [];
     let lastControl = null;
     for (const [c1, c2, p] of pieces) {
-      points.push(...flattenBezier([from, c1, c2, p], this.fn));
+      points.push(...flattenCurve([from, c1, c2, p], this.fn));
       lastControl = c2;
       from = p;
     }
@@ -280,23 +411,8 @@ export class Path {
     this.closed = true;
     const pts = this.pts.slice(0, -1);
     const joins = this.joins.slice(0, -1); // the last join is the start again
-    const bySpot = new Map(joins.map((spot, i) => [spot, i]));
-    const perJoin = (value) => {
-      if (value === undefined) return undefined;
-      if (typeof value === 'number') return (i) => (bySpot.has(i) ? value : 0);
-      if (typeof value === 'function') return (i, p) => (bySpot.has(i) ? value(bySpot.get(i), p) : 0);
-      if (value && typeof value === 'object') {
-        return Object.fromEntries(
-          Object.entries(value).map(([j, size]) => {
-            const k = Number(j);
-            if (!(Number.isInteger(k) && k >= 0 && k < joins.length)) throw new Error(`path.close(): the joins are 0 to ${joins.length - 1}, not ${j}`);
-            return [joins[k], size];
-          }),
-        );
-      }
-      return value;
-    };
-    const shape = polygon(pts, { round: perJoin(options.round), chamfer: perJoin(options.chamfer), fn: options.fn ?? this.fn });
+    const specs = cornerSpecs(joins.map((k) => pts[k]), options.round, options.chamfer, 'path.close()', 'join');
+    const shape = polygon(softenJoins(pts, joins, specs, options.fn ?? this.fn));
     this.hooks?.profile(shape);
     return shape;
   }
@@ -359,14 +475,14 @@ export function splineIn(points, options, hooks) {
   let from = knots[0];
   const pts = [];
   pieces.forEach(([c1, c2, p], i) => {
-    const flat = flattenBezier([from, c1, c2, p], options.fn);
+    const flat = flattenCurve([from, c1, c2, p], options.fn);
     // The last piece comes back to the first point, which the outline already has.
     pts.push(...(i === pieces.length - 1 ? flat.slice(0, -1) : flat));
     from = p;
   });
   for (const k of knots.slice(1)) hooks?.point(k);
   hooks?.trace([knots[0], ...pts, knots[0]]);
-  const shape = polygon([knots[0], ...pts]);
+  const shape = polygon([knots[0], ...pts], { fn: options.fn });
   hooks?.profile(shape);
   return shape;
 }

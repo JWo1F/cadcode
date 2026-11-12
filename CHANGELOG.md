@@ -6,7 +6,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ### Added
 
-- `path(start)` draws an outline piece by piece: `line`, Bézier `curve`, `quad` and `smooth`, `arc` tangent or through a point, and `spline` through points, then `close()` into a 2D shape with rounded or cut joins; an open path's `points()` are for `sweep()`. `spline(points, { closed, start, end })` is a smooth curve through points on its own. In a sketch, `s.path()` and `s.spline()` show their curve, points and Bézier handles.
+- `path(start)` draws an outline piece by piece: `line`, Bézier `curve`, `quad` and `smooth`, `arc` tangent, at an angle or through a point, and `spline` through points, then `close()` into a 2D shape with rounded or cut joins, which reach along curves as far as they need; curves get their points where they bend; an open path's `points()` are for `sweep()`. `spline(points, { closed, start, end })` is a smooth curve through points on its own. In a sketch, `s.path()` and `s.spline()` show their curve, points and Bézier handles.
 
 ### Changed
 

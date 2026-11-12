@@ -1271,7 +1271,7 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
   {
     id: 'paths',
     title: 'Paths',
-    intro: 'A path draws an outline piece by piece from a starting point: straight lines, Bézier curves, arcs and smooth splines through points, each starting where the last one ended. `close()` makes it a 2D shape; an open path gives its points to `sweep()`. Curves are cut into segments by `fn` and `fa`, as circles are. A path is built in place: every piece returns the same path.',
+    intro: 'A path draws an outline piece by piece from a starting point: straight lines, Bézier curves, arcs and smooth splines through points, each starting where the last one ended. `close()` makes it a 2D shape; an open path gives its points to `sweep()`. Curves get their points where they bend: one every `360 / fn` degrees of turning, or without `fn` every `fa` degrees but no closer than `fs`, as circles are cut. A path is built in place: every piece returns the same path.',
     entries: [
       {
         id: 'path',
@@ -1355,10 +1355,11 @@ const wall = spline([[30, 0], [42, 40], [26, 90], [34, 120]], { start: 0, end: 0
         name: 'arc',
         owner: 'Path',
         signature: '.arc(to, options)',
-        summary: 'A circular arc to `to`: carrying on along the direction the path is heading, tangent to it, or through a third point. Straight ahead, it is a line.',
+        summary: 'A circular arc to `to`: carrying on along the direction the path is heading, tangent to it, leaving in a direction of its own, or through a third point. Straight ahead, it is a line.',
         params: [
           { name: 'to', type: '[x, y]', text: 'The end.' },
-          { name: 'options.through', type: '[x, y]', text: 'Optional. A point the arc passes through, instead of carrying on tangent. The first piece of a path needs it, having no direction yet.' },
+          { name: 'options.start', type: 'number', text: 'Optional. The direction to leave in, degrees counter-clockwise from +X, instead of carrying on: a corner, or the first piece of a path.' },
+          { name: 'options.through', type: '[x, y]', text: 'Optional. A point the arc passes through. Give `start` or `through`, not both; the first piece of a path needs one of them, having no direction yet.' },
         ],
         returns: 'Path',
         example: `path([0, 0]).line([20, 0]).arc([20, 10]).line([0, 10]).close()   // a D: the arc carries on from the line`,
@@ -1371,7 +1372,7 @@ const wall = spline([[30, 0], [42, 40], [26, 90], [34, 120]], { start: 0, end: 0
         summary: 'A smooth curve through points, carrying on along the direction the path is heading.',
         params: [
           { name: 'through', type: '[x, y][]', text: 'The points to pass through, the last one where the piece ends.' },
-          { name: 'options.start', type: 'number', text: 'Optional. The direction to leave in, degrees from +X, when this is the path\'s first piece.' },
+          { name: 'options.start', type: 'number', text: 'Optional. The direction to leave in, degrees from +X, instead of carrying on: a corner, or the first piece of a path.' },
           { name: 'options.end', type: 'number', text: 'Optional. The direction to arrive in.' },
         ],
         returns: 'Path',
@@ -1383,7 +1384,7 @@ const wall = spline([[30, 0], [42, 40], [26, 90], [34, 120]], { start: 0, end: 0
         signature: '.close(options)',
         summary: 'Closes the path back to its start with a straight line, if it is not there already, and makes it a 2D shape. `round` and `chamfer` soften the corners where pieces meet, as for `polygon`, by the index of the join: 0 is the start, then the end of each piece in order.',
         params: [
-          { name: 'options.round', type: 'number | { [join]: r } | (join, point) => r', text: 'Optional. Rounds joins. The sides either side need room for it: between two lines it always works, next to a curve the curve\'s own short segments may be too short and it throws.' },
+          { name: 'options.round', type: 'number | { [join]: r } | (join, point) => r', text: 'Optional. Rounds joins. The cut-back is measured along the outline, so next to a curve the round reaches over as many of its segments as it needs; each stretch between joins must have room for the cut-backs at both its ends. A join where the outline runs on smoothly has no corner and is left alone; a cusp, where both sides leave the same way, throws.' },
           { name: 'options.chamfer', type: 'number | { [join]: c } | (join, point) => c', text: 'Optional. Cuts joins, as for `round`.' },
         ],
         returns: 'Shape2',

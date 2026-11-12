@@ -31,7 +31,7 @@ test('Bézier curves and smooth continuations', () => {
   const quarter = path([0, 0], { fn: 400 }).line([10, 0]).curve([10, 10 * k], [10 * k, 10], [0, 10]).close();
   near(quarter.area(), Math.PI * 25, 0.05);
   const q = path([0, 0], { fn: 64 }).quad([5, 10], [10, 0]).close();
-  near(q.area(), (2 / 3) * 10 * 5, 0.1); // a parabolic segment: 2/3 of base times height (the peak is at 5)
+  near(q.area(), (2 / 3) * 10 * 5, 0.2); // a parabolic segment: 2/3 of base times height (the peak is at 5)
   const s = path([0, 0], { fn: 64 }).curve([0, 5], [5, 5], [5, 0]).smooth([5, -5], [10, 0]);
   assert.ok(s instanceof Path);
   assert.deepEqual(s.end, [10, 0]);
@@ -67,4 +67,29 @@ test('a path in a sketch shows its handles, points and curve', () => {
   assert.equal(s.profiles[0], shape);
   s.spline([[0, 0], [5, 5], [10, 0]]);
   assert.ok(s.traces.length >= 4);
+});
+
+test('joins round along the outline, next to curves at any resolution', () => {
+  const arch = (fn) => path([0, 0], { fn }).curve([0, 5], [5, 10], [10, 10]).curve([15, 10], [20, 5], [20, 0]).close({ round: { 0: 2, 2: 2 } });
+  for (const fn of [16, 64, 256]) assert.ok(arch(fn).area() > 140);
+  // A tangent join has no corner and is left as it is; a cusp cannot be rounded.
+  near(path([0, 0], { fn: 64 }).line([10, 0]).arc([10, 10]).line([0, 10]).close({ round: 1 }).area(), path([0, 0], { fn: 64 }).line([10, 0]).arc([10, 10]).line([0, 10]).close({ round: { 0: 1, 3: 1 } }).area(), 1e-3);
+  assert.throws(() => path([0, 0]).line([10, 0]).line([0, 0.5]).close({ round: { 1: 1 } }), /does not fit|cusp/);
+  assert.throws(() => path([0, 0]).line([10, 0]).line([10, 10]).close({ round: { 7: 1 } }), /the joins are 0 to 2/);
+});
+
+test('curves get their points where they bend', () => {
+  // A curve that runs straight and then bends hard: its points crowd into the bend.
+  const pts = path([0, 0], { fn: 36 }).curve([40, 0], [50, 0], [50, 10]).points();
+  // The nearly straight start needs few points; the bend at the end takes most of them.
+  assert.ok(pts.filter((p) => p[0] > 45).length >= pts.length / 2, JSON.stringify(pts));
+});
+
+test('an arc or a spline can leave in a direction of its own', () => {
+  const up = path([0, 0], { fn: 400 }).arc([10, 0], { start: 90 }).close();
+  near(up.area(), (Math.PI * 25) / 2, 1e-2);
+  near(up.bounds().max[1], 5, 1e-6);
+  const corner = path([0, 0]).line([10, 0]).spline([[10, 10]], { start: 90 }).points();
+  near(corner[2][0], 10, 0.05); // turns the corner and goes straight up
+  assert.throws(() => path([0, 0]).arc([1, 0], { start: 90, through: [0.5, 0.5] }), /not both/);
 });

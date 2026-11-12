@@ -1064,13 +1064,13 @@ export function polygon(points, paths, options) {
 }
 
 /**
- * One spec per point from polygon()'s `round` and `chamfer`.
+ * @internal One spec per point from polygon()'s `round` and `chamfer`; a path's close() sizes its joins with it.
  * @param {number} count
  * @param {unknown} round
  * @param {unknown} chamfer
  * @returns {(EdgeSpec | undefined)[]}
  */
-function cornerSpecs(points, round, chamfer) {
+export function cornerSpecs(points, round, chamfer, op = 'polygon()', what = 'corner') {
   const count = points.length;
   /** @type {(EdgeSpec | undefined)[]} */
   const specs = Array(count).fill(undefined);
@@ -1082,7 +1082,7 @@ function cornerSpecs(points, round, chamfer) {
     const set = new Set();
     for (const [kind, value] of given) {
       if (value === undefined || everyCorner(value) !== level) continue;
-      if (!level && (!value || typeof value !== 'object')) throw new Error(`polygon(): ${kind} must be a number, a function of the corner's index, or an object like { 0: 1 } by index`);
+      if (!level && (!value || typeof value !== 'object')) throw new Error(`${op}: ${kind} must be a number, a function of the ${what}'s index, or an object like { 0: 1 } by index`);
       const sizes =
         typeof value === 'number' ? points.map(() => value)
         : typeof value === 'function' ? points.map((p, i) => value(i, p) ?? 0)
@@ -1090,10 +1090,10 @@ function cornerSpecs(points, round, chamfer) {
       const entries = sizes ? sizes.map((size, i) => [String(i), size]) : Object.entries(value);
       for (const [key, size] of entries) {
         const i = Number(key);
-        if (!(Number.isInteger(i) && i >= 0 && i < count)) throw new Error(`polygon(): ${kind} names corner ${key}, but the corners are 0 to ${count - 1}`);
-        if (!(typeof size === 'number' && size >= 0)) throw new Error(`polygon(): ${kind} must be 0 or more, got ${JSON.stringify(size)} for corner ${i}`);
+        if (!(Number.isInteger(i) && i >= 0 && i < count)) throw new Error(`${op}: ${kind} names ${what} ${key}, but the ${what}s are 0 to ${count - 1}`);
+        if (!(typeof size === 'number' && size >= 0)) throw new Error(`${op}: ${kind} must be 0 or more, got ${JSON.stringify(size)} for ${what} ${i}`);
         if (level && size === 0) continue;
-        if (set.has(i)) throw new Error(`polygon(): give corner ${i} round or chamfer, not both`);
+        if (set.has(i)) throw new Error(`${op}: give ${what} ${i} round or chamfer, not both`);
         set.add(i);
         specs[i] = size === 0 ? undefined : { kind, size };
       }

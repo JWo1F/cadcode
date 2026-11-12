@@ -304,7 +304,7 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] };
 
 ### Paths
 
-A path draws an outline piece by piece: lines, Bézier curves, arcs and splines through points, each starting where the last ended. `close()` makes a 2D shape; an open path's `points()` are a path to `sweep()` along. Curves follow `fn` and `fa`, as circles do.
+A path draws an outline piece by piece: lines, Bézier curves, arcs and splines through points, each starting where the last ended. `close()` makes a 2D shape; an open path's `points()` are a path to `sweep()` along. Curves get their points where they bend, by `fn`, or `fa` and `fs`, as circles do.
 
 ```js
 const nose = path([0, 0]).line([12, 0]).line([12, 20]).curve([12, 32], [6, 38], [0, 44]).close();
@@ -317,9 +317,9 @@ const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: 
 | `.line(to)`, `.line({ angle, length })` | A straight line to a point, or at an angle for a length. |
 | `.curve(c1, c2, to)`, `.quad(c, to)` | Cubic and quadratic Bézier curves. |
 | `.smooth(c2, to)` | A cubic whose first control point mirrors the last curve's second, like SVG's `S`. |
-| `.arc(to)`, `.arc(to, { through })` | A circular arc carrying on tangent to the path, or through a point. |
-| `.spline(through, { start, end })` | A smooth curve through points, carrying on tangent to the path. |
-| `.close({ round, chamfer })` | Back to the start with a line if needed; a `Shape2`. Round or cut the joins (0 the start, then each piece's end) as for `polygon`. |
+| `.arc(to)`, `.arc(to, { start })`, `.arc(to, { through })` | A circular arc carrying on tangent to the path, leaving at an angle of its own, or through a point. |
+| `.spline(through, { start, end })` | A smooth curve through points, carrying on tangent to the path unless `start` gives it a direction. |
+| `.close({ round, chamfer })` | Back to the start with a line if needed; a `Shape2`. Round or cut the joins (0 the start, then each piece's end) as for `polygon`; next to a curve the round reaches over as much of it as it needs. |
 | `.points()`, `.end` | The points so far, for `sweep()`; where the path is now. |
 | `spline(points, { closed, start, end, fn })` | A centripetal Catmull-Rom spline through points: closed, a `Shape2`; open, a path. `start` and `end` set the directions at the ends in degrees. |
 | `s.path(...)`, `s.spline(...)` | In a sketch: the viewer draws the curve, its points and its Bézier handles. |
