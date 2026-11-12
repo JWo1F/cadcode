@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, polygon, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, polygon, slot, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -248,4 +248,15 @@ test('polygon rounds and chamfers corners by index', () => {
   near(polygon(sq, { chamfer: (i, [x]) => (x > 5 ? 1 : 0), round: { 1: 0 } }).area(), 100 - 0.5);
   assert.throws(() => polygon(sq, { round: 1, chamfer: 1 }), /round or chamfer, not both/);
   assert.throws(() => polygon(sq, { round: (i) => -1 }), /0 or more/);
+});
+
+test('square rounds its corners inside the same size; slot is a stadium', () => {
+  const r = square([10, 6], { center: true, round: 1, fn: 400 });
+  near(r.area(), 60 - 4 * (1 - Math.PI / 4), 1e-2);
+  assert.deepEqual(r.bounds(), { min: [-5, -3], max: [5, 3] });
+  near(square(4, { chamfer: { 2: 1 } }).area(), 15.5);
+  const s = slot([-3, 0], [3, 0], 2, { fn: 400 });
+  near(s.area(), 12 + Math.PI, 1e-2);
+  near(s.bounds().max[0], 4, 1e-9);
+  assert.throws(() => slot([0, 0], [1, 0], 0), /width/);
 });

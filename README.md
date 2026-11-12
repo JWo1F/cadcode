@@ -195,7 +195,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 
 | Function | Notes |
 | --- | --- |
-| `square(size, { center })` | `size` is a number or `[x, y]`. |
+| `square(size, { center, round, chamfer, fn })` | `size` is a number or `[x, y]`. `round` and `chamfer` soften the corners inside the same size, all or by index (0 at the smallest x and y, counter-clockwise) or function, as for `polygon`. |
+| `slot(from, to, width, { fn })` | A stadium: round ends of `width` centered on two points, for slotted holes and ports. |
 | `circle(r)` or `circle({ r \| d, fn })` | |
 | `polygon(points, paths?, { round, chamfer, fn })` | Paths inside other paths become holes. `round: r` rounds every corner and `chamfer: c` cuts it; an object sizes some by index into `points` (`{ round: { 3: 4 }, chamfer: { 1: 2 } }`) and a function each by its index and point (`{ round: (i) => (i % 2 ? 2 : 3) }`). An inside corner rounds into a fillet. |
 | `text(string, { size, font, halign, valign, spacing, lineHeight, fn })` | Text for labels and engraving; letters keep their holes, `\n` breaks lines. `size` is the height of a capital letter (default 10). `halign` is `left`, `center` or `right`; `valign` is `baseline`, `top`, `center` or `bottom`. The font is Liberation Sans unless `font` gives a font file's bytes: `import font from './Roboto.ttf'` (TTF, OTF or WOFF). Curves follow `fn` and `fa`, not `fs`. |

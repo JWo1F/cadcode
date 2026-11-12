@@ -803,12 +803,42 @@ export function polyhedron(points, faces) {
 // 2D primitives
 
 /**
+ * @typedef {object} SquareOptions
+ * @property {boolean} [center]
+ * @property {PolygonOptions['round']} [round] corners rounded inside the same size: a radius for every
+ *   corner, or by index or function as for `polygon()`; corner 0 is at the smallest x and y, then
+ *   counter-clockwise
+ * @property {PolygonOptions['chamfer']} [chamfer] corners cut back along both sides, as for `round`
+ * @property {number} [fn] segments of a full circle, for `round`
+ */
+
+/**
+ * A rectangle with one corner at the origin, or centered with `{ center: true }`.
+ * `{ round: 2 }` rounds its corners and `{ chamfer: 1 }` cuts them, inside the same size.
  * @param {number | number[]} [size]
- * @param {{ center?: boolean }} [options]
+ * @param {SquareOptions} [options]
  */
 export function square(size = 1, options = {}) {
   const s = typeof size === 'number' ? [size, size] : [size[0], size[1]];
-  return new Shape2(CrossSection.square(s, options.center ?? false));
+  const { center = false, round, chamfer, fn } = options;
+  if (round === undefined && chamfer === undefined) return new Shape2(CrossSection.square(s, center));
+  const [x0, y0] = center ? [-s[0] / 2, -s[1] / 2] : [0, 0];
+  const [x1, y1] = [x0 + s[0], y0 + s[1]];
+  return polygon([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], { round, chamfer, fn });
+}
+
+/**
+ * A slot: a stadium of `width` whose round ends are centered on `from` and `to`, as a milled slot or
+ * a hole for a sliding pin. Equal points give a circle.
+ * @param {number[]} from
+ * @param {number[]} to
+ * @param {number} width
+ * @param {{ fn?: number }} [options]
+ */
+export function slot(from, to, width, options = {}) {
+  if (!(typeof width === 'number' && width > 0)) throw new Error(`slot(): width must be more than 0, got ${width}`);
+  const end = (p) => circle({ r: width / 2, fn: options.fn }).translate([p[0] ?? 0, p[1] ?? 0]);
+  return end(from).hull(end(to));
 }
 
 /**

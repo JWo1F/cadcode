@@ -11,6 +11,7 @@ export {
   square,
   circle,
   polygon,
+  slot,
   union,
   difference,
   intersection,

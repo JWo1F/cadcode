@@ -177,9 +177,27 @@ cylinder({ d: 20, h: 8, chamfer: { top: 1 } }) // flat bottom for the bed`,
         params: [
           { name: 'size', type: 'number | [x, y]', default: '1', text: 'A number makes a square.' },
           { name: 'options.center', type: 'boolean', default: 'false', text: 'Center it on the origin instead.' },
+          { name: 'options.round', type: 'number | { [index]: r } | (index, point) => r', text: 'Optional. Rounds the corners inside the same size: every corner, or some by index or function as for `polygon`. Corner 0 is at the smallest x and y, then counter-clockwise.' },
+          { name: 'options.chamfer', type: 'number | { [index]: c } | (index, point) => c', text: 'Optional. Cuts the corners back along both sides, given as for `round`.' },
+          fn,
         ],
         returns: 'Shape2',
-        example: `square([30, 12], { center: true })`,
+        example: `square([30, 12], { center: true })
+square([9, 3.3], { center: true, round: 1 })    // a USB-C window`,
+      },
+      {
+        id: 'slot',
+        name: 'slot',
+        signature: 'slot(from, to, width, options)',
+        summary: 'A stadium: two round ends of `width`, centered on `from` and `to`, and the straight between them. A slotted hole, a pin track, a cable port. Equal points give a circle.',
+        params: [
+          { name: 'from', type: '[x, y]', text: 'The center of one end.' },
+          { name: 'to', type: '[x, y]', text: 'The center of the other.' },
+          { name: 'width', type: 'number', text: 'Across the slot, more than 0.' },
+          fn,
+        ],
+        returns: 'Shape2',
+        example: `slot([-3, 0], [3, 0], 3.4)    // a 9.4 × 3.4 slot for a USB-C port`,
       },
       {
         id: 'circle',

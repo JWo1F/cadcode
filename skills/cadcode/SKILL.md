@@ -156,7 +156,7 @@ surface (its normal square to it), `frameAt(point, normal)` one at any point, an
 `.perpendicular(p)`, `.intersect(other)`, `s.circle(c, r)` give `[x, y]` points for `s.polygon(...)` and
 `s.extrude(...)`. Add the sketch to the part's return (`[body, s]`) and its guides show in the viewer and in
 `cadcode png` — check them there when an outline comes out wrong.
-Rounded-rectangle cut-outs: `square([w - 2 * r, h - 2 * r], { center: true }).offset(r).extrude(depth)`.
+Rounded-rectangle cut-outs: `square([w, h], { center: true, round: r })`; slotted holes and ports: `slot(a, b, width)`.
 
 **Text.** `text('A1', { size: 5, halign: 'center', valign: 'center' })` is a `Shape2`; extrude it for raised
 letters, or subtract the extrusion for engraving (sink it: extrude a bit deeper than the cut and
