@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-13
+
 ### Added
 
 - Wood screw sizes `W3` to `W6` for `screw()`, `screwHole()` and `boss()`.
@@ -192,7 +194,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/81e43c6...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/1352a4e...HEAD
+[0.16.0]: https://github.com/JWo1F/cadcode/compare/81e43c6...1352a4e
 [0.15.0]: https://github.com/JWo1F/cadcode/compare/03842cf...81e43c6
 [0.14.0]: https://github.com/JWo1F/cadcode/compare/6c34691...03842cf
 [0.13.0]: https://github.com/JWo1F/cadcode/compare/499707c...6c34691
