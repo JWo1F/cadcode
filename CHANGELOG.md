@@ -20,7 +20,6 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `cadcode stl --all` (and `3mf`, `png`) builds each part in a fresh worker, as `-p` does, so a part that calls `setResolution()` or `setFit()` no longer changes the parts after it. An unknown command is reported before the program is built.
 - A threaded hole (`thread({ internal: true })`) is grown so its facets clear a round screw; at the default resolution an M3 hole bound.
 - Lengths in the viewer and playground show up to 2 decimals, the same in the readout and the measure label.
-- `startDevServer()` returns `{ url, close }` and takes `port: 0`.
 - `ec11().cutout` reaches down to the body's bottom, so it cuts the panel whichever side of it the mounting face is put.
 - The examples take holes, standoffs and fits from the hardware library and use `clip`, `ring`, `polarPoint` and cylinder axes. The bracket and hook's M4 countersinks are 8.96 across, and the sensor case's battery rests 0.25 lower.
 
