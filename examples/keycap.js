@@ -68,9 +68,7 @@ export default (p) => {
   const dishR = ((topW / 2) ** 2 + p.dish ** 2) / (2 * p.dish);
   const dish = () =>
     top(p.height).place(
-      cylinder({ r: dishR, h: p.topD + 10, center: true, fn: 180 })
-        .rotate([90, 0, 0])
-        .translate([0, 0, dishR - p.dish]),
+      cylinder({ r: dishR, h: p.topD + 10, center: true, axis: 'y', fn: 180 }).translate([0, 0, dishR - p.dish]),
     );
 
   const roofZ = p.height - p.dish - p.roof; // underside of the roof, at the middle
@@ -87,7 +85,7 @@ export default (p) => {
 
   const keycap = () =>
     body(0, 0)
-      .subtract(body(p.wall, -1).intersect(cube([200, 200, roofZ + 1]).translate([-100, -100, -1])), dish())
+      .subtract(body(p.wall, -1).clip({ z: [-Infinity, roofZ] }), dish())
       .union(stems());
 
   // A plain MX switch for the assembly view: housing, plate-mount clips and the red cross stem.

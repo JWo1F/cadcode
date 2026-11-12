@@ -2,7 +2,7 @@
 title: Spiral staircase
 description: A desk model with wedge treads, balusters and a handrail around a column.
 ---*/
-import { cylinder, hull, polygon, range, setResolution, sphere } from 'cadcode';
+import { cylinder, hull, polarPoint, polygon, range, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -48,18 +48,12 @@ export default (p) => {
 
   // A tread is a ring sector, from inside the column to the outer radius.
   const tread = (i) => {
-    const arc = range(0, 8).map((k) => {
-      const a = ((angle(i) + ((step + p.overlap) * k) / 8) * Math.PI) / 180;
-      return [p.radius * Math.cos(a), p.radius * Math.sin(a)];
-    });
+    const arc = range(0, 8).map((k) => polarPoint(p.radius, angle(i) + ((step + p.overlap) * k) / 8));
     return polygon([[0, 0], ...arc]).extrude(p.tread).translate([0, 0, treadZ(i)]);
   };
 
   // The middle of a tread's outer edge, where its baluster stands.
-  const post = (i, z) => {
-    const a = ((angle(i) + step / 2) * Math.PI) / 180;
-    return [edge * Math.cos(a), edge * Math.sin(a), z];
-  };
+  const post = (i, z) => [...polarPoint(edge, angle(i) + step / 2), z];
 
   const baluster = (i) => cylinder({ d: p.balusterD, h: p.railHeight, fn: 8 }).translate(post(i, treadZ(i) + p.tread - 0.5));
 

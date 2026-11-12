@@ -65,8 +65,8 @@ export default (p) => {
     ]);
     const c = [p.reach, tipY + p.bendR + p.tipH / 2];
     const ring = circle(p.bendR + p.tipH)
-      .subtract(circle(p.bendR))
-      .intersect(square([p.bendR + p.tipH + 1, p.bendR + p.tipH + 1]).translate([0, -p.bendR - p.tipH - 1]))
+      .ring(p.tipH)
+      .clip({ x: [0, Infinity], y: [-Infinity, 0] })
       .translate(c);
     const w = p.tipH;
     const tipX = c[0] + p.bendR + p.tipH / 2;
@@ -80,19 +80,19 @@ export default (p) => {
 
   // Rods along X and Y through the prongs' centres; the prongs keep only what lies inside them.
   const prongTrim = () => {
-    const rod = (h) => cylinder({ d: p.roundTo, h, center: true });
+    const rod = (axis) => cylinder({ d: p.roundTo, h: 40, center: true, axis });
     return union(
-      rod(40).rotate([0, 90, 0]).translate([back, z1, p.t / 2]),
-      rod(40).rotate([0, 90, 0]).translate([-p.boardT / 2, z0, p.t / 2]),
-      rod(40).rotate([90, 0, 0]).translate([back - p.prong / 2, z1, p.t / 2]),
+      rod('x').translate([back, z1, p.t / 2]),
+      rod('x').translate([-p.boardT / 2, z0, p.t / 2]),
+      rod('y').translate([back - p.prong / 2, z1, p.t / 2]),
     );
   };
 
-  // Print orientation: the profile on the bed, the thickness along Z.
+  // Print orientation: the profile on the bed, the thickness along Z. Behind the board's face (X < 0)
+  // only the prongs are, trimmed round.
   const hook = () => {
     const flat = linearExtrude(p.t, {}, profile());
-    const prongZone = cube([-back + p.prong + 1, 60, p.t + 2]).translate([back - p.prong - 1, z0 - 30, -1]);
-    return flat.subtract(prongZone).union(flat.intersect(prongZone, prongTrim()));
+    return flat.clip({ x: [0, Infinity] }).union(flat.clip({ x: [-Infinity, 0] }).intersect(prongTrim()));
   };
 
   // In use: profile upright in XZ, thickness centred on Y = 0.

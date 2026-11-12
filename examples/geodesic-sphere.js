@@ -2,7 +2,7 @@
 title: Geodesic sphere
 description: A frame of struts from a subdivided icosahedron, cut flat to stand and print.
 ---*/
-import { cube, hull, range, sphere, union } from 'cadcode';
+import { hull, range, sphere, union } from 'cadcode';
 
 // A geodesic frame: an icosahedron whose faces are split into frequency^2 triangles, every new
 // corner pushed out onto the sphere. Each edge becomes a strut, the hull of two small balls, and
@@ -98,9 +98,9 @@ export default (p) => {
       .filter(([a, b]) => keep(a) || keep(b))
       .map(([a, b]) => hull(ball(p.strut, a), ball(p.strut, b)));
     const nodes = hubs.filter(keep).map((v) => ball(p.hub, v));
-    const span = 2 * p.radius + 4 * p.hub;
-    const above = cube([span, span, span], { center: true }).translate([0, 0, cutZ + span / 2]);
-    return union(struts, nodes).intersect(above).translate([0, 0, -cutZ]);
+    return union(struts, nodes)
+      .clip({ z: [cutZ, Infinity] })
+      .translate([0, 0, -cutZ]);
   };
 
   return { frame };

@@ -7,7 +7,7 @@ description: A Staunton-style set turned on a virtual lathe, every piece printed
 //
 //   cadcode dev examples/chess-set.js
 //   cadcode stl examples/chess-set.js --all
-import { cube, polar, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { cube, polar, polarPoint, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -30,12 +30,7 @@ export const params = [
 
 export default (p) => {
   // Profile helpers, in [radius, z] points.
-  const rad = (deg) => (deg * Math.PI) / 180;
-  const arc = ([cx, cz], r, from, to, n = 10) =>
-    range(0, n).map((i) => {
-      const a = rad(from + ((to - from) * i) / n);
-      return [cx + r * Math.cos(a), cz + r * Math.sin(a)];
-    });
+  const arc = (center, r, from, to, n = 10) => range(0, n).map((i) => polarPoint(r, from + ((to - from) * i) / n, center));
   // A stem that flares out at the bottom: radius eases from r0 at z0 to r1 at z1.
   const stem = (r0, z0, r1, z1, n = 10) =>
     range(0, n).map((i) => {

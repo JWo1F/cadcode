@@ -8,7 +8,7 @@ description: An oval dish with draining ribs, standing in an optional drip tray.
 //
 //   cadcode dev examples/soap-dish.js
 //   cadcode stl examples/soap-dish.js --part dish
-import { cube, cylinder, grid, hull, polygon, product, range, setResolution, slot, sphere, square } from 'cadcode';
+import { cube, cylinder, grid, hull, polygon, product, range, setResolution, slot, sphere } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -59,13 +59,13 @@ export default (p) => {
     ]);
     const outside = core.offset(round);
     const section = outside
-      .subtract(outside.offset(-wall))
-      .intersect(square([2 * (r + round), h]).translate([-r - round, 0]))
+      .ring(wall)
+      .clip({ y: [0, h] })
       .offset(-wall * 0.45)
       .offset(wall * 0.45) // round the rim; before halving, so the axis keeps a straight edge
-      .intersect(square([r + round, h]));
+      .clip({ x: [0, Infinity] });
     // The inside of the bowl as a solid, for trimming ribs to the wall.
-    const inside = outside.offset(-wall).intersect(square([r + round, 2 * h]));
+    const inside = outside.offset(-wall).clip({ x: [0, Infinity], y: [-Infinity, 2 * h] });
     return {
       shell: section.revolve().scale([p.oval, 1, 1]),
       inside: inside.revolve().scale([p.oval, 1, 1]),

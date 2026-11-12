@@ -2,12 +2,12 @@
 title: Cookie cutter
 description: A thin blade grown from any 2D outline, with a wide rim to press on.
 ---*/
-// A cookie cutter from a 2D outline: a thin blade grown outwards from the shape with offset(), and a
+// A cookie cutter from a 2D outline: a thin blade grown outwards from the shape with ring(), and a
 // wide rim to press on. Prints rim down with the cutting edge up, no supports.
 //
 //   cadcode dev examples/cookie-cutter.js
 //   cadcode stl examples/cookie-cutter.js --part cutter --set shape=star
-import { cylinder, path, polygon, range, setResolution, union } from 'cadcode';
+import { cylinder, path, polarPoint, polygon, range, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -53,11 +53,7 @@ export default (p) => {
       .close({ round: { 0: 1, 3: 0.75 } }); // blunt the tip, soften the notch
 
   const star = () => {
-    const points = range(0, 9).map((i) => {
-      const a = Math.PI / 2 + (i * Math.PI) / 5;
-      const r = i % 2 ? 15 : 37;
-      return [r * Math.cos(a), r * Math.sin(a)];
-    });
+    const points = range(0, 9).map((i) => polarPoint(i % 2 ? 15 : 37, 90 + i * 36));
     // Blunt the tips and the valleys, so the blade can bend round them and the dough comes out.
     return polygon(points, { round: (i) => (i % 2 ? 2 : 3) });
   };
@@ -71,7 +67,7 @@ export default (p) => {
   };
 
   // A band of width w just outside the outline.
-  const ring = (w) => outline().offset(w).subtract(outline());
+  const ring = (w) => outline().ring(w, { outward: true });
 
   // Rim on the bed, blade rising from it; the inside face is one straight wall so the dough slides out.
   const cutter = () =>
@@ -93,9 +89,9 @@ export default (p) => {
     const sprinkles = range(0, 17).map((i) => {
       const r = 0.36 * p.size * Math.sqrt((i + 0.5) / 18);
       const a = i * 137.5;
-      return cylinder({ d: 1.6, h: 5, center: true, fn: 8 })
-        .rotate([0, 90, a * 2])
-        .translate([r * Math.cos((a * Math.PI) / 180), r * Math.sin((a * Math.PI) / 180), 6])
+      return cylinder({ d: 1.6, h: 5, center: true, axis: 'x', fn: 8 })
+        .rotate(a * 2)
+        .translate([...polarPoint(r, a), 6])
         .intersect(inside)
         .color(colors[i % colors.length]);
     });

@@ -7,7 +7,7 @@ description: A stepped tray for 1/4" screwdriver bits, with a strip in front for
 //
 //   cadcode dev examples/hex-bit-holder.js
 //   cadcode stl examples/hex-bit-holder.js --part tray
-import { circle, cube, cylinder, plane, polygon, product, range, setResolution, square, union } from 'cadcode';
+import { circle, cube, cylinder, plane, polarPoint, polygon, product, range, setResolution, square, union } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -83,7 +83,7 @@ export default (p) => {
     () => square([5.5, 0.9], { center: true }).extrude(4, { scale: [0.8, 0.5] }), // slotted
     () => circle({ d: hexD(3), fn: 6 }).extrude(4), // hex key
     () =>
-      polygon(range(0, 11).map((k) => [((k % 2 ? 1.5 : 2.4) * Math.cos((k * Math.PI) / 6)), ((k % 2 ? 1.5 : 2.4) * Math.sin((k * Math.PI) / 6))]))
+      polygon(range(0, 11).map((k) => polarPoint(k % 2 ? 1.5 : 2.4, k * 30)))
         .offset(0.3)
         .extrude(4), // Torx
   ];

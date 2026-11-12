@@ -2,7 +2,7 @@
 title: Compression spring
 description: A coil spring swept along a helix, with closed and ground ends so it stands flat.
 ---*/
-import { circle, cylinder, setResolution } from 'cadcode';
+import { circle, polarPoint, setResolution } from 'cadcode';
 
 setResolution({ fn: 24 });
 
@@ -41,8 +41,7 @@ export default (p) => {
   for (let i = 0; i <= steps; i++) {
     const t = (turns * i) / steps;
     if (i > 0) z += pitchAt(t) / p.perTurn;
-    const a = 2 * Math.PI * t;
-    path.push([r * Math.cos(a), r * Math.sin(a), z]);
+    path.push([...polarPoint(r, 360 * t), z]);
   }
 
   const height = z;
@@ -52,7 +51,7 @@ export default (p) => {
   const spring = () => {
     const cut = p.wireD / 2;
     return coil()
-      .intersect(cylinder({ r: r + p.wireD, h: height + p.wireD - 2 * cut }).translate([0, 0, cut]))
+      .clip({ z: [cut, height + p.wireD - cut] })
       .translate([0, 0, -cut]);
   };
 

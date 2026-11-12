@@ -10,7 +10,7 @@ description: A desk or door sign with a name and a second line, engraved or rais
 //
 //   cadcode dev examples/nameplate.js
 //   cadcode stl examples/nameplate.js --set 'name="Ada Lovelace"' --all
-import { cube, text } from 'cadcode';
+import { cube, square, text } from 'cadcode';
 
 export const params = [
   {
@@ -54,8 +54,9 @@ export default (p) => {
   const slab = cube([width, height, p.thick], { round: { z: p.round } }).align(lettering, { x: 'center', y: 'center' });
   const frame =
     p.border > 0 &&
-    cube([width, height, p.depth], { round: { z: p.round } })
-      .subtract(cube([width - 2 * p.border, height - 2 * p.border, p.depth + 2], { round: { z: Math.max(p.round - p.border, 0.01) } }).translate([p.border, p.border, -1]))
+    square([width, height], { round: p.round })
+      .ring(p.border)
+      .extrude(p.depth)
       .align(slab, { x: 'center', y: 'center', z: 'after' });
 
   // Raised letters stand on the face; engraved ones are cut from it, starting a little above.

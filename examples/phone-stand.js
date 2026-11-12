@@ -98,8 +98,8 @@ export default (p) => {
     const [w, h, t] = [72, 150, 9];
     const shell = square([t - 2, w - 8], { center: true })
       .offset(4)
-      .extrude(h)
-      .intersect(cube([t, w, h], { center: true }).translate([0, 0, h / 2]));
+      .clip({ x: [-t / 2, t / 2] })
+      .extrude(h);
     return [
       shell.color('#1d1d1f'),
       cube([0.6, w - 6, h - 6], { center: true }).translate([-t / 2, 0, h / 2]).color('#3b5b7a'),

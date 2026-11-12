@@ -2,7 +2,7 @@
 title: Propeller
 description: A fan propeller with twisted, tapered blades and a domed spinner.
 ---*/
-import { cube, cylinder, frameAt, polar, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { cylinder, frameAt, polar, polygon, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -83,7 +83,7 @@ export default (p) => {
     const r = p.hubD / 2;
     const dome = sphere(r)
       .scale([1, 1, p.spinner / r])
-      .intersect(cube([p.hubD, p.hubD, p.spinner], { center: true }).translate([0, 0, p.spinner / 2]));
+      .clip({ z: [0, Infinity] });
     return cylinder({ r, h: p.hubH }).union(dome.translate([0, 0, p.hubH]));
   };
 

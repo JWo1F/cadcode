@@ -2,7 +2,7 @@
 title: Twisted vase
 description: A lobed vase that twists and flares as it rises.
 ---*/
-import { cube, polygon, range, setResolution } from 'cadcode';
+import { polarPoint, polygon, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -25,11 +25,7 @@ export const params = [
 
 export default (p) => {
   const profile = () => {
-    const points = range(0, 2 * p.lobes - 1).map((i) => {
-      const a = (i * Math.PI) / p.lobes;
-      const r = i % 2 === 0 ? p.radius : p.radius * p.valley;
-      return [r * Math.cos(a), r * Math.sin(a)];
-    });
+    const points = range(0, 2 * p.lobes - 1).map((i) => polarPoint(i % 2 === 0 ? p.radius : p.radius * p.valley, (i * 180) / p.lobes));
     // Every tip is rounded and every valley, an inside corner, becomes a fillet.
     return polygon(points, { round: p.round });
   };
@@ -46,10 +42,7 @@ export default (p) => {
 
   const vase = () => {
     const over = 1;
-    const span = 4 * p.radius * p.topScale;
-    const inside = extrude(profile().offset(-p.wall), p.height + over).intersect(
-      cube([span, span, p.height + over], { center: true }).translate([0, 0, p.bottom + (p.height + over) / 2]),
-    );
+    const inside = extrude(profile().offset(-p.wall), p.height + over).clip({ z: [p.bottom, Infinity] });
     return solid().subtract(inside);
   };
 

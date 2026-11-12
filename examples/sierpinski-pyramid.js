@@ -2,7 +2,7 @@
 title: Sierpinski pyramid
 description: A tetrahedron of half-size tetrahedra, again and again, printed without supports.
 ---*/
-import { polyhedron, union } from 'cadcode';
+import { polarPoint, polyhedron, union } from 'cadcode';
 
 // A Sierpinski tetrahedron: a tetrahedron split into four half-size copies at its corners, again
 // and again. The copies only touch at their corners, so each one is grown a little about its own
@@ -29,7 +29,7 @@ export default (p) => {
   // Base triangle counter-clockwise seen from above, apex over its centre.
   const corners = () => {
     const rb = p.edge / Math.sqrt(3);
-    const base = [-15, 105, 225].map((a) => [rb * Math.cos((a * Math.PI) / 180), rb * Math.sin((a * Math.PI) / 180), 0]);
+    const base = [-15, 105, 225].map((a) => [...polarPoint(rb, a), 0]);
     return [...base, [0, 0, p.edge * Math.sqrt(2 / 3)]];
   };
 

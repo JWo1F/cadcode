@@ -2,7 +2,7 @@
 title: Torus knot
 description: A tube that winds around a torus, any (p, q) you give it.
 ---*/
-import { cube, hull, range, setResolution, sphere, union } from 'cadcode';
+import { hull, range, setResolution, sphere, union } from 'cadcode';
 
 setResolution({ fn: 20 });
 
@@ -40,9 +40,8 @@ export default (k) => {
 
   const print = () => {
     const bottom = -k.swing - k.tube + k.flatBottom;
-    const size = 2 * (k.radius + k.swing + k.tube) + 2;
     return knot()
-      .intersect(cube([size, size, size], { center: true }).translate([0, 0, bottom + size / 2]))
+      .clip({ z: [bottom, Infinity] })
       .translate([0, 0, -bottom]);
   };
 

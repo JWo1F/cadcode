@@ -8,7 +8,7 @@ description: A retro model rocket with swept fins, portholes and a nozzle, print
 //
 //   cadcode dev examples/rocket.js
 //   cadcode stl examples/rocket.js --part body
-import { cylinder, frameAt, path, plane, polar, polygon, setResolution, union } from 'cadcode';
+import { cylinder, frameAt, path, plane, polar, polarPoint, polygon, setResolution, union } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -86,8 +86,8 @@ export default (p) => {
     { z: 49, d: p.portD * 0.7 },
   ];
   // Each porthole is built on a frame on the axis at its height, looking out between the first two fins.
-  const facing = ((-360 / p.fins / 2) * Math.PI) / 180;
-  const radial = (z) => frameAt([0, 0, z], [Math.cos(facing), Math.sin(facing), 0]);
+  const facing = -360 / p.fins / 2;
+  const radial = (z) => frameAt([0, 0, z], [...polarPoint(1, facing), 0]);
   const rims = () => portAt.map(({ z, d }) => radial(z).place(cylinder({ d: d + 3, h: R + p.rim })));
   const recess = 1.2;
   const holes = () => portAt.map(({ z, d }) => radial(z).offset(R + p.rim - recess).place(cylinder({ d, h: recess + 1 })));

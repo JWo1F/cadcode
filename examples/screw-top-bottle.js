@@ -2,7 +2,7 @@
 title: Screw-top bottle
 description: A bottle lofted from a rounded-square body into a round neck, with a threaded neck and a cap that screws on.
 ---*/
-import { circle, cube, cylinder, loft, polar, setResolution, square, thread } from 'cadcode';
+import { circle, cylinder, loft, polar, setResolution, square, thread } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -72,8 +72,7 @@ export default (p) => {
   const cap = () => capInPlace().layFlat('+Z');
 
   // A cut-away of the closed bottle, to check that the cap seats on the neck.
-  const section = () =>
-    [bottle(), capInPlace().color('tomato')].map((s) => s.subtract(cube([200, 100, 400]).translate([-100, -100, -10])));
+  const section = () => [bottle(), capInPlace().color('tomato')].map((s) => s.clip({ y: [0, Infinity] }));
 
   console.log(`${p.width} mm wide, ${neckZ + p.neckHeight} mm to the rim, ${p.neckD} mm neck`);
 

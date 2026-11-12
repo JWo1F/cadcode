@@ -8,7 +8,7 @@ description: A twisted, faceted plant pot with a drainage hole and a matching sa
 //
 //   cadcode dev examples/planter.js
 //   cadcode stl examples/planter.js --all
-import { cube, cylinder, polar, polygon, range, setResolution, sphere } from 'cadcode';
+import { cube, cylinder, polar, polarPoint, polygon, range, setResolution, sphere } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -46,13 +46,7 @@ export const params = [
 
 export default (p) => {
   const profile = () =>
-    polygon(
-      range(0, 2 * p.facets - 1).map((i) => {
-        const a = (i * Math.PI) / p.facets;
-        const r = i % 2 ? p.radius * (1 - p.depth) : p.radius;
-        return [r * Math.cos(a), r * Math.sin(a)];
-      }),
-    );
+    polygon(range(0, 2 * p.facets - 1).map((i) => polarPoint(i % 2 ? p.radius * (1 - p.depth) : p.radius, (i * 180) / p.facets)));
 
   // Twist and flare grow linearly with height, so a shape extruded taller with both stretched to
   // match follows the same surface: that keeps the inside parallel to the outside.
@@ -65,10 +59,7 @@ export default (p) => {
 
   const pot = () => {
     const over = 2;
-    const span = 3 * p.radius * p.flare;
-    const inside = extrude(profile().offset({ delta: -p.wall }), p.height + over).intersect(
-      cube([span, span, p.height + over]).translate([-span / 2, -span / 2, p.bottom]),
-    );
+    const inside = extrude(profile().offset({ delta: -p.wall }), p.height + over).clip({ z: [p.bottom, Infinity] });
     const channels = polar(cube([2 * p.radius + 2, p.channel, 2], { center: true }), { count: 3, start: 15 }); // each bar crosses the whole floor
     return extrude(profile(), p.height).subtract(inside, cylinder({ d: p.hole, h: 3 * p.bottom, center: true }), channels);
   };
@@ -85,7 +76,7 @@ export default (p) => {
   const plant = () => {
     const soilZ = p.height - 10;
     const soil = extrude(profile().offset({ delta: -p.wall - 0.2 }), soilZ)
-      .intersect(cube([300, 300, 6]).translate([-150, -150, soilZ - 6]))
+      .clip({ z: [soilZ - 6, Infinity] })
       .color('#5a3d2b');
     const rings = [
       { n: 5, len: 7, tilt: 20, out: 1 },
