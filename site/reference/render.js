@@ -15,6 +15,9 @@ const rootOf = (name) => (name.startsWith('...') ? name : name.split('.')[0]);
 
 const methodsOf = (cls) => Object.getOwnPropertyNames(cls.prototype).filter((name) => name !== 'constructor');
 
+// Members the library uses itself, marked @internal, that the page does not describe.
+const INTERNAL = new Set(['Solid.manifold', 'Shape2.section']);
+
 /** Throws, naming every export or method the page does not describe. */
 export function checkCoverage() {
   const entries = sections.flatMap((section) => section.entries);
@@ -30,7 +33,7 @@ export function checkCoverage() {
     ...methodsOf(Line).map((name) => `Line.${name}`),
     ...methodsOf(Circle).map((name) => `Circle.${name}`),
   ];
-  const missing = required.filter((name) => !documented.has(name));
+  const missing = required.filter((name) => !documented.has(name) && !INTERNAL.has(name));
   if (missing.length) throw new Error(`site/reference/content.js does not describe: ${missing.join(', ')}`);
 
   const ids = entries.map((entry) => entry.id);
