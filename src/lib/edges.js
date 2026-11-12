@@ -5,6 +5,7 @@
 // between the corner and an arc, swept along the run; a chamfer does the same with a straight cut.
 
 import { Solid, polygon, segmentsFor } from './shapes.js';
+import { vec3 } from './vec.js';
 
 /** @typedef {[number, number, number]} Vec3 */
 
@@ -40,13 +41,7 @@ import { Solid, polygon, segmentsFor } from './shapes.js';
  * @property {(edge: Edge) => boolean} [where] any test of your own
  */
 
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const len = (a) => Math.hypot(a[0], a[1], a[2]);
-const unit = (a) => mul(a, 1 / len(a));
+const { sub, add, scale: mul, dot, cross, length: len, normalize: unit } = vec3;
 
 /** Faces that meet at less than this many degrees are one surface, such as the facets of a cylinder. */
 const SHARP = 20;

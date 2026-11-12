@@ -1,19 +1,14 @@
 // Solids built ring by ring from a 2D profile: sweep along a path, loft between sections,
 // and the helix that springs and threads follow.
 import { Manifold, Mesh, Solid, segmentsFor, triangulate } from './shapes.js';
+import { vec3 } from './vec.js';
 
 /** @typedef {import('./shapes.js').Vec2} Vec2 */
 /** @typedef {import('./shapes.js').Vec3} Vec3 */
 
 const EPS = 1e-9;
 
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const length = (a) => Math.hypot(a[0], a[1], a[2]);
-const normalize = (a) => mul(a, 1 / length(a));
+const { sub, add, scale: mul, dot, cross, length, normalize } = vec3;
 
 /** `v` turned by `angle` radians around the unit `axis` (Rodrigues). */
 function turn(v, axis, angle) {

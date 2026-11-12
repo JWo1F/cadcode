@@ -5,6 +5,7 @@
 import { plane } from './frame.js';
 import { polygon } from './shapes.js';
 import { sketchPath, splineIn } from './path.js';
+import { vec2 as V2 } from './vec.js';
 
 /** @typedef {[number, number]} Vec2 */
 
@@ -15,12 +16,7 @@ const vec2 = (p) => {
   if (!Array.isArray(p) || typeof p[0] !== 'number' || typeof p[1] !== 'number') throw new Error(`sketch: a point must be [x, y], got ${JSON.stringify(p)}`);
   return [p[0], p[1]];
 };
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
-const add = (a, b) => /** @type {Vec2} */ ([a[0] + b[0], a[1] + b[1]]);
-const mul = (a, k) => /** @type {Vec2} */ ([a[0] * k, a[1] * k]);
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
-const crossZ = (a, b) => a[0] * b[1] - a[1] * b[0];
-const left = (d) => /** @type {Vec2} */ ([-d[1], d[0]]);
+const { sub, add, scale: mul, dot, cross: crossZ, left } = V2;
 
 /** Adds a guide to its sketch, for the viewer. @template {Line | Circle} T @param {T} guide @returns {T} */
 function keep(guide) {

@@ -2,6 +2,8 @@
 // needs no rotate().translate() chain. A frame maps local [u, v, w] to the world: u and v lie
 // in the plane, w runs along its normal.
 
+import { vec3 } from './vec.js';
+
 /** @typedef {[number, number, number]} Vec3 */
 
 const AXES = /** @type {const} */ (['X', 'Y', 'Z']);
@@ -135,11 +137,7 @@ export const plane = Object.freeze({
   YZ: axisFrame('X', 1, 0),
 });
 
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const scaled = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const unit = (a) => scaled(a, 1 / Math.hypot(...a));
+const { sub, scale: scaled, dot, cross, normalize: unit } = vec3;
 
 /**
  * A frame at a point with the given normal, such as on a curved surface. Local v points as close to

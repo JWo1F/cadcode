@@ -2,19 +2,12 @@
 // points — closed into a 2D shape, or left open as the points of a path to sweep along.
 
 import { polygon, circle, union, segmentsFor, cornerSpecs, resolution } from './shapes.js';
+import { vec2 as V2 } from './vec.js';
 
 /** @typedef {[number, number]} Vec2 */
 
 const EPS = 1e-9;
-const sub = (a, b) => /** @type {Vec2} */ ([a[0] - b[0], a[1] - b[1]]);
-const add = (a, b) => /** @type {Vec2} */ ([a[0] + b[0], a[1] + b[1]]);
-const mul = (a, k) => /** @type {Vec2} */ ([a[0] * k, a[1] * k]);
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
-const crossZ = (a, b) => a[0] * b[1] - a[1] * b[0];
-const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-const unit = (a) => mul(a, 1 / Math.hypot(a[0], a[1]));
-const left = (d) => /** @type {Vec2} */ ([-d[1], d[0]]);
-const fromAngle = (deg) => /** @type {Vec2} */ ([Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180)]);
+const { sub, add, scale: mul, dot, cross: crossZ, distance: dist, normalize: unit, left, fromAngle } = V2;
 
 /** @param {string} op @param {unknown} p @returns {Vec2} */
 function vec2(op, p) {

@@ -1,6 +1,7 @@
 import Module from 'manifold-3d';
 import { parseColor } from './colors.js';
 import { range } from './util.js';
+import { vec3 } from './vec.js';
 import { sweepPolygons } from './sweep.js';
 import { faceFrame, frameAt } from './frame.js';
 import { edgesOf, softenEdges } from './edges.js';
@@ -536,9 +537,7 @@ const SMOOTH_UNDER = 40;
 function firstHit({ numProp, vertProperties, triVerts }, origin, dir, normalAt) {
   const vertex = (i) => [vertProperties[i * numProp], vertProperties[i * numProp + 1], vertProperties[i * numProp + 2]];
   const normal = (i) => [0, 1, 2].map((k) => vertProperties[i * numProp + normalAt + k]);
-  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const { sub, cross, dot } = vec3;
   let best = null;
   for (let t = 0; t < triVerts.length; t += 3) {
     const [a, b, c] = [vertex(triVerts[t]), vertex(triVerts[t + 1]), vertex(triVerts[t + 2])];
