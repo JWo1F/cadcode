@@ -8,7 +8,7 @@ description: A box and lid for a Pro Micro board, a Li-ion cell and a climate se
 //   cadcode dev examples/sensor-case.js
 //   cadcode stl examples/sensor-case.js --part box
 //   cadcode png examples/sensor-case.js --part assembly --view sheet
-import { circle, cube, cylinder, square, union, difference, intersection, setResolution, product, grid, arrange } from 'cadcode';
+import { cell, circle, cube, cylinder, square, union, difference, setResolution, product, grid, arrange } from 'cadcode';
 
 setResolution({ fn: 40 });
 
@@ -109,7 +109,10 @@ export default (p) => {
   // Grid of pores over an a x b rectangle, drawn from [0, 0]
   const poreGrid = (a, b) => grid(circle({ d: poreD }), { pitch: porePitch, within: square([a, b]) });
 
-  const snapLine = (len) => cylinder({ r: bumpR, h: len, center: true }).rotate([0, 90, 0]);
+  const snapLine = (len) => cylinder({ r: bumpR, h: len, center: true, axis: 'x' });
+
+  // The cell resting on the floor, centered in its compartment; its cutout is batClr bigger across.
+  const battery = cell({ d: batD, l: batL, clearance: batClr / 2 }).translate([mainL / 2 - batL / 2, batY0 + (batD + batClr) / 2, 0]);
 
   const box = () => {
     const shell = roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]);
@@ -152,10 +155,7 @@ export default (p) => {
 
       // Battery cradles
       [mainL / 2 - batL / 3, mainL / 2 + batL / 3].map((x) =>
-        difference(
-          cube([2, batD + batClr + 0.5, batD * 0.4]).translate([x - 1, batY0 - 0.5, 0]),
-          cylinder({ d: batD + batClr, h: 4 }).rotate([0, 90, 0]).translate([x - 2, batY0 + (batD + batClr) / 2, (batD + batClr) / 2]),
-        ),
+        cube([2, batD + batClr + 0.5, batD * 0.4]).translate([x - 1, batY0 - 0.5, 0]).subtract(battery.cutout),
       ),
 
       // Sensor pad
@@ -173,20 +173,14 @@ export default (p) => {
 
       // Skirt with snap bumps
       difference(
-        cube([iL - 2 * fit, iW - 2 * fit, lipD]).translate([fit, fit, iH - lipD]),
-        cube([iL - 2 * fit - 2 * lipT, iW - 2 * fit - 2 * lipT, lipD + 1]).translate([fit + lipT, fit + lipT, iH - lipD - 1]),
+        square([iL - 2 * fit, iW - 2 * fit]).ring(lipT).extrude(lipD).translate([fit, fit, iH - lipD]),
         cube([divT + 0.6, iW + 2, lipD + 1]).translate([mainL - 0.3, -1, iH - lipD - 1]), // slot for the divider
         // Slits beside the snaps, so the tabs flex more easily
         product(bumpXs, [-1, 1]).map(([x, s]) =>
           cube([1, iW + 2, lipD + 1 - 0.5]).translate([x + s * (bumpLen / 2 + 0.75) - 0.5, -1, iH - lipD - 1]),
         ),
       ),
-      product(bumpXs, [fit, iW - fit]).map(([x, y]) =>
-        intersection(
-          snapLine(bumpLen).translate([x, y, iH - lipD / 2]),
-          cube([iL, iW - 2 * fit + 2 * bumpR, iH]).translate([0, fit - bumpR, 0]),
-        ),
-      ),
+      product(bumpXs, [fit, iW - fit]).map(([x, y]) => snapLine(bumpLen).translate([x, y, iH - lipD / 2])),
 
       // Board hold-downs: on the USB-C body and on the far edge of the board
       cylinder({ d: 3, h: iH - (boardStandoff + boardT + usbH + 0.2) }).translate([boardX0 + 4, usbCy, boardStandoff + boardT + usbH + 0.2]),
@@ -202,10 +196,7 @@ export default (p) => {
   const dummies = () => [
     cube([boardL, boardW, boardT]).translate([boardX0, boardY0, boardStandoff]).color('green'),
     cube([7.5, usbW, usbH]).translate([boardX0 - 0.5, usbCy - usbW / 2, boardStandoff + boardT]).color('silver'),
-    cylinder({ d: batD, h: batL })
-      .rotate([0, 90, 0])
-      .translate([mainL / 2 - batL / 2, batY0 + (batD + batClr) / 2, (batD + batClr) / 2])
-      .color('royalblue'),
+    battery.body.color('royalblue'),
     cube([sensorS, sensorS, 1.2]).translate([sx0 + (sensL - sensorS) / 2, (iW - sensorS) / 2, sensorPadH]).color('purple'),
   ];
 

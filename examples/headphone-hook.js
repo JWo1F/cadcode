@@ -9,7 +9,7 @@ description: A rounded strap that screws under a desk and holds headphones by th
 //
 //   cadcode dev examples/headphone-hook.js
 //   cadcode stl examples/headphone-hook.js --part hanger
-import { cube, cylinder, plane, setResolution, sketch, square, union } from 'cadcode';
+import { cube, cylinder, frameAt, plane, screwHole, setResolution, sketch, square } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -33,12 +33,10 @@ export const params = [
       lip: { value: 12, name: 'Lip', description: 'Length of the straight end after the saddle, in mm.' },
     },
   },
-  // #8 countersunk wood screws, 4 mm
+  // #8 countersunk wood screws, 4 mm: holes sized for M4
   {
     name: 'Screws',
     children: {
-      screwD: { value: 4.4, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-      headD: { value: 8.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
       holeInset: { value: 12, name: 'Hole inset', description: "Distance of each hole from the ends of the plate's straight part, in mm." },
     },
   },
@@ -67,16 +65,10 @@ export default (p) => {
   const strap = () => section().sweep(centre.points().map(([x, y]) => [x, y, 0]), { up: [0, 0, 1] });
 
   // Screws go up into the desk; the heads sink into the plate's lower face, halfway up the width.
-  const sink = (p.headD - p.screwD) / 2;
-  const screwHole = () =>
-    union(
-      cylinder({ d: p.screwD, h: p.t + 2 }).translate([0, 0, -1]),
-      cylinder({ d1: p.headD, d2: p.screwD, h: sink }).translate([0, 0, -0.01]),
-      cylinder({ d: p.headD, h: 1 }).translate([0, 0, -1]),
-    );
-  const lowerFace = plane.XZ.offset(-p.t);
-  const holes = () =>
-    [p.holeInset, p.plate - p.holeInset].map((x) => lowerFace.place(screwHole().translate([x, p.width / 2, 0])));
+  // The lower face looks down -Y, with u along X and v up the width.
+  const lowerFace = frameAt([0, -p.t, 0], [0, -1, 0]);
+  const sink = () => screwHole('M4', { length: p.t + 1, head: 'countersunk' });
+  const holes = () => [p.holeInset, p.plate - p.holeInset].map((x) => lowerFace.place(sink().translate([x, p.width / 2, 0])));
 
   // Print orientation: on its side, the strap's width standing up from the bed.
   const hanger = () => strap().subtract(holes());
@@ -96,9 +88,7 @@ export default (p) => {
       .rotate(-10); // symmetric about +Y
     const headband = plane.YZ.place(ring).translate([x, 0, cy]); // into the YZ plane, apex up
     const cups = [-1, 1].map((s) =>
-      cylinder({ d: 78, h: 34, center: true })
-        .rotate([90, 0, 0])
-        .translate([x, s * (R - 4), cy - 22]),
+      cylinder({ d: 78, h: 34, center: true, axis: 'y' }).translate([x, s * (R - 4), cy - 22]),
     );
     return [headband.color('#2b2d42', 0.55), cups.map((c) => c.color('#3d405b'))]; // a see-through band, so the hanger shows
   };

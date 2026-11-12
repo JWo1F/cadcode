@@ -7,7 +7,7 @@ description: A case for the Pi Zero and Zero 2 W with a sliding lid that clicks 
 //
 //   cadcode dev examples/pi-zero-case.js
 //   cadcode stl examples/pi-zero-case.js --part print
-import { arrange, circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { arrange, boss, circle, cube, cylinder, fit, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -29,7 +29,6 @@ export const params = [
       boardT: { value: 1.4, name: 'Board thickness', description: 'Thickness of the board, in mm.' },
       holeInset: { value: 3.5, name: 'Hole inset', description: 'Distance of the mounting holes from the board edges, in mm.' },
       standoff: { value: 3, name: 'Standoff', description: 'Height of the standoffs under the board, in mm.' },
-      screwHole: { value: 2.2, name: 'Screw hole', description: 'Hole in the standoffs for M2.5 self-tapping screws, in mm.' },
       headroom: { value: 6, name: 'Headroom', description: 'Space above the board, under the lid, in mm; keeps the plug recesses below the lid groove.' },
     },
   },
@@ -51,7 +50,7 @@ export const params = [
       lidT: { value: 3, name: 'Lid thickness', description: 'Thickness of the lid, flush with the walls, in mm.' },
       tongueT: { value: 1.2, name: 'Tongue', description: 'Thickness of the tongue that runs in the grooves, in mm.' },
       groove: { value: 1, name: 'Groove depth', description: 'Depth of the lid grooves in the walls, in mm.' },
-      slide: { value: 0.2, name: 'Slide clearance', description: 'Clearance for the lid in the grooves, in mm.' },
+      slide: { value: fit('slide'), name: 'Slide clearance', description: 'Clearance for the lid in the grooves, in mm.' },
       detent: { value: 0.5, name: 'Click bumps', description: "How far the click bumps stand out of the tongue's edges, in mm." },
     },
   },
@@ -100,7 +99,7 @@ export default (p) => {
     // SD card in the left end, with a scoop to get a fingernail on the card
     const scoop = circle({ d: 12 })
       .translate([by(p.sdY), boardTop + 1])
-      .intersect(square([20, 10]).translate([by(p.sdY) - 10, boardTop - 0.5]));
+      .clip({ y: [boardTop - 0.5, Infinity] });
     const sd = [
       left.extrude(square([13, 3]).translate([by(p.sdY) - 6.5, boardTop - 0.5]), -p.wall, { through: true }),
       left.extrude(scoop, -0.9, { through: 'start' }), // stops short of the lid groove behind it
@@ -124,11 +123,8 @@ export default (p) => {
       return cylinder({ r: 0.7, h: p.tongueT + p.slide }).translate([detentX, y, lidZ]);
     });
 
-    const standoffs = holes.map(([x, y]) =>
-      cylinder({ d: 5.5, h: p.standoff })
-        .subtract(cylinder({ d: p.screwHole, h: p.standoff + 1 }).translate([0, 0, 0.6]))
-        .translate([bx(x), by(y), 0]),
-    );
+    // For M2.5 self-tapping screws
+    const standoffs = holes.map(([x, y]) => boss('M2.5', { h: p.standoff, d: 5.5, floor: 0.6 }).translate([bx(x), by(y), 0]));
 
     return shell
       .subtract(cube([iL, iW, H + 1]), ports, sd, camera, grooves, entry, notches)

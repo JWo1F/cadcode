@@ -7,7 +7,7 @@ description: A base with port windows and a snap-on cover for the Pi 3 Model B+.
 //
 //   cadcode dev examples/pi3-case.js
 //   cadcode stl examples/pi3-case.js --part print
-import { arrange, circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { arrange, boss, circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -28,7 +28,6 @@ export const params = [
       boardW: { value: 56, name: 'Board width', description: 'Width of the board, in mm.' },
       boardT: { value: 1.4, name: 'Board thickness', description: 'Thickness of the board, in mm.' },
       standoff: { value: 3, name: 'Standoff', description: 'Height of the standoffs, room for the SD card underneath, in mm.' },
-      screwHole: { value: 2.2, name: 'Screw hole', description: 'Hole in the standoffs for M2.5 self-tapping screws, in mm.' },
       headroom: { value: 1.6, name: 'Headroom', description: 'Space over the USB stack, the tallest part, in mm.' },
     },
   },
@@ -84,7 +83,7 @@ export default (p) => {
     const side = box.face('-Y'); // port side, (x, z)
     const end = box.face('+X'); // right end, (y, z)
     const left = box.face('-X'); // left end, (y, z)
-    const scoop = circle({ d: 12 }).intersect(square([14, 7]).translate([-7, 0])); // upper half
+    const scoop = circle({ d: 12 }).clip({ y: [0, Infinity] }); // upper half
     return [
       window(side, [bx(10.6), boardTop + 1.5], [10, 5], [12.5, 8, 2]), // micro-USB power
       window(side, [bx(32), boardTop + 3], [16.5, 7.5], [22, 12, 2]), // HDMI
@@ -106,8 +105,8 @@ export default (p) => {
     return box.subtract(outline(0).extrude(iH), ports(box));
   };
 
-  const below = (z) => cube([iL + 20, iW + 20, z + 20]).translate([-10, -10, -20]);
-  const lipRing = (off, h) => outline(off).subtract(outline(-1)).extrude(h).translate([0, 0, splitZ]);
+  // From `off` outside the interior to 1 inside it.
+  const lipRing = (off, h) => outline(off).ring(off + 1).extrude(h).translate([0, 0, splitZ]);
 
   const snapZ = splitZ + p.lipH / 2;
   const snapXs = [iL / 4, (3 * iL) / 4];
@@ -115,7 +114,7 @@ export default (p) => {
     product(snapXs, [0, 1]).map(([x, side]) => {
       const face = side === 0 ? -p.lipT : iW + p.lipT;
       const y = side === 0 ? face - r + standOut : face + r - standOut;
-      return cylinder({ r, h: p.snapLen, center: true }).rotate([0, 90, 0]).translate([x, y, snapZ]);
+      return cylinder({ r, h: p.snapLen, center: true, axis: 'x' }).translate([x, y, snapZ]);
     });
 
   const base = () => {
@@ -123,14 +122,11 @@ export default (p) => {
     const slits = product(snapXs, [-1, 1]).map(([x, s]) =>
       cube([1, iW + 2 * p.wall + 2, p.lipH + 1]).translate([x + s * (p.snapLen / 2 + 1) - 0.5, -p.wall - 1, splitZ + 1]),
     );
-    const standoffs = holes.map(([x, y]) =>
-      cylinder({ d: 6, h: p.standoff })
-        .subtract(cylinder({ d: p.screwHole, h: p.standoff + 1 }).translate([0, 0, 0.6]))
-        .translate([bx(x), by(y), 0]),
-    );
+    // For M2.5 self-tapping screws
+    const standoffs = holes.map(([x, y]) => boss('M2.5', { h: p.standoff, d: 6, floor: 0.6 }).translate([bx(x), by(y), 0]));
     const s = shell();
     return s
-      .intersect(below(splitZ))
+      .clip({ z: [-Infinity, splitZ] })
       .union(s.intersect(lipRing(p.lipT, p.lipH)).subtract(slits), snaps(0.6, p.snapIn), standoffs);
   };
 
@@ -139,7 +135,8 @@ export default (p) => {
       cube([p.ventW, 26, p.top + 2]).translate([bx(19) + i * p.ventPitch, by(18), iH - 1]),
     );
     return shell()
-      .subtract(below(splitZ), lipRing(p.lipT + p.fit, p.lipH + p.fit).translate([0, 0, -0.01]), snaps(0.7, p.snapIn + 0.1), vents);
+      .clip({ z: [splitZ, Infinity] })
+      .subtract(lipRing(p.lipT + p.fit, p.lipH + p.fit).translate([0, 0, -0.01]), snaps(0.7, p.snapIn + 0.1), vents);
   };
 
   const board = () => {
@@ -149,7 +146,7 @@ export default (p) => {
     const metal = [
       cube([7.5, 5.6, 3]).translate([10.6 - 3.75, -1, p.boardT]),
       cube([15, 11.5, 6]).translate([32 - 7.5, -1, p.boardT]),
-      cylinder({ d: 6, h: 12 }).rotate([90, 0, 0]).translate([53.5, 11, p.boardT + 3]),
+      cylinder({ d: 6, h: 12, axis: 'y' }).translate([53.5, -1, p.boardT + 3]),
       cube([17.5, 13.1, 16]).translate([p.boardL - 15.4, 9 - 6.55, p.boardT]),
       cube([17.5, 13.1, 16]).translate([p.boardL - 15.4, 27 - 6.55, p.boardT]),
       cube([21.5, 16, 13.5]).translate([p.boardL - 19.4, 45.75 - 8, p.boardT]),

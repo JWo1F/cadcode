@@ -8,7 +8,7 @@ description: A shelf bracket with a gusset, a filleted corner and countersunk sc
 //
 //   cadcode dev examples/l-bracket.js
 //   cadcode stl examples/l-bracket.js
-import { cylinder, plane, product, setResolution, sketch } from 'cadcode';
+import { plane, product, screwHole, setResolution, sketch } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -36,8 +36,6 @@ export const params = [
   {
     name: 'Screws',
     children: {
-      hole: { value: 4.5, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-      head: { value: 8.6, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
       holes: { value: 2, name: 'Holes', description: 'Screw holes per leg, across the width: 1 or 2.' },
     },
   },
@@ -65,13 +63,10 @@ export default (p) => {
   // Pushed along +Y: the profile across the full width, the gusset in the middle.
   const gusset = () => plane.XZ.offset((p.width - p.gusset) / 2).extrude(gussetShape, p.gusset);
 
-  // Through hole plus a 90° cone; the cone overshoots the face so it cuts clean.
-  const sink = () => [
-    cylinder({ d: p.hole, h: p.thick + 2 }).translate([0, 0, -1]),
-    cylinder({ d1: p.hole, d2: p.head + 1, h: (p.head + 1 - p.hole) / 2 }).translate([0, 0, p.thick - (p.head - p.hole) / 2]),
-  ];
-  // The cutter at [u, v] on a plane through the outside of a leg, the cone towards the inside.
-  const sinkAt = (frame, u, v) => sink().map((c) => frame.place(c.translate([u, v, 0])));
+  // A through hole with a 90° countersink, sized for M4 (a 4 mm wood screw takes the same).
+  const sink = () => screwHole('M4', { length: p.thick + 1, head: 'countersunk' });
+  // The cutter at [u, v] on a leg's inside face, going down through the leg.
+  const sinkAt = (frame, u, v) => frame.place(sink().translate([u, v, 0]));
 
   // Holes sit across the width, clear of the gusset, at the middle of the free stretch of each leg.
   const ys = p.holes === 1 ? [p.width / 2] : [p.width * 0.22, p.width * 0.78];
@@ -80,8 +75,8 @@ export default (p) => {
   const shelfX = [freeShelf + (p.shelfLeg - freeShelf) * 0.35, freeShelf + (p.shelfLeg - freeShelf) * 0.8];
   const wallZ = [freeWall + (p.wallLeg - freeWall) * 0.3, freeWall + (p.wallLeg - freeWall) * 0.75];
 
-  const shelfHoles = () => product(shelfX, ys).map(([x, y]) => sinkAt(plane.XY, x, y));
-  const wallHoles = () => product(wallZ, ys).map(([z, y]) => sinkAt(plane.YZ, y, z));
+  const shelfHoles = () => product(shelfX, ys).map(([x, y]) => sinkAt(plane.XY.offset(p.thick), x, y));
+  const wallHoles = () => product(wallZ, ys).map(([z, y]) => sinkAt(plane.YZ.offset(p.thick), y, z));
 
   const bracket = () =>
     plane.XZ.extrude(profile, p.width).union(gusset()).subtract(shelfHoles(), wallHoles());

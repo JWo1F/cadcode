@@ -2,7 +2,7 @@
 title: Knob
 description: A knurled knob with a pointer, for a 6 mm D-shaft potentiometer.
 ---*/
-import { cube, cylinder, polar, polygon, setResolution } from 'cadcode';
+import { cube, cylinder, fit, polar, polygon, setResolution } from 'cadcode';
 
 setResolution({ fn: 96 });
 
@@ -32,7 +32,7 @@ export const params = [
       shaftD: { value: 6, name: 'Shaft diameter', description: 'Diameter of the potentiometer shaft, in mm.' },
       shaftFlat: { value: 4.5, name: 'Shaft flat', description: 'Width of the shaft across the flat, in mm.' },
       shaftDepth: { value: 11, name: 'Shaft depth', description: 'Depth of the D-hole, in mm.' },
-      fit: { value: 0.2, name: 'Fit', description: 'Clearance added to the hole, across the round and the flat, in mm.' },
+      fit: { value: 2 * fit('press'), name: 'Fit', description: 'Clearance added to the hole, across the round and the flat, in mm.' },
     },
   },
 ];
@@ -64,7 +64,7 @@ export default (p) => {
     const flat = p.shaftFlat + p.fit;
     // Round on -Y, flat at `flat` from the round side.
     return cylinder({ d, h: p.shaftDepth + 1 })
-      .intersect(cube([d + 2, flat + 1, p.shaftDepth + 3]).translate([-d / 2 - 1, -d / 2 - 1, -1]))
+      .clip({ y: [-Infinity, flat - d / 2] })
       .translate([0, 0, -1]);
   };
 

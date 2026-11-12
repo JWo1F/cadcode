@@ -9,7 +9,7 @@ description: A small box and lid joined by a hinge that comes off the bed alread
 //
 //   cadcode dev examples/hinged-box.js
 //   cadcode stl examples/hinged-box.js --part print
-import { circle, cube, ellipse, frameAt, hull, plane, range, setResolution } from 'cadcode';
+import { circle, cube, ellipse, fit, frameAt, hull, plane, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -34,7 +34,7 @@ export const params = [
       knuckleD: { value: 8, name: 'Knuckle diameter', description: 'Outside diameter of the hinge knuckles, in mm.' },
       pinD: { value: 3.4, name: 'Pin diameter', description: 'Diameter of the hinge pin, in mm.' },
       margin: { value: 6, name: 'Hinge margin', description: 'Distance from each end of the box to the hinge, in mm.' },
-      gap: { value: 0.4, name: 'Gap', description: 'Clearance between moving parts, radial and axial, in mm.' },
+      gap: { value: fit('loose'), name: 'Gap', description: 'Clearance between moving parts, radial and axial, in mm.' },
     },
   },
   {
