@@ -1251,26 +1251,69 @@ function combine(items, op, solidOp, shapeOp) {
   }
 }
 
-/** @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function union(...items) {
   return combine(items, 'union', (ms) => Manifold.union(ms), (cs) => CrossSection.union(cs));
 }
 
 /**
+ * @overload
+ * @param {Solid} base
+ * @param {...SolidItems} cutters
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {Shape2} base
+ * @param {...Shape2Items} cutters
+ * @returns {Shape2}
+ */
+/**
  * Subtracts every following shape from the first one.
  * @param {Solid | Shape2} base
  * @param {...ShapeItems} cutters
+ * @returns {Solid | Shape2}
  */
 export function difference(base, ...cutters) {
   return base.subtract(...cutters);
 }
 
-/** @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function intersection(...items) {
   return combine(items, 'intersection', (ms) => Manifold.intersection(ms), (cs) => CrossSection.intersection(cs));
 }
 
-/** Convex hull of all given shapes, like OpenSCAD's hull(). @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** Convex hull of all given shapes, like OpenSCAD's hull(). @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function hull(...items) {
   return combine(items, 'hull', (ms) => Manifold.hull(ms), (cs) => CrossSection.hull(cs));
 }
@@ -1286,15 +1329,54 @@ export function minkowski(...items) {
   return first ? first.minkowski(rest) : new Solid(Manifold.compose([]));
 }
 
-/** @param {number[]} v @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {number[]} v
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {number[]} v
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** @param {number[]} v @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function translate(v, ...items) {
   return union(...items).translate(v);
 }
 
 /**
- * `rotate(angles, ...shapes)` or `rotate(angles, { around }, ...shapes)`. 2D shapes take a single angle.
+ * @overload
+ * @param {number[] | number} angles
+ * @param {RotateOptions} options
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {number[] | number} angles
+ * @param {RotateOptions} options
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/**
+ * @overload
+ * @param {number[] | number} angles
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {number[] | number} angles
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/**
+ * `rotate(angles, ...shapes)` or `rotate(angles, { around }, ...shapes)`. 2D shapes take one angle, or `[0, 0, z]`.
  * @param {number[] | number} angles
  * @param {...(RotateOptions | ShapeItems)} rest
+ * @returns {Solid | Shape2}
  */
 export function rotate(angles, ...rest) {
   const first = rest[0];
@@ -1303,12 +1385,36 @@ export function rotate(angles, ...rest) {
   return union(...rest).rotate(angles, options);
 }
 
-/** @param {number[] | number} v @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {number[] | number} v
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {number[] | number} v
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** @param {number[] | number} v @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function scale(v, ...items) {
   return union(...items).scale(v);
 }
 
-/** @param {number[]} normal @param {...ShapeItems} items */
+/**
+ * @overload
+ * @param {number[]} normal
+ * @param {...SolidItems} items
+ * @returns {Solid}
+ */
+/**
+ * @overload
+ * @param {number[]} normal
+ * @param {...Shape2Items} items
+ * @returns {Shape2}
+ */
+/** @param {number[]} normal @param {...ShapeItems} items @returns {Solid | Shape2} */
 export function mirror(normal, ...items) {
   return union(...items).mirror(normal);
 }

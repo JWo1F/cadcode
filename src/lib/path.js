@@ -433,6 +433,18 @@ export function sketchPath(start, options, hooks) {
  */
 
 /**
+ * @overload
+ * @param {number[][]} points
+ * @param {SplineOptions & { closed: true }} options
+ * @returns {import('./shapes.js').Shape2}
+ */
+/**
+ * @overload
+ * @param {number[][]} points
+ * @param {SplineOptions & { closed?: false }} [options]
+ * @returns {Path}
+ */
+/**
  * A smooth curve through points (a centripetal Catmull-Rom spline). Closed, it is a 2D shape; open, a
  * path to carry on with or to take the points of.
  * @param {number[][]} points
