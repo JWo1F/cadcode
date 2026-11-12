@@ -1,5 +1,6 @@
 import { zipSync, strToU8 } from 'fflate';
 import { colorOfId } from '../lib/shapes.js';
+import { build } from '../lib/lazy.js';
 import { DEFAULT_COLOR } from './raster.js';
 
 /**
@@ -26,6 +27,8 @@ export function to3MF(solids, { name = 'part' } = {}) {
     return materials.get(hex);
   };
 
+  // In one pass, so what the solids share is built once.
+  build(solids);
   const objects = solids.map((solid, i) => {
     const objectName = solids.length > 1 ? `${name}-${i + 1}` : name;
     return objectXML(i + 2, objectName, solid.manifold.getMesh(), materialOf);

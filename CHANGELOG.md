@@ -4,6 +4,11 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Changed
+
+- Solids and 2D shapes are built when their geometry is first needed, and each intermediate result is freed as soon as the next step is built. A loop like `plate = plate.subtract(hole)` with 1000 holes went from 2.5 GB and 7 s to 23 MB and 0.2 s; with 4000 it no longer runs out of memory.
+- `union`, `subtract`, `intersect` and `hull` on a solid refuse a 2D shape, and on a 2D shape a solid, with a message saying so.
+
 ## [0.16.0] - 2026-11-13
 
 ### Added

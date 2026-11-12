@@ -1,5 +1,6 @@
 import { colorOfId } from '../lib/shapes.js';
 import { union } from '../lib/functional.js';
+import { build } from '../lib/lazy.js';
 import { parseColor } from '../lib/colors.js';
 import { mat4 } from '../lib/vec.js';
 
@@ -32,6 +33,8 @@ const GUIDE_COLOR = parseColor('#d6336c', 1);
  * @returns {MeshGroup[]}
  */
 export function meshGroups(solids, shapes = [], sketches = []) {
+  // In one pass, so what the solids share is built once.
+  build(solids);
   const groups = [];
   solids.forEach((solid, body) => {
     const mesh = solid.manifold.getMesh();

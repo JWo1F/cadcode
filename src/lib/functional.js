@@ -1,5 +1,5 @@
 // The functional forms of the shape methods, as in OpenSCAD.
-import { CrossSection, Manifold, Shape2, Solid, flatten, shapesFor, solidsFor } from './shapes.js';
+import { CrossSection, Manifold, Shape2, Solid, flatten, shape2Of, shapesFor, solidOf, solidsFor } from './shapes.js';
 
 /** @typedef {import('./shapes.js').SolidItems} SolidItems */
 /** @typedef {import('./shapes.js').Shape2Items} Shape2Items */
@@ -27,9 +27,9 @@ function combine(items, op, solidOp, shapeOp) {
     case 'empty':
       return new Solid(Manifold.compose([]));
     case 'solid':
-      return new Solid(solidOp(flat.map((s) => s.manifold)));
+      return solidOf(flat, solidOp);
     case 'shape2':
-      return new Shape2(shapeOp(flat.map((s) => s.section)));
+      return shape2Of(flat, shapeOp);
   }
 }
 

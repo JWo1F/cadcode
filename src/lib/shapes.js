@@ -6,6 +6,7 @@ import { mat4, vec3 } from './vec.js';
 import { sweepPolygons } from './sweep.js';
 import { faceFrame, frameAt } from './frame.js';
 import { edgesOf, softenEdges } from './edges.js';
+import { deferred, handleOf, leaf } from './lazy.js';
 
 /** @typedef {import('./colors.js').ColorInput} ColorInput */
 /** @typedef {import('./colors.js').RGBA} RGBA */
@@ -90,11 +91,50 @@ export function solidsFor(op, items) {
   return flat;
 }
 
-/** The 2D shapes in `items` joined into one, empty when there are none. @param {string} op @param {any[]} items */
-export function shapesFor(op, items) {
+/** Flattens items that must all be 2D shapes. */
+function shapesOnly(op, items) {
   const flat = flatten(items);
   if (flat.some((s) => !(s instanceof Shape2))) throw new Error(`${op}() works on 2D shapes only, not on solids`);
-  return new Shape2(CrossSection.union(flat.map((s) => s.section)));
+  return flat;
+}
+
+/** The 2D shapes in `items` joined into one, empty when there are none. @param {string} op @param {any[]} items */
+export function shapesFor(op, items) {
+  return shape2Of(shapesOnly(op, items), (cs) => CrossSection.union(cs));
+}
+
+/**
+ * @internal A solid made from `inputs` when its geometry is first asked for: `make` gets their WASM
+ * objects and returns a new one, deleting anything else it makes along the way.
+ * @param {(Solid | Shape2)[]} inputs
+ * @param {(handles: any[]) => any} make
+ * @returns {Solid}
+ */
+export function solidOf(inputs, make) {
+  const solid = Object.create(Solid.prototype);
+  deferred(solid, inputs, make);
+  return solid;
+}
+
+/**
+ * @internal A 2D shape made from `inputs` when its geometry is first asked for, as {@link solidOf}.
+ * @param {(Solid | Shape2)[]} inputs
+ * @param {(handles: any[]) => any} make
+ * @returns {Shape2}
+ */
+export function shape2Of(inputs, make) {
+  const shape = Object.create(Shape2.prototype);
+  deferred(shape, inputs, make);
+  return shape;
+}
+
+/** `first` less the union of `rest`, deleting the union it makes. */
+function cut(first, rest, Class) {
+  if (rest.length === 1) return first.subtract(rest[0]);
+  const cutters = Class.union(rest);
+  const result = first.subtract(cutters);
+  cutters.delete();
+  return result;
 }
 
 /** The Z angle of OpenSCAD's `[x, y, z]` rotation of a 2D shape, which must not turn about X or Y. @param {number[]} angles */
@@ -259,14 +299,20 @@ function anchor(op, box, side, axes) {
 
 /** A 3D solid. Every method returns a new solid; solids are never modified in place. */
 export class Solid {
-  /** @internal */
+  /** @internal @param {any} manifold an already built manifold-3d object */
   constructor(manifold) {
-    this.manifold = manifold;
+    leaf(this, manifold);
+  }
+
+  /** @internal The manifold-3d object, built on first use and kept. @returns {any} */
+  get manifold() {
+    return handleOf(this);
   }
 
   /** @param {number[]} v */
   translate(v) {
-    return new Solid(this.manifold.translate(toVec3(v)));
+    const offset = toVec3(v);
+    return solidOf([this], ([m]) => m.translate(offset));
   }
 
   /**
@@ -284,23 +330,27 @@ export class Solid {
       const c = pivotOf(options.around);
       return this.translate(c.map((v) => -v)).rotate(angles, axis).translate(c);
     }
-    if (axis) return new Solid(this.manifold.transform(axisRotation(angles, axis)));
-    return new Solid(this.manifold.rotate(typeof angles === 'number' ? [0, 0, angles] : toVec3(angles)));
+    if (axis) return this.transform(axisRotation(angles, axis));
+    const turn = typeof angles === 'number' ? [0, 0, angles] : toVec3(angles);
+    return solidOf([this], ([m]) => m.rotate(turn));
   }
 
   /** @param {number[] | number} v */
   scale(v) {
-    return new Solid(this.manifold.scale(typeof v === 'number' ? v : [v[0] ?? 1, v[1] ?? 1, v[2] ?? 1]));
+    const factor = typeof v === 'number' ? v : [v[0] ?? 1, v[1] ?? 1, v[2] ?? 1];
+    return solidOf([this], ([m]) => m.scale(factor));
   }
 
   /** Mirrors across the plane through the origin with the given normal. @param {number[]} normal */
   mirror(normal) {
-    return new Solid(this.manifold.mirror(toVec3(normal)));
+    const n = toVec3(normal);
+    return solidOf([this], ([m]) => m.mirror(n));
   }
 
   /** Applies a column-major 4x4 matrix. @param {number[]} matrix */
   transform(matrix) {
-    return new Solid(this.manifold.transform(matrix));
+    const copy = [...matrix];
+    return solidOf([this], ([m]) => m.transform(copy));
   }
 
   /**
@@ -309,31 +359,34 @@ export class Solid {
    * @param {number} [alpha]
    */
   color(color, alpha) {
-    const m = this.manifold.asOriginal();
-    colorById.set(m.originalID(), parseColor(color, alpha));
-    return new Solid(m);
+    const rgba = parseColor(color, alpha);
+    return solidOf([this], ([m]) => {
+      const colored = m.asOriginal();
+      colorById.set(colored.originalID(), rgba);
+      return colored;
+    });
   }
 
   /** @param {...SolidItems} others */
   union(...others) {
-    return new Solid(Manifold.union([this.manifold, ...flatten(others).map((s) => s.manifold)]));
+    return solidOf([this, ...solidsFor('union', others)], (ms) => Manifold.union(ms));
   }
 
   /** @param {...SolidItems} others */
   subtract(...others) {
-    const cutters = flatten(others);
+    const cutters = solidsFor('subtract', others);
     if (cutters.length === 0) return this;
-    return new Solid(this.manifold.subtract(Manifold.union(cutters.map((s) => s.manifold))));
+    return solidOf([this, ...cutters], ([m, ...cs]) => cut(m, cs, Manifold));
   }
 
   /** @param {...SolidItems} others */
   intersect(...others) {
-    return new Solid(Manifold.intersection([this.manifold, ...flatten(others).map((s) => s.manifold)]));
+    return solidOf([this, ...solidsFor('intersect', others)], (ms) => Manifold.intersection(ms));
   }
 
   /** Convex hull of this solid together with any others. @param {...SolidItems} others */
   hull(...others) {
-    return new Solid(Manifold.hull([this.manifold, ...flatten(others).map((s) => s.manifold)]));
+    return solidOf([this, ...solidsFor('hull', others)], (ms) => Manifold.hull(ms));
   }
 
   /**
@@ -343,17 +396,25 @@ export class Solid {
    * @param {...SolidItems} others
    */
   minkowski(...others) {
-    return new Solid(solidsFor('minkowski', others).reduce((sum, s) => sum.minkowskiSum(s.manifold), this.manifold));
+    const rest = solidsFor('minkowski', others);
+    if (rest.length === 0) return this;
+    return solidOf([this, ...rest], ([first, ...rest]) =>
+      rest.reduce((sum, m) => {
+        const next = sum.minkowskiSum(m);
+        if (sum !== first) sum.delete();
+        return next;
+      }, first),
+    );
   }
 
   /** The cross-section at height `z`. */
   slice(z = 0) {
-    return new Shape2(this.manifold.slice(z));
+    return shape2Of([this], ([m]) => m.slice(z));
   }
 
   /** The outline of the solid projected onto the XY plane. */
   project() {
-    return new Shape2(this.manifold.project());
+    return shape2Of([this], ([m]) => m.project());
   }
 
   /** @returns {number} */
@@ -497,7 +558,9 @@ export class Solid {
     // Vertex normals smoothed across the facets of a curve (turning less than 40° between triangles) and
     // kept apart at sharp edges, to read the surface's own normal off the triangle met.
     const extra = this.manifold.numProp();
-    const hit = firstHit(this.manifold.calculateNormals(extra, SMOOTH_UNDER).getMesh(), origin, dir, 3 + extra);
+    const withNormals = this.manifold.calculateNormals(extra, SMOOTH_UNDER);
+    const hit = firstHit(withNormals.getMesh(), origin, dir, 3 + extra);
+    withNormals.delete();
     if (!hit) throw new Error(`surfaceAt(): nothing of the solid lies under [${u}, ${v}] on its ${side} side`);
     return frameAt(hit.point, hit.normal);
   }
@@ -560,14 +623,20 @@ function firstHit({ numProp, vertProperties, triVerts }, origin, dir, normalAt) 
 
 /** A 2D shape in the XY plane. Extrude or revolve it to get a solid. */
 export class Shape2 {
-  /** @internal */
+  /** @internal @param {any} section an already built manifold-3d CrossSection */
   constructor(section) {
-    this.section = section;
+    leaf(this, section);
+  }
+
+  /** @internal The manifold-3d CrossSection, built on first use and kept. @returns {any} */
+  get section() {
+    return handleOf(this);
   }
 
   /** @param {number[]} v */
   translate(v) {
-    return new Shape2(this.section.translate([v[0] ?? 0, v[1] ?? 0]));
+    const offset = [v[0] ?? 0, v[1] ?? 0];
+    return shape2Of([this], ([c]) => c.translate(offset));
   }
 
   /**
@@ -583,17 +652,19 @@ export class Shape2 {
       const [x, y] = pivotOf(options.around);
       return this.translate([-x, -y]).rotate(degrees).translate([x, y]);
     }
-    return new Shape2(this.section.rotate(degrees));
+    return shape2Of([this], ([c]) => c.rotate(degrees));
   }
 
   /** @param {number[] | number} v */
   scale(v) {
-    return new Shape2(this.section.scale(typeof v === 'number' ? v : [v[0] ?? 1, v[1] ?? 1]));
+    const factor = typeof v === 'number' ? v : [v[0] ?? 1, v[1] ?? 1];
+    return shape2Of([this], ([c]) => c.scale(factor));
   }
 
   /** @param {number[]} axis */
   mirror(axis) {
-    return new Shape2(this.section.mirror([axis[0] ?? 0, axis[1] ?? 0]));
+    const normal = [axis[0] ?? 0, axis[1] ?? 0];
+    return shape2Of([this], ([c]) => c.mirror(normal));
   }
 
   /**
@@ -603,8 +674,14 @@ export class Shape2 {
    */
   offset(options) {
     const o = typeof options === 'number' ? { r: options } : options;
-    if ('r' in o) return new Shape2(this.section.offset(o.r, 'Round', 2, segmentsFor(Math.abs(o.r), o.fn)));
-    return new Shape2(this.section.offset(o.delta, o.chamfer ? 'Square' : 'Miter', 1e6));
+    if ('r' in o) {
+      const { r } = o;
+      const segments = segmentsFor(Math.abs(r), o.fn);
+      return shape2Of([this], ([c]) => c.offset(r, 'Round', 2, segments));
+    }
+    const { delta } = o;
+    const join = o.chamfer ? 'Square' : 'Miter';
+    return shape2Of([this], ([c]) => c.offset(delta, join, 1e6));
   }
 
   /**
@@ -622,24 +699,24 @@ export class Shape2 {
 
   /** @param {...Shape2Items} others */
   union(...others) {
-    return new Shape2(CrossSection.union([this.section, ...flatten(others).map((s) => s.section)]));
+    return shape2Of([this, ...shapesOnly('union', others)], (cs) => CrossSection.union(cs));
   }
 
   /** @param {...Shape2Items} others */
   subtract(...others) {
-    const cutters = flatten(others);
+    const cutters = shapesOnly('subtract', others);
     if (cutters.length === 0) return this;
-    return new Shape2(this.section.subtract(CrossSection.union(cutters.map((s) => s.section))));
+    return shape2Of([this, ...cutters], ([c, ...cs]) => cut(c, cs, CrossSection));
   }
 
   /** @param {...Shape2Items} others */
   intersect(...others) {
-    return new Shape2(CrossSection.intersection([this.section, ...flatten(others).map((s) => s.section)]));
+    return shape2Of([this, ...shapesOnly('intersect', others)], (cs) => CrossSection.intersection(cs));
   }
 
   /** @param {...Shape2Items} others */
   hull(...others) {
-    return new Shape2(CrossSection.hull([this.section, ...flatten(others).map((s) => s.section)]));
+    return shape2Of([this, ...shapesOnly('hull', others)], (cs) => CrossSection.hull(cs));
   }
 
   /**
@@ -650,8 +727,8 @@ export class Shape2 {
   extrude(height, options = {}) {
     const { center = false, twist = 0, scale = 1, divisions = 0 } = options;
     // manifold-3d misreads a scalar scaleTop, so always pass a vector.
-    const scaleTop = typeof scale === 'number' ? [scale, scale] : scale;
-    return new Solid(this.section.extrude(height, divisions, twist, scaleTop, center));
+    const scaleTop = typeof scale === 'number' ? [scale, scale] : [scale[0], scale[1]];
+    return solidOf([this], ([c]) => c.extrude(height, divisions, twist, scaleTop, center));
   }
 
   /**
@@ -659,9 +736,12 @@ export class Shape2 {
    * @param {{ angle?: number, fn?: number }} [options]
    */
   revolve(options = {}) {
-    const { min, max } = this.section.bounds();
-    const radius = Math.max(Math.abs(min[0]), Math.abs(max[0]));
-    return new Solid(this.section.revolve(segmentsFor(radius, options.fn), options.angle ?? 360));
+    const { fn, angle = 360 } = options;
+    return solidOf([this], ([c]) => {
+      const { min, max } = c.bounds();
+      const radius = Math.max(Math.abs(min[0]), Math.abs(max[0]));
+      return c.revolve(segmentsFor(radius, fn), angle);
+    });
   }
 
   /**
