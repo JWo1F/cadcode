@@ -201,7 +201,7 @@ function frames(points, closed, up) {
  */
 export function sweepPolygons(polygons, path, options = {}) {
   const { closed = false, twist = 0, scale = 1, up } = options;
-  if (polygons.length === 0) return new Solid(new Manifold());
+  if (polygons.length === 0) return new Solid(Manifold.compose([]));
   const [sx, sy] = typeof scale === 'number' ? [scale, scale] : [scale[0] ?? 1, scale[1] ?? 1];
   if (closed && (sx !== 1 || sy !== 1)) throw new Error('sweep(): a closed path cannot scale the profile, its ends would not meet');
   if (closed && Math.abs(twist % 360) > 1e-9) throw new Error('sweep(): on a closed path `twist` must be a whole number of turns (a multiple of 360), or the ends would not meet');

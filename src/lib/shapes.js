@@ -109,8 +109,21 @@ function flatten(items) {
 /** Flattens items that must all be solids, for an operation that has no 2D form. */
 function solidsFor(op, items) {
   const flat = flatten(items);
-  if (flat.some((s) => !(s instanceof Solid))) throw new Error(`${op}() works on solids only; for 2D shapes use offset()`);
+  if (flat.some((s) => !(s instanceof Solid))) throw new Error(`${op}() works on solids only, not on 2D shapes`);
   return flat;
+}
+
+/** The 2D shapes in `items` joined into one, empty when there are none. @param {string} op @param {any[]} items */
+function shapesFor(op, items) {
+  const flat = flatten(items);
+  if (flat.some((s) => !(s instanceof Shape2))) throw new Error(`${op}() works on 2D shapes only, not on solids`);
+  return new Shape2(CrossSection.union(flat.map((s) => s.section)));
+}
+
+/** The Z angle of OpenSCAD's `[x, y, z]` rotation of a 2D shape, which must not turn about X or Y. @param {number[]} angles */
+function planarAngle(angles) {
+  if ((angles[0] ?? 0) !== 0 || (angles[1] ?? 0) !== 0) throw new Error(`rotate(): a 2D shape turns about Z only, got [${angles.join(', ')}]`);
+  return angles[2] ?? 0;
 }
 
 /** @param {number[]} v @returns {Vec3} */
@@ -593,11 +606,13 @@ export class Shape2 {
 
   /**
    * Rotates counter-clockwise, around the origin or around `{ around }`: a point, the center of a shape, or [x, y].
-   * @param {number} degrees
+   * OpenSCAD's `[0, 0, degrees]` is taken too; a turn about X or Y would leave the plane, so it throws.
+   * @param {number | number[]} angle
    * @param {RotateOptions} [options]
    * @returns {Shape2}
    */
-  rotate(degrees, options) {
+  rotate(angle, options) {
+    const degrees = Array.isArray(angle) ? planarAngle(angle) : angle;
     if (options?.around) {
       const [x, y] = pivotOf(options.around);
       return this.translate([-x, -y]).rotate(degrees).translate([x, y]);
@@ -1060,8 +1075,14 @@ export function polyhedron(points, faces) {
     triVerts: new Uint32Array(triVerts),
   });
   mesh.merge();
-  const manifold = new Manifold(mesh);
+  let manifold;
+  try {
+    manifold = new Manifold(mesh);
+  } catch (error) {
+    throw new Error(`polyhedron() is not a closed solid: ${/** @type {Error} */ (error).message}`);
+  }
   if (manifold.status() !== 'NoError') throw new Error(`polyhedron() is not a closed solid: ${manifold.status()}`);
+  if (manifold.volume() < 0) throw new Error('polyhedron(): the faces are wound inside out; list each one clockwise seen from outside');
   return new Solid(manifold);
 }
 
@@ -1296,15 +1317,22 @@ export function mirror(normal, ...items) {
  */
 export function color(c, ...rest) {
   const alpha = typeof rest[0] === 'number' ? rest.shift() : undefined;
-  return union(...rest).color(c, alpha);
+  return union(solidsFor('color', rest)).color(c, alpha);
 }
 
 /** @param {number | OffsetOptions} options @param {...Shape2Items} items @returns {Shape2} */
 export function offset(options, ...items) {
-  return union(...items).offset(options);
+  return shapesFor('offset', items).offset(options);
 }
 
-/** @param {number} height @param {ExtrudeOptions} options @param {...Shape2Items} items @returns {Solid} */
+/**
+ * `linearExtrude(height, shapes)` or `linearExtrude(height, options, shapes)`.
+ * @param {number} height
+ * @param {ExtrudeOptions | Shape2Items} [options]
+ * @param {...Shape2Items} items
+ * @returns {Solid}
+ */
 export function linearExtrude(height, options, ...items) {
-  return union(...items).extrude(height, options);
+  const isOptions = options === undefined || (typeof options === 'object' && options !== null && !Array.isArray(options) && !(options instanceof Shape2) && !(options instanceof Solid));
+  return isOptions ? shapesFor('linearExtrude', items).extrude(height, options) : shapesFor('linearExtrude', [options, ...items]).extrude(height);
 }
