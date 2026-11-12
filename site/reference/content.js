@@ -1158,10 +1158,11 @@ part.subtract(under.place(nutTrap('M3')), under.place(screwHole('M3', { length: 
         summary: 'A USB-C receptacle, 8.94 × 3.26 with round ends and 7.35 long. Its mouth is at x = 0 facing -X and it runs along +X, centered on y = 0 and z = 0. The cutout is the mouth grown by `clearance`, from x = 0.5 out to x = -12, through any wall at -X. Point `mouth` is the mouth\'s center.',
         params: [
           { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the cutout is on every side.' },
+          { name: 'options.recess', type: '{ size, gap, round }', text: 'Adds a pocket for the plug\'s overmold to the cutout: `size` `[width, height]` centered on the mouth, corners rounded by `round` (0), from `gap` outside the mouth out to x = -12. `gap` is the closest the overmold has to come to the mouth, so the pocket is cut only as deep as the wall\'s outside is nearer than that.' },
           fn,
         ],
         returns: 'Component',
-        example: `const port = usbC().translate([0, 20, 6])
+        example: `const port = usbC({ recess: { size: [12.5, 7.5], round: 1.5, gap: 0.6 } }).translate([0, 20, 6])
 box.subtract(port.cutout)`,
       },
       {
@@ -1173,6 +1174,7 @@ box.subtract(port.cutout)`,
           { name: 'options.clearance', type: 'number', default: "fit('slide')", text: 'How much bigger the connector\'s cutout is on every side.' },
           { name: 'options.length', type: 'number', default: '34', text: 'The board\'s size, and likewise `width` (17) and `thickness` (1.6): pass a model\'s own params so the board follows them.' },
           { name: 'options.usbDrop', type: 'number', default: '1', text: 'How far the connector\'s bottom is below the board\'s top; 0 for a top-mount connector. `usbOverhang` (0.5) is how far its mouth reaches past the edge.' },
+          { name: 'options.recess', type: '{ size, gap, round }', text: 'A pocket for the plug\'s overmold, as for `usbC()`.' },
           fn,
         ],
         returns: 'Component',

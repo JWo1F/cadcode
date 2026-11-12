@@ -159,18 +159,47 @@ function usbOutline(grow, fn) {
  */
 
 /**
+ * @typedef {object} RecessOptions
+ * @property {number[]} size `[width, height]` of the plug's overmold, with room to spare
+ * @property {number} gap how far outside the mouth the recess starts: the closest the overmold has to come
+ * @property {number} [round] radius of the recess's corners (default 0)
+ */
+
+/**
+ * @typedef {ClearanceOptions & { recess?: RecessOptions }} UsbOptions
+ */
+
+/**
+ * The recess for a plug's overmold: `size` centered on the mouth, from `gap` outside it out to
+ * x = -12, so it is cut into a wall only where the wall's outside is nearer the mouth than `gap`.
+ * @param {string} op
+ * @param {RecessOptions} recess
+ * @param {number | undefined} fn
+ */
+function plugRecess(op, recess, fn) {
+  const { size, gap, round } = recess;
+  if (!(Array.isArray(size) && size.length === 2 && size.every((v) => typeof v === 'number' && v > 0))) throw new Error(`${op}: recess.size must be [width, height], both more than 0, got ${JSON.stringify(size)}`);
+  if (!(typeof gap === 'number' && gap >= 0 && gap < PORT_REACH)) throw new Error(`${op}: recess.gap must be 0 or more and less than ${PORT_REACH}, got ${JSON.stringify(gap)}`);
+  const outline = square(size, { center: true, round, fn });
+  return plane.YZ.offset(-PORT_REACH).extrude(outline, PORT_REACH - gap);
+}
+
+/**
  * A USB-C receptacle, 8.94 × 3.26 with fully round ends and 7.35 long. Its mouth is at x = 0
  * facing -X and its body runs along +X, centered on y = 0 and z = 0. The cutout is the mouth's
  * outline grown by `clearance`, from x = 0.5 inside out to x = -12, through any wall at -X.
+ * `recess` adds a pocket for the plug's overmold: `{ size: [12.5, 7.5], round: 1.5, gap: 0.6 }`
+ * cuts a 12.5 × 7.5 recess into the wall from 0.6 outside the mouth outward.
  * Nominal dimensions: measure yours.
- * @param {ClearanceOptions} [options]
+ * @param {UsbOptions} [options]
  * @returns {Component}
  */
 export function usbC(options = {}) {
   const clearance = checkClearance('usbC()', options.clearance ?? fit('slide'));
-  const { fn } = options;
+  const { fn, recess } = options;
   const body = plane.YZ.extrude(usbOutline(0, fn), USBC.length).color(METAL);
-  const cutout = plane.YZ.offset(-PORT_REACH).extrude(usbOutline(clearance, fn), PORT_REACH + 0.5);
+  const port = plane.YZ.offset(-PORT_REACH).extrude(usbOutline(clearance, fn), PORT_REACH + 0.5);
+  const cutout = recess ? port.union(plugRecess('usbC()', recess, fn)) : port;
   return new Component({ body, cutout, points: { mouth: point([0, 0, 0]) } });
 }
 
@@ -188,8 +217,8 @@ const PRO_MICRO = { length: 34, width: 17, thickness: 1.6, usbDrop: 1.0, usbOver
  * connector's bottom 1 below the PCB's top. The cutout is the connector's only: the board sits
  * inside the enclosure. Point `usb` is the center of the connector's mouth.
  * Nominal dimensions, each an option: measure yours, or pass a model's own params so the board
- * follows them.
- * @param {ClearanceOptions & { length?: number, width?: number, thickness?: number, usbDrop?: number, usbOverhang?: number }} [options]
+ * follows them. `recess` adds a pocket for the plug's overmold, as for `usbC()`.
+ * @param {UsbOptions & { length?: number, width?: number, thickness?: number, usbDrop?: number, usbOverhang?: number }} [options]
  *   `usbDrop` how far the connector's bottom is below the PCB's top, `usbOverhang` how far its mouth reaches past the edge
  * @returns {Component}
  */

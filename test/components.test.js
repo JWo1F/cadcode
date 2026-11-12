@@ -34,6 +34,19 @@ test('proMicro: board on z = 0, connector at the -X edge, cutout only for the co
   box(mcu.cutout, [-12.5, -4.67, usbZ - 1.83], [0, 4.67, usbZ + 1.83], 1e-3);
 });
 
+test('usbC and proMicro: recess for the plug from `gap` outside the mouth outward', () => {
+  const port = usbC({ recess: { size: [12, 7], gap: 0.6, round: 1 } });
+  box(port.cutout, [-12, -6, -3.5], [0.5, 6, 3.5], 1e-3);
+  // Only the port's stadium reaches nearer the mouth than the gap.
+  const inside = port.cutout.clip({ x: [-0.6 + 1e-3, 1] }).bounds();
+  near(inside.max[1], 4.67, 1e-3);
+  const mcu = proMicro({ recess: { size: [12, 7], gap: 1 } });
+  const usb = mcu.points.usb.toArray();
+  near(mcu.cutout.clip({ x: [-20, -1.5 - 1e-3] }).bounds().max[2], usb[2] + 3.5, 1e-3);
+  assert.throws(() => usbC({ recess: { size: [12], gap: 1 } }), /recess.size must be/);
+  assert.throws(() => usbC({ recess: { size: [12, 7], gap: -1 } }), /recess.gap must be/);
+});
+
 test('oled091: board bottom on z = 0, centered, window up from the glass', () => {
   const oled = oled091();
   box(oled.body, [-19, -6, 0], [19, 6, 2.6]);

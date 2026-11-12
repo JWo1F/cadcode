@@ -365,8 +365,8 @@ Common parts as a `Component`: a colored `body`, the `cutout` to subtract from t
 
 | Function | Notes |
 | --- | --- |
-| `usbC()` | Receptacle with its mouth at x = 0 facing -X; the cutout runs out to x = -12. Point `mouth`. |
-| `proMicro({ length, width, thickness, usbDrop, usbOverhang })` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X; sizes default to 34 × 17 × 1.6. Cutout: the connector only. Point `usb`. |
+| `usbC({ recess })` | Receptacle with its mouth at x = 0 facing -X; the cutout runs out to x = -12. `recess: { size: [w, h], gap, round }` adds a pocket for the plug's overmold from `gap` outside the mouth outward. Point `mouth`. |
+| `proMicro({ length, width, thickness, usbDrop, usbOverhang, recess })` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X; sizes default to 34 × 17 × 1.6. Cutout: the connector only, with the plug's `recess` as for `usbC()`. Point `usb`. |
 | `oled091({ board, glass, active, glassShift, activeShift })` | 0.91" OLED, board on z = 0, centered, seen from +Z; shift the glass and active area if yours are off center. Cutout: pocket and window. |
 | `ec11({ shaft })` | Rotary encoder, mounting face at z = 0, shaft up. Cutout: the bushing's hole, through a panel on either side of the face. Point `face`. |
 | `led5({ d, h, flange })` | 5 mm LED on z = 0, or any size. Cutout: the hole from the flange up. |
