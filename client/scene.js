@@ -5,7 +5,7 @@
 //
 //   to the worker:   init, resize, inset, event, show, fit, snapshot, set-camera, view-axis, display,
 //                    section, measuring, measure-clear
-//   from the worker: reply (to show and snapshot), camera (on every move), cursor,
+//   from the worker: ready or failed (to init), reply (to show and snapshot), camera (on every move), cursor,
 //                    section (the plane dragged), measure, measure-label
 
 import { groupBuffers } from './mesh-buffers.js';
@@ -32,26 +32,44 @@ export function createScene(canvas, { workerUrl, colors, onCamera }) {
   const emit = (type, value) => listeners.get(type)?.forEach((handler) => handler(value));
   let nextId = 1;
 
+  // Set when the view cannot work: its worker failed to load, or to make the view.
+  // Pending and later requests are rejected with it rather than left waiting.
+  let failure = null;
+  let ready = false;
+
+  const fail = (error) => {
+    failure ??= error;
+    for (const { reject } of pending.values()) reject(failure);
+    pending.clear();
+    console.error(error);
+  };
+
   const request = (message, transfer = []) =>
     new Promise((resolve, reject) => {
+      if (failure) return reject(failure);
       const id = nextId++;
       pending.set(id, { resolve, reject });
       worker.postMessage({ ...message, id }, transfer);
     });
 
   worker.onmessage = ({ data }) => {
+    if (data.type === 'ready') return void (ready = true);
+    if (data.type === 'failed') return fail(new Error(`The 3D view could not start: ${data.error}`));
     if (data.type === 'camera') return onCamera?.(data.camera);
     if (data.type === 'cursor') return void (canvas.style.cursor = data.value);
     if (data.type !== 'reply') return emit(data.type, data.value);
-    const { resolve, reject } = pending.get(data.id);
+    const entry = pending.get(data.id);
+    if (!entry) return; // already rejected, when the worker failed
     pending.delete(data.id);
-    if (data.error) reject(new Error(data.error));
-    else resolve(data.value);
+    if (data.error) entry.reject(new Error(data.error));
+    else entry.resolve(data.value);
   };
 
-  // A worker that fails to load or throws would leave the page waiting for replies.
+  // A worker that fails to load never gets ready: that is for good. An error after it
+  // is ready fails only the requests under way.
   worker.onerror = (event) => {
     const error = new Error(event.message || 'The view failed to start');
+    if (!ready) return fail(error);
     for (const { reject } of pending.values()) reject(error);
     pending.clear();
     console.error(error);

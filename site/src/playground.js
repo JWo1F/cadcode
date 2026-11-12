@@ -295,7 +295,16 @@ async function evaluate() {
   notice = '';
   markError(null);
   showParts(result.partNames, result.part);
-  const mesh = await view.showModel(result.groups); // the view's worker builds the meshes
+  let mesh;
+  try {
+    mesh = await view.showModel(result.groups); // the view's worker builds the meshes
+  } catch (error) {
+    if (shown !== result || preview) return;
+    setBusy(false);
+    setStatus('error');
+    showError(error.message);
+    return;
+  }
   if (shown !== result || preview) return; // a newer run was shown meanwhile, or is under way
   setBusy(false);
   delete stage.dataset.empty;

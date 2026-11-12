@@ -65,19 +65,32 @@ function dispatch(target, data) {
 }
 
 let view = null;
+let failure = null; // why the view could not be made: WebGL unavailable, say
 const queue = []; // messages that arrived before init
 
+// The page hears 'ready', or 'failed' with the reason; after a failure every request
+// is answered with it, so none waits for ever.
 self.onmessage = ({ data }) => {
   if (data.type === 'init') {
-    view = createView(data);
+    try {
+      view = createView(data);
+      self.postMessage({ type: 'ready' });
+    } catch (error) {
+      failure = error?.message || String(error);
+      self.postMessage({ type: 'failed', error: failure });
+    }
     for (const message of queue.splice(0)) handle(message);
     return;
   }
-  if (view) handle(data);
+  if (view || failure) handle(data);
   else queue.push(data);
 };
 
 async function handle(message) {
+  if (failure) {
+    if (message.id !== undefined) self.postMessage({ type: 'reply', id: message.id, error: failure });
+    return;
+  }
   switch (message.type) {
     case 'resize':
       return view.resize(message);

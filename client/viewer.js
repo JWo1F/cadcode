@@ -97,7 +97,15 @@ let shown = null; // header of the model on screen
 
 async function showModel({ header, groups }) {
   shown = header;
-  const mesh = await view.showModel(groups);
+  let mesh;
+  try {
+    mesh = await view.showModel(groups);
+  } catch (error) {
+    if (shown !== header) return;
+    setStatus('error');
+    showError(error.message);
+    return;
+  }
   if (shown !== header) return; // a newer frame arrived meanwhile
   delete stage.dataset.empty;
   showReadout(mesh, header.ms);
