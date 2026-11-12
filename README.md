@@ -197,7 +197,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | --- | --- |
 | `square(size, { center })` | `size` is a number or `[x, y]`. |
 | `circle(r)` or `circle({ r \| d, fn })` | |
-| `polygon(points, paths?)` | Paths inside other paths become holes. |
+| `polygon(points, paths?, { round, chamfer, fn })` | Paths inside other paths become holes. `round: r` rounds every corner and `chamfer: c` cuts it; an object rounds some by index into `points`: `{ round: { 3: 4 }, chamfer: { 1: 2 } }`. An inside corner rounds into a fillet. |
 | `text(string, { size, font, halign, valign, spacing, lineHeight, fn })` | Text for labels and engraving; letters keep their holes, `\n` breaks lines. `size` is the height of a capital letter (default 10). `halign` is `left`, `center` or `right`; `valign` is `baseline`, `top`, `center` or `bottom`. The font is Liberation Sans unless `font` gives a font file's bytes: `import font from './Roboto.ttf'` (TTF, OTF or WOFF). Curves follow `fn` and `fa`, not `fs`. |
 
 ### Solid methods

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cube, cylinder, sphere, square, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
+import { cube, cylinder, sphere, square, polygon, union, difference, hull, minkowski, translate, rotate, point, range, product, parseColor, text, setResolution } from '../src/lib/index.js';
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
@@ -227,3 +227,20 @@ function polygonArea(points) {
   });
   return Math.abs(a) / 2;
 }
+
+test('polygon rounds and chamfers corners by index', () => {
+  const sq = [[0, 0], [10, 0], [10, 10], [0, 10]];
+  near(polygon(sq, { round: 2, fn: 400 }).area(), 100 - 4 * (4 - Math.PI), 1e-2);
+  near(polygon(sq, { chamfer: { 2: 2 } }).area(), 98);
+  // A number covers every corner; a corner named by index wins over it, and 0 leaves it sharp.
+  near(polygon(sq, { chamfer: 1, round: { 0: 0 } }).area(), 100 - 3 * 0.5);
+  // An inside corner of an L gets a fillet: material is added.
+  const l = [[0, 0], [20, 0], [20, 10], [10, 10], [10, 20], [0, 20]];
+  near(polygon(l, { round: { 3: 2 }, fn: 400 }).area(), 300 + 4 * (1 - Math.PI / 4), 1e-2);
+  // Paths index into the points, and so does round.
+  const ring = polygon([...sq, [3, 3], [7, 3], [7, 7], [3, 7]], [[0, 1, 2, 3], [4, 5, 6, 7]], { chamfer: { 4: 1 } });
+  near(ring.area(), 100 - 16 + 0.5);
+  assert.throws(() => polygon(sq, { round: { 4: 1 } }), /corners are 0 to 3/);
+  assert.throws(() => polygon(sq, { round: { 1: 1 }, chamfer: { 1: 1 } }), /round or chamfer, not both/);
+  assert.throws(() => polygon(sq, { round: 6 }), /does not fit/);
+});

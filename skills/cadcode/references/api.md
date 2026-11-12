@@ -29,7 +29,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | --- | --- |
 | `square(size = 1, { center = false })` | `size`: number or `[x, y]`. |
 | `circle(r)` / `circle({ r, d, fn })` | Centered. |
-| `polygon(points, paths?)` | Even-odd fill: paths inside other paths are holes. |
+| `polygon(points, paths?, { round, chamfer, fn })` | Even-odd fill: paths inside other paths are holes. `paths` may be left out with options second. `round`/`chamfer`: number = every corner, `{ index: size }` = by index into `points` (an index wins over a number; one index in both throws). Inside (reflex) corners round into fillets. Throws when a size does not fit along a side. Replaces `hull()` of circles and `offset(r).offset(-r)` tricks for per-corner radii. |
 | `text(string, { size = 10, font, halign = 'left', valign = 'baseline', spacing = 1, lineHeight = 1, fn })` | A number for options is `{ size }`. `size`: height of the capital H. `font`: TTF/OTF/WOFF bytes (`import font from './x.ttf'`), default Liberation Sans. `halign`: left/center/right by advance width; `valign`: baseline (first line's) or top/center/bottom of the ink. `\n` breaks lines. Curves: `fn` per full turn, else one segment per `fa` degrees (`fs` unused). Throws on a font without an H. |
 
 ## Importing files

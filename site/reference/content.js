@@ -198,18 +198,23 @@ cylinder({ d: 20, h: 8, chamfer: { top: 1 } }) // flat bottom for the bed`,
       {
         id: 'polygon',
         name: 'polygon',
-        signature: 'polygon(points, paths)',
-        summary: 'A polygon from points, like OpenSCAD\'s `polygon()`.',
+        signature: 'polygon(points, paths, options)',
+        summary: 'A polygon from points, like OpenSCAD\'s `polygon()`, with corners rounded or chamfered if asked: every corner, or some by index.',
         params: [
           { name: 'points', type: '[x, y][]', text: 'The corners. Without `paths` they are one outline, in order.' },
-          { name: 'paths', type: 'number[][]', default: 'one path through all points', text: 'Optional. Each path lists indices into `points`. A path inside another becomes a hole (even-odd fill).' },
+          { name: 'paths', type: 'number[][]', default: 'one path through all points', text: 'Optional. Each path lists indices into `points`. A path inside another becomes a hole (even-odd fill). Leave it out to pass `options` second.' },
+          { name: 'options.round', type: 'number | { [index]: r }', text: 'Optional. Rounds corners with radius `r`: a number for every corner, or an object by index into `points`. An arc on an inside corner adds material, a fillet. A radius that does not fit along a side throws.' },
+          { name: 'options.chamfer', type: 'number | { [index]: c }', text: 'Optional. Cuts corners `c` back along both sides, every corner or by index. A corner named by index wins over a number for every corner, and `0` leaves it sharp; a corner named in both `round` and `chamfer` throws.' },
+          fn,
         ],
         returns: 'Shape2',
         example: `// A square frame: the inner path is a hole.
 polygon(
   [[0, 0], [20, 0], [20, 20], [0, 20], [5, 5], [15, 5], [15, 15], [5, 15]],
   [[0, 1, 2, 3], [4, 5, 6, 7]],
-)`,
+)
+// An L with its inside corner filleted and the far corner cut
+polygon([[0, 0], [30, 0], [30, 8], [8, 8], [8, 30], [0, 30]], { round: { 3: 4 }, chamfer: { 1: 2 } })`,
       },
       {
         id: 'text',
