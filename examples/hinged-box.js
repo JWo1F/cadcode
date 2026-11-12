@@ -9,7 +9,7 @@ description: A small box and lid joined by a hinge that comes off the bed alread
 //
 //   cadcode dev examples/hinged-box.js
 //   cadcode stl examples/hinged-box.js --part print
-import { circle, cube, frameAt, hull, plane, range, setResolution } from 'cadcode';
+import { circle, cube, ellipse, frameAt, hull, plane, range, setResolution } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -95,7 +95,7 @@ export default (p) => {
 
   // Notch in the box's front rim for a thumbnail, and a matching tab on the lid.
   const thumbNotch = () =>
-    plane.XZ.extrude(circle({ d: 16 }).scale([1, 0.5]).translate([p.length / 2, p.boxH]), p.wall, { through: true });
+    plane.XZ.extrude(ellipse({ d: [16, 8] }).translate([p.length / 2, p.boxH]), p.wall, { through: true });
   const tab = () =>
     hull(
       cube([20, 0.1, p.lidH - 2]).translate([p.length / 2 - 10, 0, p.boxH + 2]),
