@@ -275,12 +275,12 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 
 | Function | Notes |
 | --- | --- |
-| `solid.face(name)` | The side `'+X'`, `'-X'`, `'+Y'`, `'-Y'`, `'+Z'` or `'-Z'` of the bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. |
+| `solid.face(name)` | The side `'+X'`, `'-X'`, `'+Y'`, `'-Y'`, `'+Z'` or `'-Z'` of the bounding box, its normal pointing out. u and v are Y and Z on an X side, X and Z on a Y side, X and Y on a Z side, seen from outside: world coordinates on `+X`, `-Y` and `+Z`; on `-X`, `+Y` and `-Z` u runs against its axis (u = -y on `-X`). Every frame is a rotation, so nothing placed on it is mirrored. |
 | `solid.surfaceAt(side, [u, v])` | The frame where the solid is first met looking in from `face(side)` at `[u, v]`, with the surface's normal: a hole or a boss square to a dome or a slope. On a curve the normal is smoothed across the mesh's facets, close to the true surface's. Throws when nothing lies under `[u, v]`. |
-| `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
+| `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates (X, Y; X, Z; Y, Z); the normals are +Z, -Y and +X. `plane.XZ` faces -Y like OpenSCAD's `rotate([90, 0, 0]) linear_extrude()`, so a positive depth grows towards -Y. |
 | `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
 | `frame.extrude(shape, depth, { through, center })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin; `through: 'start'` reaches 1 back past the plane only, for a pocket cut into a face. `center: true` puts the plane in the middle. |
-| `frame.flip()` | The plane facing the other way, u and v kept: to place a cutter on a plane whose normal points into the part. |
+| `frame.flip()` | The plane facing the other way, turned half a turn about v (normal and u reversed): to place a cutter on a plane whose normal points into the part. |
 | `frame.offset(d)`, `frame.place(solidOrPoint)` | The plane moved along its normal; a solid or point built at the origin moved onto the frame (Z along the normal). `.origin` and `.normal` read it. |
 
 ### Sketches

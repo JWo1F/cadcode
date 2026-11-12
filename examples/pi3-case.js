@@ -82,7 +82,7 @@ export default (p) => {
   const ports = (box) => {
     const side = box.face('-Y'); // port side, (x, z)
     const end = box.face('+X'); // right end, (y, z)
-    const left = box.face('-X'); // left end, (y, z)
+    const left = box.face('-X'); // left end, (-y, z)
     const scoop = circle({ d: 12 }).clip({ y: [0, Infinity] }); // upper half
     return [
       window(side, [bx(10.6), boardTop + 1.5], [10, 5], [12.5, 8, 2]), // micro-USB power
@@ -92,8 +92,8 @@ export default (p) => {
       window(end, [by(27), boardTop + 8], [14.6, 17]), // USB pair
       window(end, [by(45.75), boardTop + 6.75], [17, 14.6]), // Ethernet
       // SD card underneath the board's left end, with a scoop above for a fingernail
-      left.extrude(square([13, 2.6]).translate([by(28) - 6.5, boardZ - 2.3]), -p.wall, { through: true }),
-      left.extrude(scoop.translate([by(28), boardZ - 1]), -p.wall / 2, { through: 'start' }),
+      left.extrude(square([13, 2.6]).translate([-by(28) - 6.5, boardZ - 2.3]), -p.wall, { through: true }),
+      left.extrude(scoop.translate([-by(28), boardZ - 1]), -p.wall / 2, { through: 'start' }),
     ];
   };
 

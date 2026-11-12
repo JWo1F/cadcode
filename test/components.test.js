@@ -132,6 +132,6 @@ test('components take their sizes as options, and frames place them', async () =
   // The encoder's hole goes through a panel on either side of its mounting face.
   const e = ec11({ fn: 32 });
   assert.ok(e.cutout.bounds().min[2] <= -6.5 + 1e-9 && e.cutout.bounds().max[2] >= 12 - 1e-9);
-  const placed = plane.XZ.offset(5).place(e);
+  const placed = plane.XZ.offset(-5).place(e); // plane.XZ faces -Y, so -5 along it is y = 5
   assert.ok(Math.abs(placed.points.face.y - 5) < 1e-9);
 });

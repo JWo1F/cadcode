@@ -95,7 +95,7 @@ export default (p) => {
 
   // Notch in the box's front rim for a thumbnail, and a matching tab on the lid.
   const thumbNotch = () =>
-    plane.XZ.extrude(ellipse({ d: [16, 8] }).translate([p.length / 2, p.boxH]), p.wall, { through: true });
+    plane.XZ.extrude(ellipse({ d: [16, 8] }).translate([p.length / 2, p.boxH]), -p.wall, { through: true });
   const tab = () =>
     hull(
       cube([20, 0.1, p.lidH - 2]).translate([p.length / 2 - 10, 0, p.boxH + 2]),

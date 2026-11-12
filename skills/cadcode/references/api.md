@@ -129,17 +129,17 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 
 | Function | Notes |
 | --- | --- |
-| `solid.face('+X' \| '-X' \| '+Y' \| '-Y' \| '+Z' \| '-Z')` | Side of the **bounding box** (not mesh faces), normal outward. u, v = **world coordinates** of the other two axes in order: X side → (y, z), Y side → (x, z), Z side → (x, y). So a hole at world `[y, z]` on either X side is drawn at `[y, z]`. Text drawn on a `-X`, `+Y` or `-Z` side reads mirrored from outside. |
-| `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at world `[u, v]` straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (normal smoothed across facets — within ~0.05° on a fn 160 ellipsoid — and kept per face at edges sharper than 40°). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
-| `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, +Y, +X. |
+| `solid.face('+X' \| '-X' \| '+Y' \| '-Y' \| '+Z' \| '-Z')` | Side of the **bounding box** (not mesh faces), normal outward. u, v = the other two axes in order, **seen from outside**: X side → (y, z), Y side → (x, z), Z side → (x, y), but on `-X`, `+Y`, `-Z` u is **negated** (−y, −x, −x). So a hole at world `[y, z]` is drawn at `[y, z]` on `+X` and at `[-y, z]` on `-X`. Every frame is a rotation: text reads right from outside, placed parts are never mirrored. |
+| `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at its `[u, v]` (as for `face`) straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (normal smoothed across facets — within ~0.05° on a fn 160 ellipsoid — and kept per face at edges sharper than 40°). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
+| `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, **−Y**, +X (`plane.XZ` = OpenSCAD `rotate([90,0,0]) linear_extrude`). |
 | `frameAt(origin, normal)` | Any point/normal (e.g. on a dome). Right-handed: v toward +Z (or +Y when the normal is vertical), u = v × normal. |
 | `frame.extrude(shape2, depth, { through = false, center = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through: true` adds 1 at both ends (cuts through a wall); `through: 'start'` adds 1 back past the plane only (a blind pocket from a face, or a boss sunk into its base) — never a hand-written `+1`. `center`: plane in the middle, `|depth|` thick; not with `'start'`. |
 | `frame.offset(d)` | Moved along the normal. |
-| `frame.flip()` | Normal reversed, u/v kept (det flips). For −Z cutters on a frame whose normal points into the part. |
+| `frame.flip()` | Half a turn about v: normal and u reversed, v kept (still a rotation). For −Z cutters on a frame whose normal points into the part. |
 | `frame.place(solid \| point \| component)` | Local X, Y → u, v; local Z → normal. |
 | `frame.origin`, `frame.normal` | `[x, y, z]`. |
 
-`toFront(shape, depth, y0)` (extrude towards -Y from y = y0) is `plane.XZ.offset(y0).extrude(shape, -depth)`.
+`toFront(shape, depth, y0)` (extrude towards -Y from y = y0) is `plane.XZ.offset(-y0).extrude(shape, depth)`; towards +Y it is `extrude(shape, -depth)`.
 
 ## Sketches
 

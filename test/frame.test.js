@@ -5,21 +5,24 @@ import { cube, sphere, square, plane, frameAt, point } from '../src/lib/index.js
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 const close = (v, w, eps) => v.forEach((c, i) => near(c, w[i], eps));
 
-test('a face is the side of the bounding box, in world coordinates', () => {
+test('a face is the side of the bounding box, its u and v seen from outside', () => {
   const box = cube([20, 10, 8]).translate([5, 0, 0]);
   const minus = box.face('-X');
   close(minus.origin, [5, 0, 0]);
   close(minus.normal, [-1, 0, 0]);
-  // u, v on an X side are world Y and Z.
-  close(minus.place(point([3, 4, 0])).toArray(), [5, 3, 4]);
+  // u, v on an X side are world Y and Z; seen from -X, u runs along -Y.
+  close(minus.place(point([3, 4, 0])).toArray(), [5, -3, 4]);
+  close(box.face('+X').place(point([3, 4, 0])).toArray(), [25, 3, 4]);
   close(box.face('+Z').place(point([3, 4, 0])).toArray(), [3, 4, 8]);
+  close(box.face('-Z').place(point([3, 4, 0])).toArray(), [-3, 4, 0]);
   close(box.face('-Y').place(point([3, 4, 0])).toArray(), [3, 0, 4]);
+  close(box.face('+Y').place(point([3, 4, 0])).toArray(), [-3, 10, 4]);
   assert.throws(() => box.face('X'), /one of \+X/);
 });
 
 test('a negative depth extrudes into the part, a positive one out of it', () => {
   const box = cube([20, 10, 8]);
-  const into = box.face('-X').extrude(square([4, 2]).translate([3, 3]), -2);
+  const into = box.face('-X').extrude(square([4, 2]).translate([-7, 3]), -2);
   close(into.bounds().min, [0, 3, 3]);
   close(into.bounds().max, [2, 7, 5]);
   near(into.volume(), 16);
@@ -31,16 +34,17 @@ test('a negative depth extrudes into the part, a positive one out of it', () => 
 
 test('through reaches 1 past both ends, so a cut leaves no skin', () => {
   const wall = cube([2, 10, 10]);
-  const window = wall.face('-X').extrude(square([4, 4]).translate([3, 3]), -2, { through: true });
+  const window = wall.face('-X').extrude(square([4, 4]).translate([-7, 3]), -2, { through: true });
   close(window.bounds().min, [-1, 3, 3]);
   close(window.bounds().max, [3, 7, 7]);
   near(wall.subtract(window).volume(), 200 - 32);
 });
 
 test('planes through the origin move along their normal', () => {
-  const xz = plane.XZ.offset(-5);
+  close(plane.XZ.normal, [0, -1, 0]);
+  const xz = plane.XZ.offset(5);
   close(xz.origin, [0, -5, 0]);
-  const s = xz.extrude(square([2, 3]), -4);
+  const s = xz.extrude(square([2, 3]), 4);
   close(s.bounds().min, [0, -9, 0]);
   close(s.bounds().max, [2, -5, 3]);
   close(plane.YZ.normal, [1, 0, 0]);
@@ -87,6 +91,8 @@ test("through: 'start' reaches back past the plane only; center straddles it", (
   close(slab.bounds().min, [0, -2, 0]);
   close(slab.bounds().max, [2, 2, 2]);
   close(plane.XZ.extrude(square(2), -4, { center: true, through: true }).bounds().min, [0, -3, 0]);
+  // Against plane.XZ's -Y normal is +Y.
+  close(plane.XZ.extrude(square(2), -4).bounds().max, [2, 4, 2]);
   assert.throws(() => top.extrude(square(2), 3, { center: true, through: 'start' }), /centered/);
   assert.throws(() => top.extrude(square(2), 3, { through: 'end' }), /through must be/);
 });
@@ -105,10 +111,22 @@ test('surfaceAt reads the normal of a curve, not of the facet it meets', () => {
   close(cube(10).surfaceAt('+Z', [9.99, 5]).normal, [0, 0, 1], 1e-9);
 });
 
-test('flip turns a frame to face the other way, u and v kept', () => {
-  const f = plane.XZ.offset(-3).flip();
-  close(f.normal, [0, -1, 0]);
+test('flip turns a frame half a turn about v to face the other way', () => {
+  const f = plane.XZ.offset(3).flip();
+  close(f.normal, [0, 1, 0]);
   close(f.origin, [0, -3, 0]);
-  close(f.place(point([1, 2, 0])).toArray(), [1, -3, 2]);
-  close(f.place(point([0, 0, 1])).toArray(), [0, -4, 0]);
+  close(f.place(point([1, 2, 0])).toArray(), [-1, -3, 2]);
+  close(f.place(point([0, 0, 1])).toArray(), [0, -2, 0]);
+});
+
+test('every frame is a rotation, so nothing placed on one is mirrored', () => {
+  const det = ({ matrix: m }) =>
+    m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5]);
+  const box = cube([20, 10, 8]);
+  const frames = [
+    ...['+X', '-X', '+Y', '-Y', '+Z', '-Z'].map((side) => box.face(side)),
+    plane.XY, plane.XZ, plane.YZ, plane.XZ.flip(), box.face('-X').flip(),
+    frameAt([1, 2, 3], [1, -2, 0.5]), frameAt([0, 0, 0], [0, 0, -1]),
+  ];
+  for (const f of frames) near(det(f), 1);
 });

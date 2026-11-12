@@ -147,10 +147,10 @@ only a preview: drawn as a sketch on Z=0 (a see-through blue fill with a bold ou
 use a frame instead of rotating it into place (below).
 
 **Draw on a face with a frame.** `box.face('-X')` is the plane of that side of the bounding box, normal outward,
-with **world coordinates** in it (y, z on an X side; x, z on a Y side; x, y on a Z side), so nothing needs
-rotating: `box.subtract(box.face('-X').extrude(window.translate([y, z]), -wall, { through: true }))` cuts a
-window through the wall. Negative depth goes into the part, positive out of it; `through: true` is the
-overshoot of 1 at both ends, `through: 'start'` only outside (a blind pocket), `center: true` straddles the plane. `plane.XZ.offset(y0)` is a plane through y = y0, `dome.surfaceAt('+Z', [x, y])` the frame on a curved
+with its u, v **seen from outside** (y, z on an X side; x, z on a Y side; x, y on a Z side, with u negated on
+`-X`, `+Y` and `-Z`), so nothing needs rotating: `box.subtract(box.face('-X').extrude(window.translate([-y, z]), -wall, { through: true }))`
+cuts a window through the wall. Frames are rotations, so nothing placed on one is mirrored. Negative depth goes into the part, positive out of it; `through: true` is the
+overshoot of 1 at both ends, `through: 'start'` only outside (a blind pocket), `center: true` straddles the plane. `plane.XZ` faces **-Y** (as OpenSCAD's `rotate([90,0,0])`), so `plane.XZ.offset(-y0)` is a plane through y = y0, `dome.surfaceAt('+Z', [x, y])` the frame on a curved
 surface (its normal square to it), `frameAt(point, normal)` one at any point, and `frame.place(solid)` puts a solid built at the origin onto any of them (Z along the normal).
 
 **Round edges after the booleans** with `.fillet(r, filter)` / `.chamfer(size, filter)`: `{ along: 'z', convex: true }`

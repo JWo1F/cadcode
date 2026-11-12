@@ -82,7 +82,7 @@ export default (p) => {
   // A notch is a circle in the end face, swept along the whole length of the block.
   const notch = (x, top, depth, width) => {
     const r = ((width / 2) ** 2 + depth ** 2) / (2 * depth);
-    return plane.XZ.extrude(circle(r).translate([x, top - depth + r]), length, { through: true });
+    return plane.XZ.extrude(circle(r).translate([x, top - depth + r]), -length, { through: true });
   };
   const notches = () => [
     notch(sdW / 2, p.sdH, p.sdNotch, SD.w * 0.6),

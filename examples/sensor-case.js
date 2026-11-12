@@ -126,8 +126,8 @@ export default (p) => {
         cube([iL, iW, iH + 1]),
 
         // USB-C: through window + recess for the plug outside
-        through('-X', square([usbW + usbSlotExtra, usbH + usbSlotExtra], { center: true, round: 1 }).translate([usbCy, usbCz])),
-        pocket('-X', square([plugW, plugH], { center: true, round: 1.5 }).translate([usbCy, usbCz]), plugDepth),
+        through('-X', square([usbW + usbSlotExtra, usbH + usbSlotExtra], { center: true, round: 1 }).translate([-usbCy, usbCz])),
+        pocket('-X', square([plugW, plugH], { center: true, round: 1.5 }).translate([-usbCy, usbCz]), plugDepth),
 
         // Fingernail notch in the long side, clear of the snap groove: a gap to pry the lid up from,
         // 0.6 mm of wall left inside
@@ -138,8 +138,9 @@ export default (p) => {
 
         // Sensor compartment pores: end wall, side walls, floor
         through('+X', poreGrid(iW, poreH).translate([0, poreZ0])),
-        ['-Y', '+Y'].map((side) => through(side, poreGrid(sensL, poreH).translate([sx0, poreZ0]))),
-        shell.face('-Z').extrude(poreGrid(sensL, iW).translate([sx0, 0]), -floorT, { through: true }),
+        through('-Y', poreGrid(sensL, poreH).translate([sx0, poreZ0])),
+        through('+Y', poreGrid(sensL, poreH).translate([sx0, poreZ0]).mirror([1, 0])), // u = -x seen from +Y
+        shell.face('-Z').extrude(poreGrid(sensL, iW).translate([sx0, 0]).mirror([1, 0]), -floorT, { through: true }), // u = -x from below
       ),
 
       // Divider with a hole for the wires

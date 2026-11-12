@@ -76,9 +76,9 @@ export default (p) => {
       .offset(-0.6); // and fillet where the rings meet the base
   };
 
-  // The profile stands up in XZ and is pushed along Y, then the plan's corners are rounded.
+  // The profile stands up in XZ and is pushed along +Y (against plane.XZ's -Y normal), then the plan's corners are rounded.
   const body = () =>
-    plane.XZ.extrude(profile(), p.width).intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
+    plane.XZ.extrude(profile(), -p.width).intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
 
   // Screw from the top: a clearance hole and a 90° countersink ending flush with the base's top, and the
   // head's width clear above it for the screwdriver.

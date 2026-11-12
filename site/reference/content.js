@@ -1332,11 +1332,14 @@ lid.subtract(knob.cutout)`,
         name: 'face',
         owner: 'Solid',
         signature: '.face(name)',
-        summary: 'The frame on one side of the solid\'s bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. So a hole at `[y, z]` in a side wall is drawn at `[y, z]`, whichever side it is on.',
+        summary: 'The frame on one side of the solid\'s bounding box, its normal pointing out. Its u and v are Y and Z on an X side, X and Z on a Y side, X and Y on a Z side, seen from outside: world coordinates on `+X`, `-Y` and `+Z`, and u runs against its axis on `-X`, `+Y` and `-Z`. So a hole at world `[y, z]` is drawn at `[y, z]` on `+X` and at `[-y, z]` on `-X`.',
         params: [{ name: 'name', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side: `\'+X\'` is the one at the largest X, `\'-X\'` at the smallest.' }],
         returns: 'Frame',
-        notes: ['The side comes from the bounding box, not from the faces of the mesh: on a rounded or sloped part it is the plane that touches it.'],
-        example: `const usb = square([9, 3.3], { center: true }).offset(0.5).translate([usbY, usbZ])
+        notes: [
+          'The side comes from the bounding box, not from the faces of the mesh: on a rounded or sloped part it is the plane that touches it.',
+          'Every frame is a rotation: text drawn on any side reads the right way round from outside, and a part placed there is not mirrored.',
+        ],
+        example: `const usb = square([9, 3.3], { center: true }).offset(0.5).translate([-usbY, usbZ]) // u = -y on -X
 box.subtract(box.face('-X').extrude(usb, -wall, { through: true }))`,
       },
       {
@@ -1347,7 +1350,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }))`,
         summary: 'The frame on the solid\'s surface where it is first met looking in from a side: from `at` on `face(side)` straight into the part. Its normal is the surface\'s, pointing out, so a hole or a boss on a dome or a sloped wall goes in square to it. Its u and v turn as `frameAt` says.',
         params: [
           { name: 'side', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side to look in from, as for `face`.' },
-          { name: 'at', type: '[u, v]', text: 'Where on that side, in world coordinates as for `face`: `[x, y]` on a Z side.' },
+          { name: 'at', type: '[u, v]', text: 'Where on that side, in its u and v as for `face`: `[x, y]` on the +Z side.' },
         ],
         returns: 'Frame',
         notes: [
@@ -1361,10 +1364,10 @@ dome.subtract(knob.extrude(circle({ d: 7.4 }), -10, { through: true }))`,
         id: 'plane',
         name: 'plane',
         signature: 'plane.XY | plane.XZ | plane.YZ',
-        summary: 'The three planes through the origin, with world coordinates for u and v: `plane.XY` has u = X, v = Y and its normal along +Z; `plane.XZ` u = X, v = Z, normal +Y; `plane.YZ` u = Y, v = Z, normal +X.',
+        summary: 'The three planes through the origin, with world coordinates for u and v: `plane.XY` has u = X, v = Y and its normal along +Z; `plane.XZ` u = X, v = Z, normal -Y (as OpenSCAD\'s `rotate([90, 0, 0])`); `plane.YZ` u = Y, v = Z, normal +X.',
         returns: 'Frame',
         example: `// A panel's front at y = -58, 2.4 thick, growing back towards +Y
-plane.XZ.offset(-58).extrude(outline, 2.4)`,
+plane.XZ.offset(58).extrude(outline, -2.4)`,
       },
       {
         id: 'frameAt',
@@ -1422,9 +1425,10 @@ atKnob.place(cylinder({ d: 24, h: 15 }).translate([0, 0, -14]))`,
         name: 'flip',
         owner: 'Frame',
         signature: '.flip()',
-        summary: 'The same plane facing the other way: its normal reversed, u and v as they were. For a cutter that goes down local -Z, such as `screwHole`, onto a plane whose normal points into the part.',
+        summary: 'The same plane facing the other way, turned half a turn about v: its normal and u reversed, v as it was, so it still places without mirroring. For a cutter that goes down local -Z, such as `screwHole`, onto a plane whose normal points into the part.',
         returns: 'Frame',
-        example: `plane.XZ.offset(-t).flip().place(screwHole('M4', { length: t, head: 'countersunk' }))`,
+        example: `// A wall from y = 0 to t: plane.XZ.offset(-t) is its back at y = t, facing -Y into it
+plane.XZ.offset(-t).flip().place(screwHole('M4', { length: t, head: 'countersunk' }))`,
       },
       {
         id: 'frame-origin',

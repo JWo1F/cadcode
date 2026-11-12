@@ -60,8 +60,8 @@ export default (p) => {
   const brace = s.line([p.shelfLeg * p.gussetReach, p.thick - 1], [p.thick - 1, p.wallLeg * p.gussetReach]);
   const gussetShape = s.polygon([[p.thick - 1, p.thick - 1], brace.start, brace.end], { round: 1.5 });
 
-  // Pushed along +Y: the profile across the full width, the gusset in the middle.
-  const gusset = () => plane.XZ.offset((p.width - p.gusset) / 2).extrude(gussetShape, p.gusset);
+  // Pushed along +Y, against plane.XZ's -Y normal: the profile across the full width, the gusset in the middle.
+  const gusset = () => plane.XZ.offset(-(p.width - p.gusset) / 2).extrude(gussetShape, -p.gusset);
 
   // A through hole with a 90° countersink, sized for M4 (a 4 mm wood screw takes the same).
   const sink = () => screwHole('M4', { length: p.thick + 1, head: 'countersunk' });
@@ -79,7 +79,7 @@ export default (p) => {
   const wallHoles = () => product(wallZ, ys).map(([z, y]) => sinkAt(plane.YZ.offset(p.thick), y, z));
 
   const bracket = () =>
-    plane.XZ.extrude(profile, p.width).union(gusset()).subtract(shelfHoles(), wallHoles());
+    plane.XZ.extrude(profile, -p.width).union(gusset()).subtract(shelfHoles(), wallHoles());
 
   return {
     bracket,

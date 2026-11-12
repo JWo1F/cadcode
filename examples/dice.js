@@ -48,7 +48,7 @@ export default (p) => {
   // Which face each number goes on: 1 top / 6 bottom, 2 right / 5 left, 3 back / 4 front.
   const faces = { 1: '+Z', 6: '-Z', 2: '+X', 5: '-X', 3: '+Y', 4: '-Y' };
 
-  // A pip is a sphere sunk into the face; the face's u and v are world axes (y, z on an X face).
+  // A pip is a sphere sunk into the face, laid out in the face's u and v as seen from outside.
   const pips = () => {
     const box = cube(p.size, { center: true });
     const pip = sphere({ d: p.pipD, fn: 20 }).translate([0, 0, p.pipD / 2 - p.pipDepth]);

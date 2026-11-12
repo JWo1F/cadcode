@@ -417,8 +417,10 @@ export class Solid {
 
   /**
    * The plane of one side of the bounding box, to draw on and extrude from: `'+X'` is the side at the
-   * largest X, its normal pointing out, and so on for `'-X'`, `'+Y'`, `'-Y'`, `'+Z'`, `'-Z'`. Positions
-   * in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side.
+   * largest X, its normal pointing out, and so on for `'-X'`, `'+Y'`, `'-Y'`, `'+Z'`, `'-Z'`. Its u and v
+   * are Y and Z on an X side, X and Z on a Y side, X and Y on a Z side, seen from outside: world
+   * coordinates on `+X`, `-Y` and `+Z`; on `-X`, `+Y` and `-Z` u runs the other way (u = -y on `-X`),
+   * so what is drawn there reads right from outside and what is placed there is not mirrored.
    * `box.face('-X').extrude(window, -wall, { through: true })` cuts a window through the wall at -X.
    * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} name
    */
@@ -504,7 +506,7 @@ export class Solid {
    * mesh's facets, close to the true surface's; at a sharp edge each face keeps its own.
    * `dome.surfaceAt('+Z', [42, 0])` is the point on top of the dome above x = 42, y = 0.
    * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} side
-   * @param {number[]} at world coordinates on that side, as for `face()`
+   * @param {number[]} at [u, v] on that side, as for `face()`
    */
   surfaceAt(side, at) {
     const face = faceFrame(side, this.bounds());

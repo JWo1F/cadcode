@@ -86,7 +86,7 @@ export default (p) => {
     const shell = roundedBox(iL + 2 * p.wall, iW + 2 * p.wall, p.floor + H, p.corner).translate([-p.wall, -p.wall, -p.floor]);
 
     const side = shell.face('-Y'); // port side, (x, z)
-    const left = shell.face('-X'); // (y, z)
+    const left = shell.face('-X'); // (-y, z): seen from outside, y runs right to left
     const right = shell.face('+X'); // (y, z)
 
     const portZ = (h) => boardTop + h / 2;
@@ -98,10 +98,10 @@ export default (p) => {
 
     // SD card in the left end, with a scoop to get a fingernail on the card
     const scoop = circle({ d: 12 })
-      .translate([by(p.sdY), boardTop + 1])
+      .translate([-by(p.sdY), boardTop + 1])
       .clip({ y: [boardTop - 0.5, Infinity] });
     const sd = [
-      left.extrude(square([13, 3]).translate([by(p.sdY) - 6.5, boardTop - 0.5]), -p.wall, { through: true }),
+      left.extrude(square([13, 3]).translate([-by(p.sdY) - 6.5, boardTop - 0.5]), -p.wall, { through: true }),
       left.extrude(scoop, -0.9, { through: 'start' }), // stops short of the lid groove behind it
     ];
 

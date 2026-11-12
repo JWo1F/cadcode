@@ -66,7 +66,7 @@ test('circles cross lines and circles in a stated order', () => {
 test('an outline from sketch points extrudes from the sketch frame', () => {
   const box = cube([20, 10, 8]);
   const s = sketch(box.face('-X'));
-  const floor = s.line([2, 2], [8, 2]);
+  const floor = s.line([-8, 2], [-2, 2]); // seen from -X, u runs along -Y
   const lid = floor.parallel(3);
   const window = s.polygon([floor.start, floor.end, lid.end, lid.start]);
   near(window.area(), 18);

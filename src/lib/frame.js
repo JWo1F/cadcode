@@ -56,13 +56,14 @@ export class Frame {
   }
 
   /**
-   * The same plane facing the other way: its normal reversed, u and v as they were. Use it to put a
-   * cutter that goes down local -Z onto a plane whose normal points into the part.
+   * The same plane facing the other way, turned half a turn about its v: the normal and u reversed,
+   * v as it was, so it still places without mirroring. Use it to put a cutter that goes down local -Z
+   * onto a plane whose normal points into the part.
    * @returns {Frame}
    */
   flip() {
     const m = [...this.matrix];
-    for (let k = 8; k < 11; k++) m[k] = -m[k];
+    for (const k of [0, 1, 2, 8, 9, 10]) m[k] = -m[k];
     return new Frame(m);
   }
 
@@ -99,19 +100,26 @@ export class Frame {
   }
 }
 
-/** A frame whose u and v are two world axes, at `at` along the third. */
-function axisFrame(axis, sign, at) {
+/**
+ * A frame on the plane across `axis` at `at`, its normal along `axis` times `normalSign`. u and v
+ * are the other two world axes in order, u reversed when needed so u × v = normal: every frame is a
+ * rotation, so whatever it places keeps its handedness.
+ */
+function axisFrame(axis, normalSign, at) {
   const n = AXES.indexOf(axis);
   const [a, b] = [0, 1, 2].filter((k) => k !== n);
   const unit = (k, s = 1) => [0, 1, 2].map((i) => (i === k ? s : 0));
-  const origin = unit(n, at);
-  return new Frame([...unit(a), 0, ...unit(b), 0, ...unit(n, sign), 0, ...origin, 1]);
+  const normal = unit(n, normalSign);
+  const uSign = vec3.dot(vec3.cross(unit(a), unit(b)), normal) > 0 ? 1 : -1;
+  return new Frame([...unit(a, uSign), 0, ...unit(b), 0, ...normal, 0, ...unit(n, at), 1]);
 }
 
 /**
  * @internal The frame on a face of a bounding box: `'+X'` is the side at the largest X, its normal
  * pointing out. Local u and v are the other two world axes in order (Y and Z on an X face, X and Z
- * on a Y face, X and Y on a Z face), so positions in it are world coordinates.
+ * on a Y face, X and Y on a Z face), seen from outside: on `+X`, `-Y` and `+Z` they are world
+ * coordinates, on `-X`, `+Y` and `-Z` u runs against its world axis, so a drawing reads the right
+ * way round from outside and nothing placed there is mirrored.
  * @param {string} name
  * @param {{ min: number[], max: number[] }} bounds
  * @returns {Frame}
@@ -126,13 +134,13 @@ export function faceFrame(name, bounds) {
 
 /**
  * The three planes through the origin. Local u and v are world coordinates: `plane.XZ` has u = X,
- * v = Z and its normal along +Y. Move one with `.offset(d)`.
+ * v = Z and its normal along -Y, so u × v is the normal on every one. Move one with `.offset(d)`.
  */
 export const plane = Object.freeze({
   /** u = X, v = Y, normal +Z. */
   XY: axisFrame('Z', 1, 0),
-  /** u = X, v = Z, normal +Y. */
-  XZ: axisFrame('Y', 1, 0),
+  /** u = X, v = Z, normal -Y (as OpenSCAD's `rotate([90, 0, 0]) linear_extrude()`). */
+  XZ: axisFrame('Y', -1, 0),
   /** u = Y, v = Z, normal +X. */
   YZ: axisFrame('X', 1, 0),
 });
