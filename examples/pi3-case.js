@@ -7,7 +7,7 @@ description: A base with port windows and a snap-on cover for the Pi 3 Model B+.
 //
 //   cadcode dev examples/pi3-case.js
 //   cadcode stl examples/pi3-case.js --part print
-import { circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { arrange, circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -69,9 +69,9 @@ export default (p) => {
 
   // Outline grown by `off` from the interior, with the corner radius growing to match.
   const r0 = 1;
-  const outline = (off) => square([iL - 2 * r0, iW - 2 * r0]).translate([r0, r0]).offset(r0 + off);
+  const outline = (off) => square([iL + 2 * off, iW + 2 * off], { round: r0 + off }).translate([-off, -off]);
 
-  const rounded = (w, h, r) => square([w - 2 * r, h - 2 * r], { center: true }).offset(r);
+  const rounded = (w, h, r) => square([w, h], { center: true, round: r });
   // Window through a wall, drawn on its outside face at [u, v], with an optional recess for the plug.
   const window = (face, [u, v], [w, h, r = 1], recess) => [
     face.extrude(rounded(w, h, r).translate([u, v]), -p.wall, { through: true }),
@@ -164,11 +164,8 @@ export default (p) => {
 
   return {
     assembly: () => [base().color('lightgray', 0.7), cover().translate([0, 0, 15]).color('orange', 0.45), board()],
-    base: () => base().translate([p.wall, p.wall, p.floor]),
-    cover: () => cover().rotate([180, 0, 0]).translate([p.wall, iW + p.wall, H]),
-    print: () => [
-      base().translate([p.wall, p.wall, p.floor]),
-      cover().rotate([180, 0, 0]).translate([p.wall, 2 * iW + 3 * p.wall + 8, H]),
-    ],
+    base: () => base().layFlat(),
+    cover: () => cover().layFlat('+Z'),
+    print: () => arrange([base().layFlat(), cover().layFlat('+Z')], { gap: 8, columns: 1 }),
   };
 };

@@ -7,7 +7,7 @@ description: A case for the Pi Zero and Zero 2 W with a sliding lid that clicks 
 //
 //   cadcode dev examples/pi-zero-case.js
 //   cadcode stl examples/pi-zero-case.js --part print
-import { circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
+import { arrange, circle, cube, cylinder, product, range, setResolution, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -74,7 +74,7 @@ export default (p) => {
 
   // A rounded window through the wall under `face`, at [u, v] on it, with an optional recess for the plug's overmould.
   const sideWindow = (face, [u, v], w, h, recess) => {
-    const window = (ww, hh) => square([ww - 2, hh - 2], { center: true }).offset(1).translate([u, v]);
+    const window = (ww, hh) => square([ww, hh], { center: true, round: 1 }).translate([u, v]);
     return [
       face.extrude(window(w, h), -p.wall, { through: true }),
       recess && face.extrude(window(recess[0], recess[1]), -p.wall / 2, { through: 'start' }),
@@ -175,12 +175,12 @@ export default (p) => {
   console.log(`outer ${(iL + 2 * p.wall).toFixed(1)} × ${(iW + 2 * p.wall).toFixed(1)} × ${(p.floor + H).toFixed(1)} mm`);
 
   // As it sits in the case, tongue on the bed: the wide part prints first, the narrower body on top.
-  const lidForPrint = () => lid().translate([p.groove, p.groove + p.detent, -lidZ]);
+  const lidForPrint = () => lid().layFlat();
 
   return {
     assembly: () => [base().color('lightgray', 0.6), lid().translate([12, 0, 0]).color('orange', 0.5), board()],
-    base: () => base().translate([p.wall, p.wall, p.floor]),
+    base: () => base().layFlat(),
     lid: lidForPrint,
-    print: () => [base().translate([p.wall, p.wall, p.floor]), lidForPrint().translate([0, iW + 2 * p.wall + 8, 0])],
+    print: () => arrange([base().layFlat(), lidForPrint()], { gap: 8, columns: 1 }),
   };
 };

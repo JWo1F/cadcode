@@ -50,7 +50,7 @@ export default (p) => {
   const baseW = p.base + extra;
   const topW = p.topW + extra;
 
-  const rect = (w, d, r) => square([w - 2 * r, d - 2 * r], { center: true }).offset(r);
+  const rect = (w, d, r) => square([w, d], { center: true, round: r });
 
   // The top's plane at height z on the axis, tilted towards the typist (-Y).
   const tiltR = (p.tilt * Math.PI) / 180;
@@ -103,10 +103,7 @@ export default (p) => {
   ];
 
   // Top made level again, flipped stem up and set down on the bed.
-  const print = () => {
-    const flipped = keycap().rotate([-p.tilt, 0, 0]).rotate([180, 0, 0]);
-    return flipped.translate([0, 0, -flipped.bounds().min[2]]);
-  };
+  const print = () => keycap().rotate([-p.tilt, 0, 0]).layFlat('+Z');
 
   return {
     assembly: () => [keycap().color('#f1ece0'), switchBody()],

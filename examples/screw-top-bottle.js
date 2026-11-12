@@ -2,7 +2,7 @@
 title: Screw-top bottle
 description: A bottle lofted from a rounded-square body into a round neck, with a threaded neck and a cap that screws on.
 ---*/
-import { circle, cube, cylinder, loft, range, setResolution, square, thread } from 'cadcode';
+import { circle, cube, cylinder, loft, polar, setResolution, square, thread } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -39,7 +39,7 @@ export default (p) => {
   const bore = neckRoot - p.wall;
 
   // One outline per section, as loft() wants: a rounded square, then circles.
-  const roundedSquare = (w, r) => square(w - 2 * r, { center: true }).offset(r);
+  const roundedSquare = (w, r) => square(w, { center: true, round: r });
   const neckThread = () => thread({ d: p.neckD, pitch: p.pitch, starts: p.starts, length: p.neckHeight, profile: 'trapezoid', taper: 1.5 });
 
   const bottle = () => {
@@ -64,17 +64,12 @@ export default (p) => {
     const top = neckZ + p.neckHeight + p.capTop;
     const shell = cylinder({ r: outer, h: top - bottom, chamfer: { top: 1 } }).translate([0, 0, bottom]);
     const hole = thread({ d: p.neckD, pitch: p.pitch, starts: p.starts, length: p.neckHeight - 1, profile: 'trapezoid', internal: true, clearance: p.clearance, taper: 1 });
-    const grips = range(0, p.grips - 1).map((i) =>
-      cylinder({ d: 2.4, h: top - bottom + 2, fn: 12 }).translate([outer + 0.5, 0, bottom - 1]).rotate((360 * i) / p.grips),
-    );
+    const grips = polar(cylinder({ d: 2.4, h: top - bottom + 2, fn: 12 }).translate([0, 0, bottom - 1]), { count: p.grips, r: outer + 0.5 });
     return shell.subtract(hole.translate([0, 0, neckZ]), grips);
   };
 
   // Printed upside down, its top on the bed.
-  const cap = () => {
-    const placed = capInPlace().rotate([180, 0, 0]);
-    return placed.translate([0, 0, -placed.bounds().min[2]]);
-  };
+  const cap = () => capInPlace().layFlat('+Z');
 
   // A cut-away of the closed bottle, to check that the cap seats on the neck.
   const section = () =>

@@ -8,7 +8,7 @@ description: A box and lid for a Pro Micro board, a Li-ion cell and a climate se
 //   cadcode dev examples/sensor-case.js
 //   cadcode stl examples/sensor-case.js --part box
 //   cadcode png examples/sensor-case.js --part assembly --view sheet
-import { circle, cube, cylinder, square, union, difference, intersection, setResolution, range, product } from 'cadcode';
+import { circle, cube, cylinder, square, union, difference, intersection, setResolution, product, grid, arrange } from 'cadcode';
 
 setResolution({ fn: 40 });
 
@@ -107,17 +107,7 @@ export default (p) => {
   const roundedBox = (l, w, h, r) => cube([l, w, h], { round: { z: r } });
 
   // Grid of pores over an a x b rectangle, drawn from [0, 0]
-  const poreGrid = (a, b) => {
-    const na = Math.floor((a - poreD) / porePitch) + 1;
-    const nb = Math.floor((b - poreD) / porePitch) + 1;
-    const oa = (a - (na - 1) * porePitch) / 2;
-    const ob = (b - (nb - 1) * porePitch) / 2;
-    return union(
-      product(range(0, na - 1), range(0, nb - 1)).map(([i, j]) =>
-        circle({ d: poreD }).translate([oa + i * porePitch, ob + j * porePitch]),
-      ),
-    );
-  };
+  const poreGrid = (a, b) => grid(circle({ d: poreD }), { pitch: porePitch, within: square([a, b]) });
 
   const snapLine = (len) => cylinder({ r: bumpR, h: len, center: true }).rotate([0, 90, 0]);
 
@@ -133,8 +123,8 @@ export default (p) => {
         cube([iL, iW, iH + 1]),
 
         // USB-C: through window + recess for the plug outside
-        through('-X', square([usbW + usbSlotExtra - 2, usbH + usbSlotExtra - 2], { center: true }).offset(1).translate([usbCy, usbCz])),
-        pocket('-X', square([plugW - 3, plugH - 3], { center: true }).offset(1.5).translate([usbCy, usbCz]), plugDepth),
+        through('-X', square([usbW + usbSlotExtra, usbH + usbSlotExtra], { center: true, round: 1 }).translate([usbCy, usbCz])),
+        pocket('-X', square([plugW, plugH], { center: true, round: 1.5 }).translate([usbCy, usbCz]), plugDepth),
 
         // Fingernail notch in the long side, clear of the snap groove: a gap to pry the lid up from,
         // 0.6 mm of wall left inside
@@ -219,15 +209,12 @@ export default (p) => {
     cube([sensorS, sensorS, 1.2]).translate([sx0 + (sensL - sensorS) / 2, (iW - sensorS) / 2, sensorPadH]).color('purple'),
   ];
 
-  // Lid flipped top-down for printing
-  const lidForPrint = () => lid().translate([0, -iW, 0]).rotate([180, 0, 0]);
-
   console.log(`Outer size: ${iL + 2 * wall} x ${iW + 2 * wall} x ${iH + floorT + lidT} mm`);
 
   return {
     assembly: () => [box().color('lightgray', 0.5), lid().translate([0, 0, 8]).color('orange', 0.35), dummies()],
     box,
-    lid: () => lidForPrint().translate([0, 0, iH + lidT]),
-    print: () => [box(), lidForPrint().translate([0, iW + 2 * wall + 6, iH + lidT])],
+    lid: () => lid().layFlat('+Z'), // top down
+    print: () => arrange([box().layFlat(), lid().layFlat('+Z')], { gap: 6, columns: 1 }),
   };
 };

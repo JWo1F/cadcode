@@ -56,7 +56,7 @@ export default (p) => {
   };
 
   // One up, six on the bed.
-  const die = () => body().subtract(pips()).translate([0, 0, half]);
+  const die = () => body().subtract(pips()).layFlat();
 
   // A few dice on the table, each turned to show a different number.
   const set = () => {
