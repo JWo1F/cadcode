@@ -93,3 +93,19 @@ test('an arc or a spline can leave in a direction of its own', () => {
   near(corner[2][0], 10, 0.05); // turns the corner and goes straight up
   assert.throws(() => path([0, 0]).arc([1, 0], { start: 90, through: [0.5, 0.5] }), /not both/);
 });
+
+test('stroke draws a line of a width; polarPoint finds points on circles and ellipses', async () => {
+  const { stroke, polarPoint } = await import('../src/lib/index.js');
+  near(stroke([[0, 0], [10, 0]], 2, { cap: 'flat' }).area(), 20);
+  near(stroke([[0, 0], [10, 0]], 2, { fn: 400 }).area(), 20 + Math.PI, 1e-2);
+  // A bend is round: the L of two flat-capped legs gains a quarter disc at the corner, not a square.
+  near(stroke([[0, 0], [10, 0], [10, 10]], 2, { cap: 'flat', fn: 400 }).area(), 40 - 1 + Math.PI / 4, 1e-2); // legs overlap by 1 at the corner
+  near(stroke([[0, 0], [10, 0], [10, 10], [0, 10]], 2, { closed: true, fn: 400 }).area(), 76 + Math.PI, 1e-2); // four overlapping legs, round outer corners
+  near(path([0, 0]).line([10, 0]).stroke(2, { cap: 'flat' }).area(), 20);
+  assert.throws(() => stroke([[0, 0]], 1), /at least 2/);
+  const [x, y] = polarPoint(10, 90);
+  near(x, 0, 1e-12);
+  near(y, 10);
+  assert.deepEqual(polarPoint([20, 10], 0, [1, 1]), [21, 1]);
+  near(polarPoint([20, 10], 90, [1, 1])[1], 11);
+});

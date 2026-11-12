@@ -185,6 +185,26 @@ function pivotOf(target) {
 
 const ALIGNMENTS = ['min', 'center', 'max', 'before', 'after'];
 
+/**
+ * The box `clip()` keeps: each axis given as `[from, to]` (either end may be `-Infinity` or `Infinity`),
+ * the rest the shape's own extent, with room to spare so nothing is cut that should not be.
+ * @param {string} op
+ * @param {{ min: number[], max: number[] }} bounds
+ * @param {Record<string, unknown>} ranges
+ * @param {string[]} axes
+ */
+function clipBox(op, bounds, ranges, axes) {
+  for (const key of Object.keys(ranges)) if (!axes.includes(key)) throw new Error(`${op}: unknown axis "${key}"; give ${axes.join(', ')}`);
+  return axes.map((axis, k) => {
+    const spare = Math.max(1, bounds.max[k] - bounds.min[k]);
+    const range = ranges[axis] ?? [-Infinity, Infinity];
+    if (!Array.isArray(range) || range.length !== 2 || range.some((v) => typeof v !== 'number' || Number.isNaN(v)) || !(range[0] < range[1])) {
+      throw new Error(`${op}: ${axis} must be [from, to] with from < to, got ${JSON.stringify(range)}`);
+    }
+    return [Math.max(range[0], bounds.min[k] - spare), Math.min(range[1], bounds.max[k] + spare)];
+  });
+}
+
 /** The rotation that turns each side of a box to face down, -Z, for layFlat(). */
 const DOWN = {
   '-Z': [0, 0, 0],
@@ -378,6 +398,19 @@ export class Solid {
   }
 
   /**
+   * Keeps the part of the solid within ranges along the axes: `dome.clip({ z: [0, Infinity] })` keeps
+   * what is above the XY plane, `turret.clip({ x: [-9, 9] })` a slab. Axes left out are not cut. For a
+   * section to look inside, `part.clip({ x: [0, Infinity] })`.
+   * @param {{ x?: [number, number], y?: [number, number], z?: [number, number] }} ranges
+   * @returns {Solid}
+   */
+  clip(ranges) {
+    const box = clipBox('clip()', this.bounds(), ranges ?? {}, ['x', 'y', 'z']);
+    if (box.some(([a, b]) => !(a < b))) return new Solid(Manifold.compose([]));
+    return this.intersect(new Solid(Manifold.cube(box.map(([a, b]) => b - a), false)).translate(box.map(([a]) => a)));
+  }
+
+  /**
    * The plane of one side of the bounding box, to draw on and extrude from: `'+X'` is the side at the
    * largest X, its normal pointing out, and so on for `'-X'`, `'+Y'`, `'-Y'`, `'+Z'`, `'-Z'`. Positions
    * in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side.
@@ -462,8 +495,8 @@ export class Solid {
   /**
    * The frame on the solid's surface where it is first met looking in from a side: from `at` on
    * `face(side)` straight into the part. Its normal is the surface's, pointing out, so a hole or a
-   * boss on a dome or a sloped wall goes in square to it. On a curve the normal is that of the mesh
-   * triangle met, so it follows the curve as finely as the solid's `fn`.
+   * boss on a dome or a sloped wall goes in square to it. On a curve the normal is smoothed across the
+   * mesh's facets, close to the true surface's; at a sharp edge each face keeps its own.
    * `dome.surfaceAt('+Z', [42, 0])` is the point on top of the dome above x = 42, y = 0.
    * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} side
    * @param {number[]} at world coordinates on that side, as for `face()`
@@ -475,22 +508,30 @@ export class Solid {
     // Start a little outside the face, so a surface lying on it is met too.
     const origin = [0, 1, 2].map((k) => m[k] * u + m[4 + k] * v + m[8 + k] + m[12 + k]);
     const dir = [-m[8], -m[9], -m[10]];
-    const hit = firstHit(this.manifold.getMesh(), origin, dir);
+    // Vertex normals smoothed across the facets of a curve (turning less than 40° between triangles) and
+    // kept apart at sharp edges, to read the surface's own normal off the triangle met.
+    const extra = this.manifold.numProp();
+    const hit = firstHit(this.manifold.calculateNormals(extra, SMOOTH_UNDER).getMesh(), origin, dir, 3 + extra);
     if (!hit) throw new Error(`surfaceAt(): nothing of the solid lies under [${u}, ${v}] on its ${side} side`);
     return frameAt(hit.point, hit.normal);
   }
 }
 
+/** Faces meeting at more than this many degrees are an edge to surfaceAt(), not facets of one curve. */
+const SMOOTH_UNDER = 40;
+
 /**
- * Where a ray from `origin` along `dir` first meets a mesh, with the outward normal of the triangle
- * met, or null if it misses (Möller–Trumbore against every triangle).
+ * Where a ray from `origin` along `dir` first meets a mesh, with the outward normal there, or null if it
+ * misses (Möller–Trumbore against every triangle). The normal blends the vertex normals stored at
+ * `normalAt` across the triangle met.
  * @param {{ numProp: number, vertProperties: Float32Array, triVerts: Uint32Array }} mesh
  * @param {number[]} origin
  * @param {number[]} dir
  * @returns {{ point: Vec3, normal: Vec3 } | null}
  */
-function firstHit({ numProp, vertProperties, triVerts }, origin, dir) {
+function firstHit({ numProp, vertProperties, triVerts }, origin, dir, normalAt) {
   const vertex = (i) => [vertProperties[i * numProp], vertProperties[i * numProp + 1], vertProperties[i * numProp + 2]];
+  const normal = (i) => [0, 1, 2].map((k) => vertProperties[i * numProp + normalAt + k]);
   const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -510,7 +551,9 @@ function firstHit({ numProp, vertProperties, triVerts }, origin, dir) {
     if (w2 < -1e-9 || w1 + w2 > 1 + 1e-9) continue;
     const distance = dot(e2, q) / det;
     if (distance < 0 || (best && distance >= best.distance)) continue;
-    best = { distance, normal: cross(e1, e2) };
+    const [na, nb, nc] = [normal(triVerts[t]), normal(triVerts[t + 1]), normal(triVerts[t + 2])];
+    const w0 = 1 - w1 - w2;
+    best = { distance, normal: [0, 1, 2].map((k) => w0 * na[k] + w1 * nb[k] + w2 * nc[k]) };
   }
   if (!best) return null;
   const n = best.normal;
@@ -576,6 +619,19 @@ export class Shape2 {
     const o = typeof options === 'number' ? { r: options } : options;
     if ('r' in o) return new Shape2(this.section.offset(o.r, 'Round', 2, segmentsFor(Math.abs(o.r), o.fn)));
     return new Shape2(this.section.offset(o.delta, o.chamfer ? 'Square' : 'Miter', 1e6));
+  }
+
+  /**
+   * A wall `thickness` wide along the outline, inside it: the shape less the shape shrunk by `thickness`,
+   * corners kept sharp. `{ outward: true }` puts the wall outside the outline instead. A tube's section,
+   * a gasket, a rim.
+   * @param {number} thickness
+   * @param {{ outward?: boolean }} [options]
+   * @returns {Shape2}
+   */
+  ring(thickness, options = {}) {
+    if (!(typeof thickness === 'number' && thickness > 0)) throw new Error(`ring(): thickness must be more than 0, got ${thickness}`);
+    return options.outward ? this.offset({ delta: thickness }).subtract(this) : this.subtract(this.offset({ delta: -thickness }));
   }
 
   /** @param {...Shape2Items} others */
@@ -651,6 +707,18 @@ export class Shape2 {
   /** The outline as arrays of points. @returns {Vec2[][]} */
   toPolygons() {
     return this.section.toPolygons().map((poly) => poly.map((p) => [p[0], p[1]]));
+  }
+
+  /**
+   * Keeps the part of the shape within ranges along X and Y, as `Solid.clip` does:
+   * `arch.clip({ y: [0, Infinity] })` keeps what is above the X axis.
+   * @param {{ x?: [number, number], y?: [number, number] }} ranges
+   * @returns {Shape2}
+   */
+  clip(ranges) {
+    const box = clipBox('clip()', this.bounds(), ranges ?? {}, ['x', 'y']);
+    if (box.some(([a, b]) => !(a < b))) return new Shape2(new CrossSection([], 'Positive'));
+    return this.intersect(new Shape2(CrossSection.square([box[0][1] - box[0][0], box[1][1] - box[1][0]], false)).translate([box[0][0], box[1][0]]));
   }
 
   /**
@@ -925,15 +993,26 @@ function edgedCube(s, specs, fn) {
  * @property {number | { top?: number, bottom?: number }} [chamfer] how far back the top and bottom
  *   edges are cut along both faces, both or each on its own. An edge takes round or chamfer, not both.
  * @property {number} [fn]
+ * @property {'x' | 'y' | 'z'} [axis] the axis it runs along, from the origin (or centered on it): `'x'` lays
+ *   it along +X, as `.rotate([0, 90, 0])` would
  */
 
 /**
- * A cylinder or cone standing on the XY plane along +Z, like OpenSCAD's cylinder().
+ * A cylinder or cone standing on the XY plane along +Z, like OpenSCAD's cylinder(), or along `axis`.
  * `{ round }` rounds the top and bottom edges and `{ chamfer }` cuts them, inside the same size;
  * `{ chamfer: { top: 1 } }` does the top edge only.
  * @param {CylinderOptions} options
  */
 export function cylinder(options) {
+  const { axis = 'z', ...rest } = options;
+  const turn = { x: [0, 90, 0], y: [-90, 0, 0], z: null }[axis];
+  if (turn === undefined) throw new Error(`cylinder(): axis must be 'x', 'y' or 'z', got ${JSON.stringify(axis)}`);
+  const upright = standingCylinder(rest);
+  return turn ? upright.rotate(turn) : upright;
+}
+
+/** @param {CylinderOptions} options */
+function standingCylinder(options) {
   const { h, r, d, r1, r2, d1, d2, center = false, fn, round, chamfer } = options;
   const base = r ?? (d !== undefined ? d / 2 : 1);
   const bottom = r1 ?? (d1 !== undefined ? d1 / 2 : base);

@@ -1,7 +1,7 @@
 // Paths: outlines drawn piece by piece — lines, Bézier curves, arcs and smooth splines through
 // points — closed into a 2D shape, or left open as the points of a path to sweep along.
 
-import { polygon, segmentsFor, cornerSpecs, resolution } from './shapes.js';
+import { polygon, circle, union, segmentsFor, cornerSpecs, resolution } from './shapes.js';
 
 /** @typedef {[number, number]} Vec2 */
 
@@ -417,6 +417,17 @@ export class Path {
     return shape;
   }
 
+  /**
+   * The path drawn as a line `width` wide: a groove to engrave, a raised stroke, a wire channel. Its
+   * ends are round, or square-cut with `{ cap: 'flat' }`; its bends are always round.
+   * @param {number} width
+   * @param {StrokeOptions} [options]
+   * @returns {import('./shapes.js').Shape2}
+   */
+  stroke(width, options = {}) {
+    return stroke(this.pts, width, { fn: this.fn, ...options });
+  }
+
   /** The points along the path so far, from its start: a path to `sweep()` along, or to draw with. @returns {Vec2[]} */
   points() {
     return this.pts.map((p) => /** @type {Vec2} */ ([...p]));
@@ -485,4 +496,41 @@ export function splineIn(points, options, hooks) {
   const shape = polygon([knots[0], ...pts], { fn: options.fn });
   hooks?.profile(shape);
   return shape;
+}
+
+/**
+ * @typedef {object} StrokeOptions
+ * @property {'round' | 'flat'} [cap] the ends: round (half a circle past each end) or cut square at the ends
+ * @property {boolean} [closed] join the last point back to the first
+ * @property {number} [fn] segments of a full circle for the round ends and bends
+ */
+
+/**
+ * A line `width` wide through points, as a 2D shape: strokes of a hand-drawn font, an engraved seam, a
+ * channel. Bends are round; ends are round, or square-cut with `{ cap: 'flat' }`.
+ * @param {number[][]} points
+ * @param {number} width
+ * @param {StrokeOptions} [options]
+ * @returns {import('./shapes.js').Shape2}
+ */
+export function stroke(points, width, options = {}) {
+  const op = 'stroke()';
+  if (!(typeof width === 'number' && width > 0)) throw new Error(`${op}: width must be more than 0, got ${width}`);
+  const pts = points.map((p) => vec2(op, p));
+  if (pts.length < 2) throw new Error(`${op}: give at least 2 points`);
+  const { cap = 'round', closed = false, fn } = options;
+  if (cap !== 'round' && cap !== 'flat') throw new Error(`${op}: cap must be 'round' or 'flat', got ${JSON.stringify(cap)}`);
+  const r = width / 2;
+  const dot = (p) => circle({ r, fn }).translate(p);
+  const runs = closed ? [...pts, pts[0]] : pts;
+  const pieces = [];
+  for (let i = 1; i < runs.length; i++) {
+    const [a, b] = [runs[i - 1], runs[i]];
+    if (dist(a, b) < EPS) continue;
+    const n = mul(left(unit(sub(b, a))), r);
+    pieces.push(polygon([add(a, n), add(b, n), sub(b, n), sub(a, n)]));
+  }
+  // Round at every bend; at the ends only for round caps.
+  const joints = closed || cap === 'round' ? pts : pts.slice(1, -1);
+  return union(pieces, joints.map(dot));
 }

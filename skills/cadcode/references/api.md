@@ -21,7 +21,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | Function | Notes |
 | --- | --- |
 | `cube(size = 1, { center = false, round, chamfer, fn })` | `size`: number or `[x, y, z]`. Corner at origin unless centered. `round: r` rounds every edge, `chamfer: c` cuts every edge at 45°, inside the same size. By group: `{ round: { z, top, bottom }, chamfer: { ... } }` — `z` vertical edges, `top`/`bottom` the four around that face; a group takes round or chamfer, not both. A top/bottom treatment follows rounded vertical corners. Errors when a size does not fit. |
-| `cylinder({ h, r, d, r1, r2, d1, d2, center = false, round, chamfer, fn })` | Along +Z from z = 0 (or centered). `r1`/`d1` bottom, `r2`/`d2` top for cones. `round`/`chamfer` soften the top and bottom edges inside the same size; `{ top, bottom }` for one end or different sizes. |
+| `cylinder({ h, r, d, r1, r2, d1, d2, center = false, round, chamfer, axis = 'z', fn })` | Along +Z from z = 0 (or centered); `axis: 'x' \| 'y'` lays it along +X / +Y (instead of `.rotate([0, 90, 0])` / `.rotate([-90, 0, 0])`). `r1`/`d1` bottom, `r2`/`d2` top for cones. `round`/`chamfer` soften the top and bottom edges inside the same size; `{ top, bottom }` for one end or different sizes. |
 | `sphere(r)` / `sphere({ r, d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices **clockwise seen from outside** (OpenSCAD order). Throws if not closed. |
 
@@ -77,6 +77,7 @@ booleans or a part's export.
 | `.project()` | `Shape2` outline projected onto XY. |
 | `.volume()`, `.surfaceArea()` | |
 | `.bounds()` | `{ min: [x, y, z], max: [x, y, z] }` |
+| `.clip({ x, y, z })` | Intersect with a box: each given axis `[from, to]` (±Infinity ok), others unbounded. Replaces BIG-cube half-spaces and slabs. |
 | `.isEmpty()` | |
 | `.fillet(r, { between, touching, along, convex, where, fn })` / `.chamfer(size, filter)` | Post-boolean edge rounding. Edge = run of mesh edges with > 20° turn, chained along ONE flat face (base) through points where it bends ≤ 60° (rims round rounded corners and cylinder rims are single closed edges; box corners end a run). Outside (convex) edges: subtract swept sliver; inside: union filler (stops at open ends). Filters (all must hold): `between: [dirA, dirB]` (faces at the edge's start, either order), `touching: dir`, `along: 'x'\|'y'\|'z'\|vec` (straight only), `convex: bool`, `where: fn(edge)`. No filter = every edge; zero matches throws. Rounds overlap at corners (no ball blends). Keep r below the adjacent faces' sizes. Order matters: fillet vertical corners first, then rims (they then run round). |
 | `.edges(filter)` | `{ points, closed, from, to, direction (null if not straight), length, normals: [base, side at start], convex, angle }[]` — inspect before filleting. |
@@ -97,6 +98,8 @@ booleans or a part's export.
 | `.revolve({ angle = 360, fn })` | `rotate_extrude`: the shape's X becomes the radius, Y becomes Z. |
 | `.sweep(path, { closed = false, twist = 0, scale = 1, up })` | Along `path`, `[x, y, z]` points. The drawing's +Z follows the path, carried without twist (rotation-minimizing); `up: v` keeps its +Y toward `v` instead. Starts as `extrude` would on a path along +Z. `closed` loops back to the first point (no scale; twist only in whole turns). Corners mitered. A path tighter than the profile self-intersects: no check. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
+| `.ring(t, { outward = false })` | `shape − shape.offset({ delta: −t })` (or `offset(+t) − shape`): a wall along the outline. |
+| `.clip({ x, y })` | As for Solid. |
 | `.at(side)`, `.align(target, { x, y, gap })` | As for `Solid`, X/Y only; `at` returns `[x, y]`. |
 
 ## Functions
@@ -126,7 +129,7 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 | Function | Notes |
 | --- | --- |
 | `solid.face('+X' \| '-X' \| '+Y' \| '-Y' \| '+Z' \| '-Z')` | Side of the **bounding box** (not mesh faces), normal outward. u, v = **world coordinates** of the other two axes in order: X side → (y, z), Y side → (x, z), Z side → (x, y). So a hole at world `[y, z]` on either X side is drawn at `[y, z]`. Text drawn on a `-X`, `+Y` or `-Z` side reads mirrored from outside. |
-| `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at world `[u, v]` straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (facet normal: coarse `fn` = coarse normal). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
+| `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at world `[u, v]` straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (normal smoothed across facets — within ~0.05° on a fn 160 ellipsoid — and kept per face at edges sharper than 40°). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
 | `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, +Y, +X. |
 | `frameAt(origin, normal)` | Any point/normal (e.g. on a dome). Right-handed: v toward +Z (or +Y when the normal is vertical), u = v × normal. |
 | `frame.extrude(shape2, depth, { through = false, center = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through: true` adds 1 at both ends (cuts through a wall); `through: 'start'` adds 1 back past the plane only (a blind pocket from a face, or a boss sunk into its base) — never a hand-written `+1`. `center`: plane in the middle, `|depth|` thick; not with `'start'`. |
@@ -166,6 +169,7 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 | `.arc(p)` / `.arc(p, { start: deg })` / `.arc(p, { through: q })` | Tangent arc continuing the heading, or leaving at `start` degrees (a corner), or through q (first piece needs start or through); collinear = line. |
 | `.spline([p1, …, pn], { start, end })` | Centripetal Catmull-Rom through the points, starting tangent to the heading unless `start` (degrees) overrides it, `end` = arrival angle. |
 | `.close({ round, chamfer, fn })` | Adds a closing line if needed → `Shape2`. Corner options index **joins** (0 = start, then each piece's end), number/object/function as for `polygon`; cut-back measured along the outline (reaches over curve segments); tangent joins are skipped, cusps throw, each stretch between joins must fit both cut-backs. |
+| `.stroke(width, { cap = 'round' \| 'flat' })` / `stroke(points, width, { cap, closed, fn })` | Polyline of a width: segment rectangles + round joints (and round ends unless flat). |
 | `.points()` / `.end` | `[x, y][]` from the start (for `sweep`, map to `[x, 0, y]` etc.) / current point. |
 | `spline(points, { closed, start, end, fn })` | Closed → `Shape2` (≥ 3 points), open → `Path` (≥ 2). |
 | `s.path(...)` / `s.spline(...)` | Same, in a sketch: viewer shows trace (dashed), piece ends, Bézier handles, and the closed outline. |
@@ -187,6 +191,7 @@ Use paths for revolve profiles and organic outlines instead of hand-computed `co
 | `grid(shape, { pitch, within \| count, stagger = false })` | Union of copies (Solid or Shape2, drawn at origin) on an XY grid. `within: Shape2`: n per axis = floor((region − shape size) / pitch) + 1, centered on the region's bbox, then only copies whose footprint lies wholly inside are kept. `count: n \| [nx, ny]`: centered on the origin. `stagger`: odd rows +pitch/2 in X with one copy fewer. Replaces product(range, range) hole grids. |
 | `polar(shape, { count, r = 0, start = 0, angle = 360 })` | Union of copies `translate([r, 0])` then `rotate(start + i·step)`; full circle: step = angle/count, else angle/(count−1). |
 | `arrange(parts, { gap = 5, columns })` | Print layout: parts (a Solid or an array moving together; falsy kept) in a row along +X or rows of `columns` along +Y (rows left-aligned, parts centered in Y on their row), `gap` apart by bbox, centered on the origin. Z is kept — `layFlat()` first. Returns the same structure. |
+| `polarPoint(r \| [rx, ry], deg, center = [0, 0])` | `[cx + rx cos, cy + ry sin]`. |
 | `range(start, end, step = 1)` | Inclusive of `end`. |
 | `product(...lists)` | Cartesian product: `product([1, 2], ['a'])` → `[[1, 'a'], [2, 'a']]`. |
 | `memo(fn)` | Same function, remembering its result per arguments. Key = fn source + JSON args + resolution; in `cadcode dev`/playground it survives across saves (not the CLI). Args: plain data only (no shapes). Result: shapes or nested arrays, may be async. Closure variables (`p`!) and called helpers are NOT in the key: pass them as args or results go stale. |

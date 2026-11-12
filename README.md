@@ -187,7 +187,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | Function | Notes |
 | --- | --- |
 | `cube(size, { center, round, chamfer, fn })` | `size` is a number or `[x, y, z]`. A corner sits at the origin unless `center: true`. `round: r` rounds every edge and `chamfer: c` cuts every edge at 45°, inside the same size. Either also takes sizes by group of edges, `z` (the vertical ones), `top` and `bottom` (around those faces): `{ round: { z: 3 }, chamfer: { top: 1 } }` keeps a flat bottom. |
-| `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, fn })` | Stands on XY along +Z. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size; `{ chamfer: { top: 1 } }` does one end only. |
+| `cylinder({ h, r \| d, r1, r2, d1, d2, center, round, chamfer, axis, fn })` | Stands on XY along +Z, or along `axis: 'x'` or `'y'`. Give `r1`/`r2` for a cone. `round` and `chamfer` soften the top and bottom edges inside the same size; `{ chamfer: { top: 1 } }` does one end only. |
 | `sphere(r)` or `sphere({ r \| d, fn })` | Centered on the origin. |
 | `polyhedron(points, faces)` | Faces list point indices clockwise when seen from outside, as in OpenSCAD. |
 
@@ -220,6 +220,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.minkowski(...shapes)` | Minkowski sum, like OpenSCAD's `minkowski()`: `.minkowski(sphere(1))` rounds every edge and grows the part by 1 on each side. Fast for convex shapes, seconds for a part with holes. The result is uncolored. |
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
+| `.clip({ x, y, z })` | Keeps what lies within `[from, to]` ranges along the axes (ends may be infinite): `dome.clip({ z: [0, Infinity] })`. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
 | `.fillet(r, filter)`, `.chamfer(size, filter)` | Round or cut edges after the booleans: outside edges are cut, inside ones (wall meets floor) filled. `filter` picks them by the faces either side: `{ along: 'z' }`, `{ touching: '-Z' }`, `{ between: ['+Z', '-X'] }`, `{ convex: false }`, `{ where: (edge) => ... }`; none takes every edge. An edge follows one flat face, so a floor's rim runs on round rounded corners. Where rounds meet at a corner they overlap rather than blend. |
 | `.edges(filter)` | The edges a filter picks, to check before rounding them: `{ points, closed, length, normals, convex, angle, ... }`. |
@@ -233,6 +234,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | --- | --- |
 | `.translate([x, y])`, `.rotate(a)`, `.scale(s)`, `.mirror([nx, ny])` | |
 | `.rotate(a, { around })` | Around a `point`, another shape's bounding-box center, or `[x, y]`. |
+| `.ring(t, { outward })` | A wall `t` wide along the outline, inside it (or outside): a tube's section, a rim. |
+| `.clip({ x, y })` | Keeps what lies within ranges along X and Y. |
 | `.offset(r)` | Grow (or shrink, when negative) with rounded corners. `.offset({ delta })` keeps corners sharp, and `.offset({ delta, chamfer: true })` cuts them. |
 | `.union()`, `.subtract()`, `.intersect()`, `.hull()` | Same as for solids. |
 | `.extrude(h, { center, twist, scale, divisions })` | Extrudes along +Z, like `linear_extrude`. |
@@ -273,7 +276,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 | Function | Notes |
 | --- | --- |
 | `solid.face(name)` | The side `'+X'`, `'-X'`, `'+Y'`, `'-Y'`, `'+Z'` or `'-Z'` of the bounding box, its normal pointing out. Positions in it are world coordinates: Y and Z on an X side, X and Z on a Y side, X and Y on a Z side. |
-| `solid.surfaceAt(side, [u, v])` | The frame where the solid is first met looking in from `face(side)` at `[u, v]`, with the surface's normal: a hole or a boss square to a dome or a slope. On a curve the normal is the mesh triangle's, as fine as the solid's `fn`. Throws when nothing lies under `[u, v]`. |
+| `solid.surfaceAt(side, [u, v])` | The frame where the solid is first met looking in from `face(side)` at `[u, v]`, with the surface's normal: a hole or a boss square to a dome or a slope. On a curve the normal is smoothed across the mesh's facets, close to the true surface's. Throws when nothing lies under `[u, v]`. |
 | `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
 | `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
 | `frame.extrude(shape, depth, { through, center })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin; `through: 'start'` reaches 1 back past the plane only, for a pocket cut into a face. `center: true` puts the plane in the middle. |
@@ -322,6 +325,7 @@ const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: 
 | `.spline(through, { start, end })` | A smooth curve through points, carrying on tangent to the path unless `start` gives it a direction. |
 | `.close({ round, chamfer })` | Back to the start with a line if needed; a `Shape2`. Round or cut the joins (0 the start, then each piece's end) as for `polygon`; next to a curve the round reaches over as much of it as it needs. |
 | `.points()`, `.end` | The points so far, for `sweep()`; where the path is now. |
+| `.stroke(width, { cap })`, `stroke(points, width, { cap, closed })` | A line of a width along the path or through points: round bends, round or `'flat'` ends. |
 | `spline(points, { closed, start, end, fn })` | A centripetal Catmull-Rom spline through points: closed, a `Shape2`; open, a path. `start` and `end` set the directions at the ends in degrees. |
 | `s.path(...)`, `s.spline(...)` | In a sketch: the viewer draws the curve, its points and its Bézier handles. |
 
@@ -341,6 +345,7 @@ const pebble = spline([[0, 0], [20, -4], [32, 8], [18, 20], [2, 14]], { closed: 
 | `grid(shape, { pitch, within \| count, stagger })` | Copies of a shape or solid on a grid in XY, unioned. `within: region` fills a 2D region with as many as fit wholly inside, centered on it: `grid(circle({ d: 1.6 }), { pitch: 3.2, within: square([17, 12]) })`. `count: [nx, ny]` centers them on the origin. `stagger` makes a honeycomb. |
 | `polar(shape, { count, r, start, angle })` | Copies around Z (the origin in 2D), moved out `r` then turned: knurls, spokes, bolt circles. `angle` < 360 spans an arc end to end. |
 | `arrange(parts, { gap = 5, columns })` | Spreads parts over the bed for a print layout: a row along +X (or rows of `columns`, each starting at the same X), `gap` apart, the whole layout centered on the origin. A part may be an array of solids that move together. Lay them flat first. |
+| `polarPoint(r, degrees, center)` | The point at an angle on a circle, or on an ellipse with `r: [rx, ry]`. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
 | `memo(fn)` | Builds once per set of arguments. In `cadcode dev` and the playground the result outlives the run, so a save that leaves the function and its arguments as they were skips it: `const ring = memo((teeth, module) => ...)`. The key is the function's source, its arguments and the resolution; a helper it calls or a variable it reads from outside (such as `p`) is not part of it, so pass those as arguments. Arguments are plain data; the result is shapes or arrays of them. |

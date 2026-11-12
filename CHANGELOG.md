@@ -4,6 +4,15 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+### Added
+
+- `shape.ring(t)` is a wall along an outline, `cylinder({ axis: 'x' })` lies along an axis, and `.clip({ x, y, z })` keeps what lies within ranges, instead of intersecting with big cubes.
+- `path.stroke(width)` and `stroke(points, width)` draw a line of a width, and `polarPoint(r, degrees)` finds a point on a circle or an ellipse.
+
+### Changed
+
+- `surfaceAt()` smooths the normal across a curve's facets: on a dome it is within a tenth of a degree of the true surface's instead of a degree or two.
+
 ## [0.14.0] - 2026-11-12
 
 ### Added

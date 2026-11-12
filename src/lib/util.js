@@ -22,3 +22,17 @@ export function range(start, end, step = 1) {
 export function product(...lists) {
   return lists.reduce((acc, list) => acc.flatMap((combo) => list.map((v) => [...combo, v])), [[]]);
 }
+
+/**
+ * The point at `degrees` counter-clockwise from +X on a circle of radius `r`, or on an ellipse of radii
+ * `[rx, ry]`, around `center`: `polarPoint(10, 90)` is `[0, 10]`. Bolt circles, points along an arch.
+ * @param {number | number[]} r
+ * @param {number} degrees
+ * @param {number[]} [center]
+ * @returns {[number, number]}
+ */
+export function polarPoint(r, degrees, center = [0, 0]) {
+  const [rx, ry] = typeof r === 'number' ? [r, r] : [r[0], r[1]];
+  const a = (degrees * Math.PI) / 180;
+  return [(center[0] ?? 0) + rx * Math.cos(a), (center[1] ?? 0) + ry * Math.sin(a)];
+}

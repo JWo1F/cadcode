@@ -90,3 +90,17 @@ test("through: 'start' reaches back past the plane only; center straddles it", (
   assert.throws(() => top.extrude(square(2), 3, { center: true, through: 'start' }), /centered/);
   assert.throws(() => top.extrude(square(2), 3, { through: 'end' }), /through must be/);
 });
+
+test('surfaceAt reads the normal of a curve, not of the facet it meets', () => {
+  const [rx, ry, rz] = [105, 80, 125];
+  const dome = sphere({ r: 1, fn: 160 }).scale([rx, ry, rz]);
+  const at = [42, 0];
+  const z = rz * Math.sqrt(1 - (at[0] / rx) ** 2);
+  const g = [at[0] / rx ** 2, 0, z / rz ** 2];
+  const n = g.map((v) => v / Math.hypot(...g));
+  const f = dome.surfaceAt('+Z', at);
+  const off = (Math.acos(f.normal.reduce((s, v, i) => s + v * n[i], 0)) * 180) / Math.PI;
+  assert.ok(off < 0.2, `${off}° off the ellipsoid's normal`);
+  // Sharp edges stay sharp: next to a box's edge its top still faces straight up.
+  close(cube(10).surfaceAt('+Z', [9.99, 5]).normal, [0, 0, 1], 1e-9);
+});

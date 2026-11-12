@@ -271,3 +271,31 @@ test('ellipse is a circle stretched to its radii', () => {
   assert.throws(() => ellipse([1, 0]), /more than 0/);
   assert.throws(() => ellipse(5), /\[rx, ry\]/);
 });
+
+test('ring makes a wall along an outline; cylinder lies along an axis', () => {
+  near(square(10).ring(1).area(), 100 - 64);
+  near(square(10).ring(1, { outward: true }).area(), 144 - 100);
+  assert.deepEqual(square(10).ring(1, { outward: true }).bounds(), { min: [-1, -1], max: [11, 11] });
+  assert.throws(() => square(1).ring(0), /more than 0/);
+  const x = cylinder({ d: 4, h: 10, axis: 'x', fn: 32 }).bounds();
+  near(x.min[0], 0);
+  near(x.max[0], 10);
+  near(x.max[2], 2, 1e-6);
+  const y = cylinder({ d: 4, h: 10, axis: 'y', center: true, fn: 32 }).bounds();
+  near(y.min[1], -5);
+  near(y.max[1], 5);
+  assert.throws(() => cylinder({ h: 1, axis: 'w' }), /axis must be/);
+});
+
+test('clip keeps what lies within ranges along the axes', () => {
+  const ball = sphere({ r: 10, fn: 64 });
+  const top = ball.clip({ z: [0, Infinity] });
+  near(top.bounds().min[2], 0);
+  near(top.volume() * 2, ball.volume(), 1e-3 * ball.volume());
+  const slab = cube(10).clip({ x: [2, 5], z: [-Infinity, 4] });
+  near(slab.volume(), 3 * 10 * 4);
+  assert.ok(cube(1).clip({ x: [5, 6] }).isEmpty());
+  near(square(10).clip({ y: [5, Infinity] }).area(), 50);
+  assert.throws(() => cube(1).clip({ x: [2, 1] }), /from < to/);
+  assert.throws(() => square(1).clip({ z: [0, 1] }), /unknown axis "z"/);
+});
