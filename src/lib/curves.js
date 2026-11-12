@@ -1,4 +1,5 @@
-// Turning Bézier curves into straight segments, for text() and the SVG importer.
+// Bézier curves: the point at t, and straight segments for text() and the SVG importer. Paths
+// place their points by how the curve bends instead (path.js), with the circle's `fs` rule too.
 import { resolution } from './shapes.js';
 
 /** How far the direction turns along a curve's control polygon, in degrees. */
@@ -24,17 +25,20 @@ function turning(points) {
  * Segments for one curve. Like a circle: `fn` per full turn when set, otherwise one per `fa` degrees.
  * `fs` is left out: letters and logo details are small, and their curves would come out as straight lines.
  */
-function segmentsFor(points, fn) {
+function segmentsAlong(points, fn) {
   const f = fn ?? resolution.fn;
   const degrees = turning(points);
   return Math.max(1, Math.ceil(f > 0 ? (f * degrees) / 360 : degrees / resolution.fa));
 }
 
-/** Point on a Bézier curve of any degree at t, by de Casteljau. */
-function bezier(points, t) {
-  let row = points;
+/**
+ * Point on a Bézier curve of any degree at t, by de Casteljau.
+ * @param {number[][]} controls @param {number} t @returns {[number, number]}
+ */
+export function bezierAt(controls, t) {
+  let row = controls;
   while (row.length > 1) row = row.slice(1).map((p, i) => [row[i][0] + (p[0] - row[i][0]) * t, row[i][1] + (p[1] - row[i][1]) * t]);
-  return row[0];
+  return /** @type {[number, number]} */ (row[0]);
 }
 
 /**
@@ -44,8 +48,8 @@ function bezier(points, t) {
  * @returns {number[][]}
  */
 export function flattenBezier(controls, fn) {
-  const n = segmentsFor(controls, fn);
+  const n = segmentsAlong(controls, fn);
   const points = [];
-  for (let i = 1; i <= n; i++) points.push(bezier(controls, i / n));
+  for (let i = 1; i <= n; i++) points.push(bezierAt(controls, i / n));
   return points;
 }

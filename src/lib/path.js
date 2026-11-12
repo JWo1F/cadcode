@@ -1,8 +1,9 @@
 // Paths: outlines drawn piece by piece — lines, Bézier curves, arcs and smooth splines through
 // points — closed into a 2D shape, or left open as the points of a path to sweep along.
 
-import { polygon, circle, union, segmentsFor, cornerSpecs, resolution } from './shapes.js';
+import { polygon, circle, union, cornerSpecs, resolution, arcPoints, shortArc } from './shapes.js';
 import { vec2 as V2 } from './vec.js';
+import { bezierAt } from './curves.js';
 
 /** @typedef {[number, number]} Vec2 */
 
@@ -135,15 +136,7 @@ function softenJoins(pts, joins, specs, fn) {
       const bisector = unit(add(c.u, c.v));
       const center = add(c.p, mul(bisector, r / Math.sin(c.half)));
       const [ta, tb] = [add(c.p, mul(c.u, c.back)), add(c.p, mul(c.v, c.back))];
-      const from = Math.atan2(ta[1] - center[1], ta[0] - center[0]);
-      let turn = Math.atan2(tb[1] - center[1], tb[0] - center[0]) - from;
-      if (turn > Math.PI) turn -= 2 * Math.PI;
-      if (turn < -Math.PI) turn += 2 * Math.PI;
-      const steps = Math.max(1, Math.ceil((segmentsFor(r, fn) * Math.abs(turn)) / (2 * Math.PI)));
-      for (let i = 1; i < steps; i++) {
-        const t = from + (turn * i) / steps;
-        out.push(/** @type {Vec2} */ ([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]));
-      }
+      out.push(...shortArc(center, r, ta, tb, fn).slice(1, -1));
     }
     out.push(b);
     return { from: wrap(along[c.k] - c.back), to: wrap(along[c.k] + c.back), points: out };
@@ -157,13 +150,6 @@ function softenJoins(pts, joins, specs, fn) {
   for (const c of inserts) items.push({ at: c.from, points: c.points });
   items.sort((x, y) => x.at - y.at);
   return items.flatMap((item) => item.points);
-}
-
-/** Point on a Bézier curve of any degree at t, by de Casteljau. @param {Vec2[]} controls @param {number} t @returns {Vec2} */
-function bezierAt(controls, t) {
-  let row = controls;
-  while (row.length > 1) row = row.slice(1).map((p, i) => /** @type {Vec2} */ ([row[i][0] + (p[0] - row[i][0]) * t, row[i][1] + (p[1] - row[i][1]) * t]));
-  return row[0];
 }
 
 /** Samples per curve to find where it bends; the points kept are chosen among them. */
@@ -351,13 +337,7 @@ export class Path {
       if (r < 0 && turn > 0) turn -= 2 * Math.PI;
     }
     const r = dist(a, center);
-    const from = Math.atan2(a[1] - center[1], a[0] - center[0]);
-    const steps = Math.max(1, Math.ceil((segmentsFor(r, this.fn) * Math.abs(turn)) / (2 * Math.PI)));
-    const points = [];
-    for (let k = 1; k < steps; k++) {
-      const t = from + (turn * k) / steps;
-      points.push(/** @type {Vec2} */ ([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]));
-    }
+    const points = arcPoints(center, r, Math.atan2(a[1] - center[1], a[0] - center[0]), turn, this.fn).slice(1, -1);
     points.push(b);
     const radial = unit(sub(b, center));
     return append(this, op, points, turn > 0 ? left(radial) : mul(left(radial), -1));
