@@ -12,25 +12,42 @@ Try it in the browser: [the playground](https://jwo1f.github.io/cadcode/playgrou
 Coming from OpenSCAD? The API keeps its ideas (cube, cylinder, hull, difference, `$fn`), so models port line by line.
 
 ```js
-import { cube } from 'cadcode';
+import { cylinder, polar, range } from 'cadcode';
 
 export const params = {
-  width: { value: 60, name: 'Width', description: 'Outside, along X, in mm.' },
-  depth: { value: 40, name: 'Depth', description: 'Outside, along Y, in mm.' },
-  height: { value: 25, name: 'Height', description: 'Outside, floor included, in mm.' },
-  wall: { value: 2, name: 'Wall', description: 'Thickness of the walls and the floor, in mm.' },
+  diameter: { value: 70, name: 'Diameter', description: 'Outside, in mm.' },
+  height: { value: 100, name: 'Height', description: 'Outside, floor included, in mm.' },
+  wall: { value: 2.4, name: 'Wall', description: 'Thickness of the wall and the floor, in mm.' },
+  columns: { value: 14, name: 'Columns', description: 'Windows around the cup.' },
+  rows: { value: 6, name: 'Rows', description: 'Rows of windows, each turned half a step.' },
 };
 
-export default (p) =>
-  cube([p.width, p.depth, p.height]).subtract(
-    cube([p.width - 2 * p.wall, p.depth - 2 * p.wall, p.height]).translate([p.wall, p.wall, p.wall]),
+export default (p) => {
+  const step = (Math.PI * p.diameter) / p.columns; // between windows around the cup
+  const rise = (step * Math.sqrt(3)) / 2; // between rows, so they nest as a honeycomb
+  const window = cylinder({ d: step * 0.85, h: 3 * p.wall, axis: 'x', center: true, fn: 6 });
+
+  const windows = range(0, p.rows - 1).map((row) =>
+    polar(window.translate([0, 0, p.height / 2 + (row - (p.rows - 1) / 2) * rise]), {
+      count: p.columns,
+      r: p.diameter / 2,
+      start: (row % 2) * (180 / p.columns),
+    }),
   );
+
+  return cylinder({ d: p.diameter, h: p.height, fn: 96, chamfer: { top: 1 } }).subtract(
+    cylinder({ d: p.diameter - 2 * p.wall, h: p.height, fn: 96 }).translate([0, 0, p.wall]),
+    windows,
+  );
+};
 ```
 
 ```bash
-npx cadcode dev box.js
-npx cadcode stl box.js --set width=80
+npx cadcode dev pen-cup.js
+npx cadcode stl pen-cup.js --set rows=8 --set height=130
 ```
+
+![The pen cup: a cylinder with a honeycomb of hexagonal windows, rendered by cadcode png](docs/pen-cup.png)
 
 ## Install
 

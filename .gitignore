@@ -5,6 +5,7 @@ out/
 *.png
 site/dist/
 !site/apple-touch-icon.png
+!docs/*.png
 types/
 !test/fixtures/*.stl
 .DS_Store
