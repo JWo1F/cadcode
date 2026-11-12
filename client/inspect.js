@@ -225,6 +225,9 @@ export function createInspect({ scene, element, getCamera, post }) {
 
     updateSection();
     clearMeasure();
+    // The hover marker sat on the old surface too.
+    hoverMark.visible = false;
+    pendingHover = null;
   }
 
   function setDisplay(mode) {
