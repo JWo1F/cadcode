@@ -1,4 +1,5 @@
-import { colorOfId, union } from '../lib/shapes.js';
+import { colorOfId } from '../lib/shapes.js';
+import { union } from '../lib/functional.js';
 import { parseColor } from '../lib/colors.js';
 import { mat4 } from '../lib/vec.js';
 

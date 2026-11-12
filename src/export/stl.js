@@ -1,4 +1,4 @@
-import { union } from '../lib/shapes.js';
+import { union } from '../lib/functional.js';
 
 /**
  * Binary STL of the part's solids merged into one. 2D shapes have no volume and are
