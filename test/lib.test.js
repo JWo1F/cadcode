@@ -243,4 +243,9 @@ test('polygon rounds and chamfers corners by index', () => {
   assert.throws(() => polygon(sq, { round: { 4: 1 } }), /corners are 0 to 3/);
   assert.throws(() => polygon(sq, { round: { 1: 1 }, chamfer: { 1: 1 } }), /round or chamfer, not both/);
   assert.throws(() => polygon(sq, { round: 6 }), /does not fit/);
+  // A function sizes each corner; an index still wins over it.
+  near(polygon(sq, { chamfer: (i) => (i % 2 ? 2 : undefined) }).area(), 100 - 2 * 2);
+  near(polygon(sq, { chamfer: (i, [x]) => (x > 5 ? 1 : 0), round: { 1: 0 } }).area(), 100 - 0.5);
+  assert.throws(() => polygon(sq, { round: 1, chamfer: 1 }), /round or chamfer, not both/);
+  assert.throws(() => polygon(sq, { round: (i) => -1 }), /0 or more/);
 });

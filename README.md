@@ -197,7 +197,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | --- | --- |
 | `square(size, { center })` | `size` is a number or `[x, y]`. |
 | `circle(r)` or `circle({ r \| d, fn })` | |
-| `polygon(points, paths?, { round, chamfer, fn })` | Paths inside other paths become holes. `round: r` rounds every corner and `chamfer: c` cuts it; an object rounds some by index into `points`: `{ round: { 3: 4 }, chamfer: { 1: 2 } }`. An inside corner rounds into a fillet. |
+| `polygon(points, paths?, { round, chamfer, fn })` | Paths inside other paths become holes. `round: r` rounds every corner and `chamfer: c` cuts it; an object sizes some by index into `points` (`{ round: { 3: 4 }, chamfer: { 1: 2 } }`) and a function each by its index and point (`{ round: (i) => (i % 2 ? 2 : 3) }`). An inside corner rounds into a fillet. |
 | `text(string, { size, font, halign, valign, spacing, lineHeight, fn })` | Text for labels and engraving; letters keep their holes, `\n` breaks lines. `size` is the height of a capital letter (default 10). `halign` is `left`, `center` or `right`; `valign` is `baseline`, `top`, `center` or `bottom`. The font is Liberation Sans unless `font` gives a font file's bytes: `import font from './Roboto.ttf'` (TTF, OTF or WOFF). Curves follow `fn` and `fa`, not `fs`. |
 
 ### Solid methods
@@ -268,7 +268,7 @@ box.subtract(box.face('-X').extrude(usb, -wall, { through: true }));
 | `solid.surfaceAt(side, [u, v])` | The frame where the solid is first met looking in from `face(side)` at `[u, v]`, with the surface's normal: a hole or a boss square to a dome or a slope. On a curve the normal is the mesh triangle's, as fine as the solid's `fn`. Throws when nothing lies under `[u, v]`. |
 | `plane.XY`, `plane.XZ`, `plane.YZ` | The planes through the origin, u and v world coordinates as for `face`; the normals are +Z, +Y and +X. |
 | `frameAt(origin, normal)` | A frame at any point and normal, such as on a curved surface. v points as close to +Z as the plane allows (+Y when the normal is vertical) and u = v × normal, so a drawing reads the right way round from outside. |
-| `frame.extrude(shape, depth, { through })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin. |
+| `frame.extrude(shape, depth, { through, center })` | A positive `depth` goes along the normal (out of a face), a negative one against it (into the part). `through: true` reaches 1 past both ends, so a cut leaves no skin; `through: 'start'` reaches 1 back past the plane only, for a pocket cut into a face. `center: true` puts the plane in the middle. |
 | `frame.offset(d)`, `frame.place(solidOrPoint)` | The plane moved along its normal; a solid or point built at the origin moved onto the frame (Z along the normal). `.origin` and `.normal` read it. |
 
 ### Sketches
@@ -287,7 +287,7 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] };
 | Function | Notes |
 | --- | --- |
 | `sketch(frame = plane.XY)` | A new sketch on a frame. |
-| `s.line(a, b)`, `s.line(a, { angle })` | A guide through two points, or endless at an angle (degrees from +u). Crossings treat every line as endless. A line has `.start`, `.end`, `.direction`, `.angle`, `.length`, `.mid`, `.at(t)`. |
+| `s.line(a, b)`, `s.line(a, { angle, length })` | A guide through two points, or from `a` at an angle (degrees from +u) for `length`; without `length` it is endless. Crossings treat every line as endless. A line has `.start`, `.end`, `.direction`, `.angle`, `.length`, `.mid`, `.at(t)`. |
 | `line.parallel(d)` | `d` to the left looking from start to end (negative: right), over the same stretch. |
 | `line.perpendicular(p)` | Through `p` at right angles; from a point off the line it ends at its foot (`.end`). |
 | `line.intersect(other)` | One point with a line (parallel lines throw); with a circle a list of 0, 1 or 2, from the line's start towards its end. |

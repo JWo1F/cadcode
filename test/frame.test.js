@@ -73,3 +73,20 @@ test('surfaceAt finds where the part is first met from a side, with the surface 
   close(ring.surfaceAt('+Z', [1, 1]).normal, [0, 0, 1]);
   assert.throws(() => ring.surfaceAt('+Z', [5, 5]), /nothing of the solid lies under \[5, 5\]/);
 });
+
+test("through: 'start' reaches back past the plane only; center straddles it", () => {
+  const box = cube([20, 10, 8]);
+  const top = box.face('+Z');
+  const pocket = top.extrude(square(2), -3, { through: 'start' });
+  close(pocket.bounds().min, [0, 0, 5]);
+  close(pocket.bounds().max, [2, 2, 9]);
+  const boss = top.extrude(square(2), 3, { through: 'start' });
+  close(boss.bounds().min, [0, 0, 7]);
+  close(boss.bounds().max, [2, 2, 11]);
+  const slab = plane.XZ.extrude(square(2), 4, { center: true });
+  close(slab.bounds().min, [0, -2, 0]);
+  close(slab.bounds().max, [2, 2, 2]);
+  close(plane.XZ.extrude(square(2), -4, { center: true, through: true }).bounds().min, [0, -3, 0]);
+  assert.throws(() => top.extrude(square(2), 3, { center: true, through: 'start' }), /centered/);
+  assert.throws(() => top.extrude(square(2), 3, { through: 'end' }), /through must be/);
+});

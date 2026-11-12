@@ -203,8 +203,8 @@ cylinder({ d: 20, h: 8, chamfer: { top: 1 } }) // flat bottom for the bed`,
         params: [
           { name: 'points', type: '[x, y][]', text: 'The corners. Without `paths` they are one outline, in order.' },
           { name: 'paths', type: 'number[][]', default: 'one path through all points', text: 'Optional. Each path lists indices into `points`. A path inside another becomes a hole (even-odd fill). Leave it out to pass `options` second.' },
-          { name: 'options.round', type: 'number | { [index]: r }', text: 'Optional. Rounds corners with radius `r`: a number for every corner, or an object by index into `points`. An arc on an inside corner adds material, a fillet. A radius that does not fit along a side throws.' },
-          { name: 'options.chamfer', type: 'number | { [index]: c }', text: 'Optional. Cuts corners `c` back along both sides, every corner or by index. A corner named by index wins over a number for every corner, and `0` leaves it sharp; a corner named in both `round` and `chamfer` throws.' },
+          { name: 'options.round', type: 'number | { [index]: r } | (index, point) => r', text: 'Optional. Rounds corners with radius `r`: a number for every corner, an object by index into `points`, or a function of a corner\'s index and point (`0` or `undefined` leaves it sharp). An arc on an inside corner adds material, a fillet. A radius that does not fit along a side throws.' },
+          { name: 'options.chamfer', type: 'number | { [index]: c } | (index, point) => c', text: 'Optional. Cuts corners `c` back along both sides, given as for `round`. A corner named by index wins over a number or function, and `0` leaves it sharp; a corner given a round and a chamfer of the same kind throws.' },
           fn,
         ],
         returns: 'Shape2',
@@ -214,7 +214,9 @@ polygon(
   [[0, 1, 2, 3], [4, 5, 6, 7]],
 )
 // An L with its inside corner filleted and the far corner cut
-polygon([[0, 0], [30, 0], [30, 8], [8, 8], [8, 30], [0, 30]], { round: { 3: 4 }, chamfer: { 1: 2 } })`,
+polygon([[0, 0], [30, 0], [30, 8], [8, 8], [8, 30], [0, 30]], { round: { 3: 4 }, chamfer: { 1: 2 } })
+// A star: tips rounded 3, valleys 2
+polygon(starPoints, { round: (i) => (i % 2 ? 2 : 3) })`,
       },
       {
         id: 'text',
@@ -935,9 +937,14 @@ dome.subtract(knob.extrude(circle({ d: 7.4 }), -10, { through: true }))`,
         params: [
           { name: 'shape', type: 'Shape2', text: 'The outline, in the frame\'s u and v.' },
           { name: 'depth', type: 'number', text: 'Positive goes along the normal (out of a face), negative against it (into the part). `0` throws.' },
-          { name: 'options.through', type: 'boolean', default: 'false', text: 'Reach 1 past both ends, so a cut goes clean through the faces it starts and ends on and leaves no skin.' },
+          { name: 'options.through', type: "boolean | 'start'", default: 'false', text: '`true` reaches 1 past both ends, so a cut goes clean through the faces it starts and ends on and leaves no skin. `\'start\'` reaches 1 back past the frame\'s plane only: a pocket cut into a face, or a boss sunk into the part it stands on.' },
+          { name: 'options.center', type: 'boolean', default: 'false', text: 'Put the frame\'s plane in the middle: `depth` thick in all, its sign ignored. Not with `through: \'start\'`.' },
         ],
         returns: 'Solid',
+        example: `const lid = box.face('+Z')
+lid.extrude(window, -wall, { through: true })        // through the lid
+lid.extrude(label, -0.6, { through: 'start' })       // a 0.6 deep pocket
+plane.XZ.extrude(fin, 2, { center: true })           // a 2 thick fin on y = 0`,
       },
       {
         id: 'frame-offset',
@@ -1008,10 +1015,10 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
         name: 'line',
         owner: 'Sketch',
         signature: '.line(from, to)',
-        summary: 'A guide line through two points, or endless through one at an angle. Crossings and perpendiculars treat every line as endless; the points only say how much of it is drawn.',
+        summary: 'A guide line through two points, from a point at an angle for a length, or endless through a point at an angle. Crossings and perpendiculars treat every line as endless; the points only say how much of it is drawn.',
         params: [
           { name: 'from', type: '[x, y]', text: 'A point on it.' },
-          { name: 'to', type: '[x, y] | { angle }', text: 'A second point, or `{ angle }` in degrees counter-clockwise from +u for an endless line, which the viewer draws across the sketch.' },
+          { name: 'to', type: '[x, y] | { angle, length }', text: 'A second point, or `{ angle }` in degrees counter-clockwise from +u. With `length` the line ends that far from `from`; without it the line is endless, and the viewer draws it across the sketch.' },
         ],
         returns: 'Line',
         notes: ['A line has `.start`, `.end` and `.endless`, and `.direction` (unit), `.angle` (degrees), `.length` and `.mid`.'],

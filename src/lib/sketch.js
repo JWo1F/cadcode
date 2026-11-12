@@ -225,17 +225,22 @@ export class Sketch {
   }
 
   /**
-   * A line through two points, or endless through a point at an angle: `line([0, 0], { angle: 60 })`.
+   * A line through two points, endless through a point at an angle (`line([0, 0], { angle: 60 })`), or
+   * from a point at an angle for a length (`line([0, 0], { angle: 60, length: 40 })`).
    * @param {number[]} from
-   * @param {number[] | { angle: number }} to a second point, or degrees counter-clockwise from +u
+   * @param {number[] | { angle: number, length?: number }} to a second point, or degrees counter-clockwise
+   *   from +u and, for a line that ends, how long it is
    * @returns {Line}
    */
   line(from, to) {
     const a = vec2(from);
     if (to && !Array.isArray(to)) {
-      if (typeof to.angle !== 'number') throw new Error('sketch.line(): the second argument must be a point or { angle }');
+      if (typeof to.angle !== 'number') throw new Error('sketch.line(): the second argument must be a point or { angle, length }');
+      const { length } = to;
+      if (length !== undefined && !(typeof length === 'number' && length > 0)) throw new Error(`sketch.line(): length must be more than 0, got ${length}`);
       const t = (to.angle * Math.PI) / 180;
-      return keep(new Line(this, a, add(a, [Math.cos(t), Math.sin(t)]), true));
+      const direction = /** @type {Vec2} */ ([Math.cos(t), Math.sin(t)]);
+      return keep(new Line(this, a, add(a, mul(direction, length ?? 1)), length === undefined));
     }
     return keep(new Line(this, a, vec2(/** @type {number[]} */ (to)), false));
   }

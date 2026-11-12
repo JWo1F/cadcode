@@ -30,6 +30,11 @@ test('lines cross where their endless extensions meet', () => {
   close(s.line([0, 0], [1, 0]).intersect(s.line([5, 1], [5, 2])), [5, 0]);
   assert.throws(() => top.intersect(s.line([0, 0], [1, 0])), /parallel/);
   assert.equal(s.points.length, 2);
+  const arm = s.line([1, 1], { angle: 90, length: 5 });
+  assert.equal(arm.endless, false);
+  close(arm.end, [1, 6], 1e-12);
+  near(arm.length, 5);
+  assert.throws(() => s.line([0, 0], { angle: 0, length: 0 }), /length must be more than 0/);
 });
 
 test('a perpendicular from a point runs to its foot; through a point on the line it is endless', () => {

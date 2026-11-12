@@ -823,11 +823,12 @@ export function circle(options) {
 
 /**
  * @typedef {object} PolygonOptions
- * @property {number | Record<number, number>} [round] radius corners are rounded with: a number for
- *   every corner, or `{ 2: 3 }` by index into `points`
- * @property {number | Record<number, number>} [chamfer] how far back corners are cut along both
- *   sides, for every corner or by index, as for `round`. A corner named by index wins over a number
- *   for every corner; a corner named in both throws.
+ * @property {number | Record<number, number> | ((index: number, point: Vec2) => number | undefined)} [round]
+ *   radius corners are rounded with: a number for every corner, `{ 2: 3 }` by index into `points`, or a
+ *   function of a corner's index and point giving its radius (0 or undefined leaves it sharp)
+ * @property {number | Record<number, number> | ((index: number, point: Vec2) => number | undefined)} [chamfer]
+ *   how far back corners are cut along both sides, given as for `round`. A corner named by index wins over a
+ *   number or function for every corner; a corner given both a round and a chamfer of the same kind throws.
  * @property {number} [fn] segments of a full circle, for `round`
  */
 
@@ -835,7 +836,8 @@ export function circle(options) {
  * A polygon from points. With `paths`, each path is a list of point indices;
  * paths inside others become holes (even-odd fill), like OpenSCAD's polygon().
  * `{ round }` and `{ chamfer }` soften corners, all of them or some by index:
- * `polygon(pts, { round: { 1: 2 }, chamfer: { 3: 1 } })`. An inside corner rounds into a fillet.
+ * `polygon(pts, { round: { 1: 2 }, chamfer: { 3: 1 } })`, or by a function of the corner's index and point:
+ * `{ round: (i) => (i % 2 ? 2 : 3) }`. An inside corner rounds into a fillet.
  * @param {number[][]} points
  * @param {number[][] | PolygonOptions} [paths]
  * @param {PolygonOptions} [options]
@@ -843,7 +845,7 @@ export function circle(options) {
 export function polygon(points, paths, options) {
   if (paths && !Array.isArray(paths)) return polygon(points, undefined, paths);
   const pts = /** @type {Vec2[]} */ (points.map((p) => [p[0], p[1]]));
-  const specs = cornerSpecs(pts.length, options?.round, options?.chamfer);
+  const specs = cornerSpecs(pts, options?.round, options?.chamfer);
   const loops = paths ?? [pts.map((_, i) => i)];
   const contours = loops.map((path) =>
     specs.some(Boolean) ? cornered('polygon', path.map((i) => pts[i]), path.map((i) => specs[i]), options?.fn) : path.map((i) => pts[i]),
@@ -858,25 +860,33 @@ export function polygon(points, paths, options) {
  * @param {unknown} chamfer
  * @returns {(EdgeSpec | undefined)[]}
  */
-function cornerSpecs(count, round, chamfer) {
+function cornerSpecs(points, round, chamfer) {
+  const count = points.length;
   /** @type {(EdgeSpec | undefined)[]} */
   const specs = Array(count).fill(undefined);
-  const named = new Set();
-  // A number covers every corner, so it goes first and a corner named by index wins over it.
   const given = /** @type {const} */ ([['round', round], ['chamfer', chamfer]]);
-  for (const [kind, value] of [...given].sort(([, a]) => (typeof a === 'number' ? -1 : 1))) {
-    if (value === undefined) continue;
-    const sizes = typeof value === 'number' ? Object.fromEntries(range(0, count - 1).map((i) => [i, value])) : value;
-    if (!sizes || typeof sizes !== 'object') throw new Error(`polygon(): ${kind} must be a number or an object like { 0: 1 } by corner index`);
-    for (const [key, size] of Object.entries(sizes)) {
-      const i = Number(key);
-      if (!(Number.isInteger(i) && i >= 0 && i < count)) throw new Error(`polygon(): ${kind} names corner ${key}, but the corners are 0 to ${count - 1}`);
-      if (!(typeof size === 'number' && size >= 0)) throw new Error(`polygon(): ${kind} must be 0 or more, got ${JSON.stringify(size)} for corner ${i}`);
-      if (typeof value !== 'number') {
-        if (named.has(i)) throw new Error(`polygon(): give corner ${i} round or chamfer, not both`);
-        named.add(i);
+  const everyCorner = (value) => typeof value === 'number' || typeof value === 'function';
+  // First what covers every corner, then corners named by index, which win over it. Two sizes at
+  // the same level for one corner — a round and a chamfer — throw.
+  for (const level of [true, false]) {
+    const set = new Set();
+    for (const [kind, value] of given) {
+      if (value === undefined || everyCorner(value) !== level) continue;
+      if (!level && (!value || typeof value !== 'object')) throw new Error(`polygon(): ${kind} must be a number, a function of the corner's index, or an object like { 0: 1 } by index`);
+      const sizes =
+        typeof value === 'number' ? points.map(() => value)
+        : typeof value === 'function' ? points.map((p, i) => value(i, p) ?? 0)
+        : null;
+      const entries = sizes ? sizes.map((size, i) => [String(i), size]) : Object.entries(value);
+      for (const [key, size] of entries) {
+        const i = Number(key);
+        if (!(Number.isInteger(i) && i >= 0 && i < count)) throw new Error(`polygon(): ${kind} names corner ${key}, but the corners are 0 to ${count - 1}`);
+        if (!(typeof size === 'number' && size >= 0)) throw new Error(`polygon(): ${kind} must be 0 or more, got ${JSON.stringify(size)} for corner ${i}`);
+        if (level && size === 0) continue;
+        if (set.has(i)) throw new Error(`polygon(): give corner ${i} round or chamfer, not both`);
+        set.add(i);
+        specs[i] = size === 0 ? undefined : { kind, size };
       }
-      specs[i] = size === 0 ? undefined : { kind, size };
     }
   }
   return specs;

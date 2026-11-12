@@ -30,7 +30,7 @@ Wherever several shapes are accepted (`...shapes`), nested arrays and falsy valu
 | --- | --- |
 | `square(size = 1, { center = false })` | `size`: number or `[x, y]`. |
 | `circle(r)` / `circle({ r, d, fn })` | Centered. |
-| `polygon(points, paths?, { round, chamfer, fn })` | Even-odd fill: paths inside other paths are holes. `paths` may be left out with options second. `round`/`chamfer`: number = every corner, `{ index: size }` = by index into `points` (an index wins over a number; one index in both throws). Inside (reflex) corners round into fillets. Throws when a size does not fit along a side. Replaces `hull()` of circles and `offset(r).offset(-r)` tricks for per-corner radii. |
+| `polygon(points, paths?, { round, chamfer, fn })` | Even-odd fill: paths inside other paths are holes. `paths` may be left out with options second. `round`/`chamfer`: number = every corner, function `(i, [x, y]) => size` (0/undefined = sharp) = each corner, `{ index: size }` = by index into `points` (an index wins over a number/function; a round and a chamfer at the same level on one corner throw). Inside (reflex) corners round into fillets. Throws when a size does not fit along a side. Replaces `hull()` of circles and `offset(r).offset(-r)` tricks for per-corner radii. |
 | `text(string, { size = 10, font, halign = 'left', valign = 'baseline', spacing = 1, lineHeight = 1, fn })` | A number for options is `{ size }`. `size`: height of the capital H. `font`: TTF/OTF/WOFF bytes (`import font from './x.ttf'`), default Liberation Sans. `halign`: left/center/right by advance width; `valign`: baseline (first line's) or top/center/bottom of the ink. `\n` breaks lines. Curves: `fn` per full turn, else one segment per `fa` degrees (`fs` unused). Throws on a font without an H. |
 
 ## Importing files
@@ -120,7 +120,7 @@ A `Frame` is a plane with 2D coordinates u, v and a normal w. Use it instead of 
 | `solid.surfaceAt(side, [u, v])` | Ray from `face(side)` at world `[u, v]` straight in; `frameAt(hit, outward triangle normal)` of the **first** surface met (facet normal: coarse `fn` = coarse normal). Throws on a miss. Use for features on domes/slopes instead of hand-written surface formulas (`domeZ`, `atan2` tilt). |
 | `plane.XY` / `plane.XZ` / `plane.YZ` | Through the origin, u, v world coordinates; normals +Z, +Y, +X. |
 | `frameAt(origin, normal)` | Any point/normal (e.g. on a dome). Right-handed: v toward +Z (or +Y when the normal is vertical), u = v × normal. |
-| `frame.extrude(shape2, depth, { through = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through` adds 1 at both ends — use it for cuts through a wall instead of a hand-written `+1`. |
+| `frame.extrude(shape2, depth, { through = false, center = false })` | `depth > 0` along the normal (out), `< 0` against it (into the part), `0` throws. `through: true` adds 1 at both ends (cuts through a wall); `through: 'start'` adds 1 back past the plane only (a blind pocket from a face, or a boss sunk into its base) — never a hand-written `+1`. `center`: plane in the middle, `|depth|` thick; not with `'start'`. |
 | `frame.offset(d)` | Moved along the normal. |
 | `frame.place(solid \| point)` | Local X, Y → u, v; local Z → normal. |
 | `frame.origin`, `frame.normal` | `[x, y, z]`. |
@@ -136,7 +136,7 @@ never exported, and passing a sketch, line or circle to a boolean throws.
 | API | Notes |
 | --- | --- |
 | `sketch(frame = plane.XY)` | `Sketch` on a frame (`box.face('-X')`, `plane.XZ.offset(y)`, `frameAt`). `s.frame` reads it. |
-| `s.line(a, b)` / `s.line(a, { angle })` | Segment for drawing, **endless for crossings**; the angle form is endless (drawn across the sketch). Props: `start`, `end`, `endless`, `direction`, `angle`, `length`, `mid`; `at(t)` (t may go past 0..1). |
+| `s.line(a, b)` / `s.line(a, { angle, length })` | Segment for drawing, **endless for crossings**; `{ angle }` without `length` is endless (drawn across the sketch). Props: `start`, `end`, `endless`, `direction`, `angle`, `length`, `mid`; `at(t)` (t may go past 0..1). |
 | `line.parallel(d)` | `+d` left looking start→end, `-d` right; same stretch; endless stays endless. |
 | `line.perpendicular(p)` | Through `p`; off the line: from `p` to the foot (`.end` = foot); on the line: endless. |
 | `line.intersect(line)` | `[x, y]`; parallel throws. |

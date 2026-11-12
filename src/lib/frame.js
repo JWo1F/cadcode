@@ -6,12 +6,15 @@
 
 const AXES = /** @type {const} */ (['X', 'Y', 'Z']);
 
-/** How far `extrude(..., { through: true })` reaches past both ends, so a cut leaves no skin. */
+/** How far `extrude(..., { through })` reaches past an end, so a cut leaves no skin. */
 const THROUGH = 1;
 
 /**
  * @typedef {object} FrameExtrudeOptions
- * @property {boolean} [through] reach 1 past both ends, so a cut goes clean through the faces it starts and ends on
+ * @property {boolean | 'start'} [through] `true` reaches 1 past both ends, so a cut goes clean through the
+ *   faces it starts and ends on; `'start'` reaches 1 back past the frame's plane only: a pocket cut into a
+ *   face, or a boss that sinks into the part it stands on
+ * @property {boolean} [center] centered on the frame's plane, `depth` thick in all; not with `through: 'start'`
  */
 
 /**
@@ -52,7 +55,8 @@ export class Frame {
 
   /**
    * Extrudes a 2D shape drawn in the frame's coordinates. A positive `depth` goes along the normal
-   * (out of a face), a negative one against it (into the part).
+   * (out of a face), a negative one against it (into the part); `{ center: true }` puts the frame's
+   * plane in the middle.
    * @param {import('./shapes.js').Shape2} shape
    * @param {number} depth
    * @param {FrameExtrudeOptions} [options]
@@ -60,9 +64,13 @@ export class Frame {
    */
   extrude(shape, depth, options = {}) {
     if (!(typeof depth === 'number' && depth !== 0)) throw new Error(`Frame.extrude(): depth must be a number other than 0, got ${depth}`);
-    const reach = options.through ? THROUGH : 0;
-    const from = Math.min(0, depth) - reach;
-    const to = Math.max(0, depth) + reach;
+    const { through = false, center = false } = options;
+    if (![true, false, 'start'].includes(through)) throw new Error(`Frame.extrude(): through must be true, false or 'start', got ${JSON.stringify(through)}`);
+    if (center && through === 'start') throw new Error("Frame.extrude(): a centered extrusion has no start to reach past; use through: true");
+    // [from, to] along the normal, before reaching past the ends; `start` is the end on the plane.
+    let [from, to] = center ? [-Math.abs(depth) / 2, Math.abs(depth) / 2] : [Math.min(0, depth), Math.max(0, depth)];
+    if (through === true) [from, to] = [from - THROUGH, to + THROUGH];
+    if (through === 'start') [from, to] = depth < 0 ? [from, to + THROUGH] : [from - THROUGH, to];
     return shape.extrude(to - from).translate([0, 0, from]).transform(this.matrix);
   }
 
