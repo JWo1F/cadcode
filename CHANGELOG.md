@@ -12,6 +12,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `square(size, { round, chamfer })` rounds or cuts its corners inside the same size, and `slot(from, to, width)` makes a stadium for slotted holes and ports.
 - `.at(side)` is the center of a shape's bounding box or one of its sides, and `.align(target, { x, y, z, gap })` lines a shape up with another by their boxes: centered, flush with a side, or standing past it.
 - `solid.layFlat(side)` turns a side down onto the bed, and `arrange(parts, { gap, columns })` spreads parts over it, for print layouts without hand-placed translates.
+- `grid(shape, { pitch, within })` fills a region with as many copies of a shape as fit, centered, or `count` of them; `polar(shape, { count, r })` copies one around the Z axis.
 - `sketch(frame)` gives construction geometry to work points out with: lines through points, or at an angle, endless or for a length, `parallel`, `perpendicular`, circles, and `intersect`. A sketch returned in a part is drawn in place in the viewer and in PNGs, and never exported.
 
 ### Changed

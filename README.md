@@ -313,6 +313,8 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] };
 | --- | --- |
 | `point([x, y, z])` | A place without geometry, such as a pivot for `rotate(..., { around })`. It has `.translate`, `.rotate`, `.scale`, `.mirror`, `.transform`, so it can move with its part, and `.x`, `.y`, `.z`, `.toArray()`. It cannot go into booleans or an export. |
 | `helix({ r \| d, pitch, turns \| height, leftHand, fn })` | Points along a helix around Z from `[r, 0, 0]`, rising `pitch` per turn: a path for `.sweep()`. `fn` is points per turn. |
+| `grid(shape, { pitch, within \| count, stagger })` | Copies of a shape or solid on a grid in XY, unioned. `within: region` fills a 2D region with as many as fit wholly inside, centered on it: `grid(circle({ d: 1.6 }), { pitch: 3.2, within: square([17, 12]) })`. `count: [nx, ny]` centers them on the origin. `stagger` makes a honeycomb. |
+| `polar(shape, { count, r, start, angle })` | Copies around Z (the origin in 2D), moved out `r` then turned: knurls, spokes, bolt circles. `angle` < 360 spans an arc end to end. |
 | `arrange(parts, { gap = 5, columns })` | Spreads parts over the bed for a print layout: a row along +X (or rows of `columns`), `gap` apart, centered on the origin. A part may be an array of solids that move together. Lay them flat first. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |

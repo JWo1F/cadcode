@@ -1208,6 +1208,37 @@ return { part: () => [box.union(s.extrude(plate, 3)), s] }`,
     title: 'Helpers',
     entries: [
       {
+        id: 'grid',
+        name: 'grid',
+        signature: 'grid(shape, options)',
+        summary: 'Copies of a shape on a grid in XY, unioned: vents, pegs, a pegboard. With `within` the copies fill a region by themselves, as many as fit wholly inside it with the grid centered on it, so there is no count-and-center arithmetic.',
+        params: [
+          { name: 'shape', type: 'Solid | Shape2', text: 'The copy, drawn around the origin. A solid fits a region by its footprint.' },
+          { name: 'options.pitch', type: 'number | [x, y]', text: 'Distance between neighbours\' centers.' },
+          { name: 'options.within', type: 'Shape2', text: 'A region to fill. Give this or `count`.' },
+          { name: 'options.count', type: 'number | [x, y]', text: 'Copies along X and Y, centered on the origin, when there is no region.' },
+          { name: 'options.stagger', type: 'boolean', default: 'false', text: 'Shift every other row half a pitch along X, one copy fewer, for a honeycomb.' },
+        ],
+        returns: 'Solid | Shape2, as given',
+        example: `const vents = grid(circle({ d: 1.6 }), { pitch: 3.2, within: square([17, 12]) })
+box.subtract(box.face('+X').extrude(vents.translate([0, 2]), -wall, { through: true }))`,
+      },
+      {
+        id: 'polar',
+        name: 'polar',
+        signature: 'polar(shape, options)',
+        summary: 'Copies of a shape around the Z axis, or the origin in 2D, unioned: knurls, spokes, a bolt circle. Each copy is moved out `r` along +X, then turned.',
+        params: [
+          { name: 'shape', type: 'Solid | Shape2', text: 'The copy, drawn around the origin.' },
+          { name: 'options.count', type: 'number', text: 'How many copies.' },
+          { name: 'options.r', type: 'number', default: '0', text: 'How far out along +X each copy is moved before turning.' },
+          { name: 'options.start', type: 'number', default: '0', text: 'Degrees the first copy is turned, counter-clockwise.' },
+          { name: 'options.angle', type: 'number', default: '360', text: 'The arc they span. 360 spreads them evenly round; less puts the first at `start` and the last at `start + angle`.' },
+        ],
+        returns: 'Solid | Shape2, as given',
+        example: `knob.subtract(polar(cube([1.4, 1.4, 16], { center: true }), { count: 24, r: 11 }))`,
+      },
+      {
         id: 'arrange',
         name: 'arrange',
         signature: 'arrange(parts, options)',

@@ -127,7 +127,8 @@ difference(
 );
 ```
 
-`product(xs, ys)` is OpenSCAD's `for (x = xs, y = ys)`; `range(a, b, step)` is `[a : step : b]` and
+Regular patterns have helpers: `grid(hole, { pitch, within: region })` fills a region with as many copies as fit,
+centered; `polar(knurl, { count: 24, r: 11 })` goes round the Z axis. `product(xs, ys)` is OpenSCAD's `for (x = xs, y = ys)`; `range(a, b, step)` is `[a : step : b]` and
 **includes** `b`.
 
 **Slow rebuilds in `cadcode dev`:** wrap the expensive builder in `memo(fn)`, and the dev server and playground
