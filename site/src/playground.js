@@ -513,8 +513,13 @@ bindDownloadMenu({ stl: () => exportPart('stl'), '3mf': () => exportPart('3mf'),
 
 const shareButton = document.getElementById('share');
 shareButton.addEventListener('click', async () => {
-  await navigator.clipboard.writeText(await shareLink());
-  shareButton.textContent = 'Link copied';
+  try {
+    await navigator.clipboard.writeText(await shareLink());
+    shareButton.textContent = 'Link copied';
+  } catch {
+    // Clipboard refused (no permission, or the page is not focused).
+    shareButton.textContent = 'Copy failed';
+  }
   setTimeout(() => (shareButton.textContent = 'Copy link'), 1500);
 });
 
