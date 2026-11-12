@@ -3,6 +3,9 @@
 // Pressing a ball turns the view to look along that axis, at the ball's side of the
 // model; pressing the ball the view already looks from turns it to the other side.
 
+// The dev server serves this library module at the URL this import names; see SHARED_MODULES in src/dev/server.js.
+import { vec3 } from '../src/lib/vec.js';
+
 const SVG = 'http://www.w3.org/2000/svg';
 const SIZE = 84; // the gizmo's width and height, in CSS pixels
 const ARM = 28; // from the centre to a ball's centre
@@ -16,12 +19,10 @@ const AXES = [
   { name: '-Z', vector: [0, 0, -1], label: 'Bottom' },
 ];
 
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const normalize = (a) => {
-  const length = Math.hypot(...a) || 1;
-  return a.map((v) => v / length);
-};
+const { dot, cross } = vec3;
+// Looking straight down Z, the camera's right is the cross of parallel vectors: a zero
+// vector, which stays zero rather than turning into NaN.
+const normalize = (a) => (vec3.length(a) ? vec3.normalize(a) : a);
 
 const element = (name, attributes = {}) => {
   const node = document.createElementNS(SVG, name);

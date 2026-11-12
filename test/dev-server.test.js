@@ -132,3 +132,18 @@ test('a download the browser abandons stops its run', async () => {
   await sleep(500);
   assert.equal(fs.readFileSync(marker, 'utf8'), stopped, 'the slow part is still running');
 });
+
+test('every module the viewer imports is served', async () => {
+  const seen = new Set();
+  const visit = async (url) => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    const response = await fetch(url);
+    assert.equal(response.status, 200, `${url} is not served`);
+    const code = await response.text();
+    for (const [, specifier] of code.matchAll(/^\s*import\s[^'"]*['"](\.{1,2}\/[^'"]+)['"]/gm)) await visit(new URL(specifier, url).href);
+  };
+  await visit(`${server.url}viewer.js`);
+  assert.ok(seen.has(`${server.url}src/lib/vec.js`));
+  assert.equal((await fetch(`${server.url}src/lib/index.js`)).status, 404);
+});
