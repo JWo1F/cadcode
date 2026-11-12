@@ -8,7 +8,7 @@ description: Snap-in channels for cables under a desk, one per cable size.
 //
 //   cadcode dev examples/cable-clip.js
 //   cadcode stl examples/cable-clip.js --part clip --set 'cables=[5,5,5]'
-import { circle, cube, cylinder, plane, polygon, setResolution, square, union } from 'cadcode';
+import { circle, cube, cylinder, plane, polygon, screw, screwHole, setResolution, square, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -30,12 +30,10 @@ export const params = [
       r: { value: 3, name: 'Corner radius', description: 'Radius of the base corners in plan, in mm.' },
     },
   },
-  // Countersunk wood screw, 3.5 mm (#6)
   {
     name: 'Screws',
     children: {
-      screwD: { value: 3.8, name: 'Screw hole', description: 'Clearance hole for the screw shank, in mm.' },
-      headD: { value: 7.4, name: 'Screw head', description: 'Diameter of the countersink for the screw head, in mm.' },
+      screw: { value: 'W3.5', name: 'Screw', description: 'Countersunk wood screw, by thread diameter: W3.5 is a 3.5 mm (#6) screw.', options: ['W3', 'W3.5', 'W4'] },
     },
   },
 ];
@@ -82,17 +80,16 @@ export default (p) => {
   const body = () =>
     plane.XZ.extrude(profile(), p.width).intersect(cube([L, p.width, H + 2], { round: { z: p.r } }));
 
-  // Screw from the top: through hole plus a 90° countersink ending flush with the base's top.
-  const sink = (p.headD - p.screwD) / 2;
-  const screwHole = () =>
+  // Screw from the top: a clearance hole and a 90° countersink ending flush with the base's top, and the
+  // head's width clear above it for the screwdriver.
+  const holeAt = (x) =>
     union(
-      cylinder({ d: p.screwD, h: p.base + 2 }).translate([0, 0, -1]),
-      cylinder({ d1: p.screwD, d2: p.headD, h: sink }).translate([0, 0, p.base - sink + 0.01]),
-      cylinder({ d: p.headD, h: H }).translate([0, 0, p.base]), // clear above, for the screwdriver
-    ).translate([p.tab / 2, p.width / 2, 0]);
+      plane.XY.offset(p.base).place(screwHole(p.screw, { length: p.base, head: 'countersunk' })),
+      cylinder({ d: screw(p.screw).countersunk.d, h: H }).translate([0, 0, p.base]),
+    ).translate([x, p.width / 2, 0]);
 
-  // One hole at each end: the second is the first mirrored about the clip's middle.
-  const clip = () => body().subtract(screwHole(), screwHole().mirror([1, 0, 0]).translate([L, 0, 0]));
+  // One hole at each end.
+  const clip = () => body().subtract(holeAt(p.tab / 2), holeAt(L - p.tab / 2));
 
   const palette = ['#e4572e', '#29335c', '#f3a712', '#669bbc', '#a8c686'];
   const cables = () =>
