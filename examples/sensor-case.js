@@ -112,7 +112,7 @@ export default (p) => {
   const snapLine = (len) => cylinder({ r: bumpR, h: len, center: true, axis: 'x' });
 
   // The cell resting on the floor, centered in its compartment; its cutout is batClr bigger across.
-  const battery = cell({ d: batD, l: batL, clearance: batClr / 2 }).translate([mainL / 2 - batL / 2, batY0 + (batD + batClr) / 2, 0]);
+  const battery = cell({ d: batD, length: batL, clearance: batClr / 2 }).translate([mainL / 2 - batL / 2, batY0 + (batD + batClr) / 2, 0]);
 
   const box = () => {
     const shell = roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]);

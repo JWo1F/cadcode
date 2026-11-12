@@ -212,7 +212,7 @@ const OLED = { board: [38, 12, 1.2], glass: [30, 11.5, 1.4], active: [22.4, 5.6]
  * active area, 0.6 bigger on each side, reaching 10 up from the glass's top.
  * Nominal dimensions, each an option: measure yours. The glass and the active area are often off
  * center: `glassShift` and `activeShift` move them, as `[x, y]` from the board's center.
- * @param {ClearanceOptions & { board?: number[], glass?: number[], active?: number[], glassShift?: number[], activeShift?: number[] }} [options]
+ * @param {Omit<ClearanceOptions, 'fn'> & { board?: number[], glass?: number[], active?: number[], glassShift?: number[], activeShift?: number[] }} [options]
  * @returns {Component}
  */
 export function oled091(options = {}) {
@@ -304,26 +304,26 @@ export function led5(options = {}) {
 /**
  * @typedef {object} CellOptions
  * @property {number} [d] diameter (default 18.4, an 18650)
- * @property {number} [l] length (default 65.2, an 18650)
+ * @property {number} [length] length (default 65.2, an 18650)
  * @property {number} [clearance] how much bigger the cutout is than the cell on every side (default `fit('slide')`)
  * @property {number} [fn] segments of a full circle
  */
 
 /**
- * A cylindrical cell lying along +X from x = 0 to `l`, its axis on y = 0 at z = d / 2, so it rests
- * on z = 0. An 18650 by default; `cell({ d: 12, l: 30 })` for a 12 × 30 Li-ion. The cutout is the
+ * A cylindrical cell lying along +X from x = 0 to `length`, its axis on y = 0 at z = d / 2, so it rests
+ * on z = 0. An 18650 by default; `cell({ d: 12, length: 30 })` for a 12 × 30 Li-ion. The cutout is the
  * cell grown by `clearance` all round, to subtract for a cradle.
  * Nominal dimensions: measure yours.
  * @param {CellOptions} [options]
  * @returns {Component}
  */
 export function cell(options = {}) {
-  const { d = 18.4, l = 65.2, fn } = options;
+  const { d = 18.4, length = 65.2, fn } = options;
   const c = checkClearance('cell()', options.clearance ?? fit('slide'));
   if (!(typeof d === 'number' && d > 0)) throw new Error(`cell(): d must be a positive number, got ${JSON.stringify(d)}`);
-  if (!(typeof l === 'number' && l > 0)) throw new Error(`cell(): l must be a positive number, got ${JSON.stringify(l)}`);
+  if (!(typeof length === 'number' && length > 0)) throw new Error(`cell(): length must be a positive number, got ${JSON.stringify(length)}`);
   /** A cylinder on the cell's axis from x = `from` to `to`. @type {(diameter: number, from: number, to: number) => Solid} */
   const along = (diameter, from, to) => plane.YZ.offset(from).extrude(circle({ d: diameter, fn }).translate([0, d / 2]), to - from);
   // The cutout stops at z = 0, where the cell rests, so it never digs into the floor it lies on.
-  return new Component({ body: along(d, 0, l).color(CELL), cutout: along(d + 2 * c, -c, l + c).clip({ z: [0, Infinity] }) });
+  return new Component({ body: along(d, 0, length).color(CELL), cutout: along(d + 2 * c, -c, length + c).clip({ z: [0, Infinity] }) });
 }

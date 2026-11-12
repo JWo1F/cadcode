@@ -258,12 +258,12 @@ export function boss(size, options) {
 /**
  * @typedef {object} NutTrapOptions
  * @property {number} [depth] how deep the pocket goes below z = 0 (default the nut's thickness + 0.2)
- * @property {number} [fit] clearance per side across the flats (default `fit('slide')`)
+ * @property {number} [clearance] how much bigger than the nut across the flats, on every side (default `fit('slide')`)
  */
 
 /**
  * The solid to subtract for a hexagonal pocket a nut drops into: drawn at a surface at z = 0 going
- * down along -Z, `fit` bigger than the nut across the flats on every side, and reaching 1 above
+ * down along -Z, `clearance` bigger than the nut across the flats on every side, and reaching 1 above
  * z = 0. Corners point along ±X, flats face ±Y. Place it with a frame, as `screwHole()`.
  * @param {ScrewSize} size
  * @param {NutTrapOptions} [options]
@@ -274,9 +274,9 @@ export function nutTrap(size, options = {}) {
   const s = lookup(op, size);
   const nut = needs(op, size, s.nut, 'nut');
   const depth = options.depth ?? nut.h + 0.2;
-  const clearance = options.fit ?? fit('slide');
+  const clearance = options.clearance ?? fit('slide');
   positive(op, 'depth', depth);
-  if (!(typeof clearance === 'number' && clearance >= 0)) throw new Error(`${op}: fit must be 0 or more, got ${JSON.stringify(clearance)}`);
+  if (!(typeof clearance === 'number' && clearance >= 0)) throw new Error(`${op}: clearance must be 0 or more, got ${JSON.stringify(clearance)}`);
   // A six-sided cylinder has a corner on +X; across its corners is 2 / √3 times across its flats.
   const acrossCorners = ((nut.s + 2 * clearance) * 2) / Math.sqrt(3);
   return cylinder({ d: acrossCorners, h: depth + OVERSHOOT, fn: 6 }).translate([0, 0, -depth]);

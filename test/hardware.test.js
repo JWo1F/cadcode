@@ -133,7 +133,7 @@ test('a nut trap is a hexagon a slide fit bigger across the flats', () => {
   near(max[0] - min[0], ((5.5 + 0.4) * 2) / Math.sqrt(3));
   near(min[2], -(2.4 + 0.2));
   near(max[2], 1);
-  near(nutTrap('M3', { fit: 0, depth: 3 }).bounds().max[1], 5.5 / 2);
+  near(nutTrap('M3', { clearance: 0, depth: 3 }).bounds().max[1], 5.5 / 2);
   near(nutTrap('M3', { depth: 3 }).bounds().min[2], -3);
   assert.throws(() => nutTrap('M3', { depth: -1 }), /depth must be a positive number/);
 });
@@ -143,7 +143,7 @@ test('a boss can leave a thinner floor, and a cell never digs into the floor it 
   near(thin.slice(0.65).area() < thin.slice(0.5).area() ? 1 : 0, 1);
   assert.throws(() => boss('M3', { h: 3, floor: -1 }), /floor must be 0 or more/);
   const { cell } = await import('../src/lib/components.js');
-  near(cell({ d: 12, l: 30 }).cutout.bounds().min[2], 0);
+  near(cell({ d: 12, length: 30 }).cutout.bounds().min[2], 0);
 });
 
 test('wood screws have holes and heads but no nut or insert', () => {

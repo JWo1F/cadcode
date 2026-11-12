@@ -256,13 +256,13 @@ These take any mix of shapes and nested arrays, so OpenSCAD's nesting style work
 | `hull(...shapes)` | |
 | `minkowski(...solids)` | `first.minkowski(...rest)`. Solids only; 2D shapes have `offset`. |
 | `translate(v, ...shapes)` | `union(...shapes).translate(v)` |
-| `rotate(a, ...shapes)` | `union(...shapes).rotate(a)` |
+| `rotate(a, ...shapes)` | `union(...shapes).rotate(a)`; a 2D shape takes a number or OpenSCAD's `[0, 0, z]` |
 | `rotate(a, { around }, ...shapes)` | `union(...shapes).rotate(a, { around })` |
 | `scale(v, ...shapes)` | `union(...shapes).scale(v)` |
 | `mirror(n, ...shapes)` | `union(...shapes).mirror(n)` |
-| `color(c, alpha?, ...shapes)` | `union(...shapes).color(c, alpha)` |
-| `offset(r, ...shapes)` | `union(...shapes).offset(r)` |
-| `linearExtrude(h, options, ...shapes)` | `union(...shapes).extrude(h, options)` |
+| `color(c, alpha?, ...solids)` | `union(...solids).color(c, alpha)`; solids only |
+| `offset(r, ...shapes)` | `union(...shapes).offset(r)`; 2D shapes only |
+| `linearExtrude(h, options?, ...shapes)` | `union(...shapes).extrude(h, options)`; options may be left out |
 
 ### Frames
 
@@ -340,20 +340,20 @@ Sizes M2, M2.5, M3, M4, M5, M6, M8 for machine screws, and W3, W3.5, W4, W4.5, W
 | `fit(kind)` / `setFit({ press, slide, loose })` | Clearance per side: `press` 0.1, `slide` 0.2, `loose` 0.4. `setFit` changes them for everything after it. |
 | `screwHole(size, { length, head, hole, headDepth, fn })` | Cutter for a screw: `hole` is `'clearance'`, `'tap'` or `'insert'`; `head` is `'none'`, `'cap'` (counterbore a slide fit bigger, head height deep) or `'countersunk'` (90° cone, head diameter at z = 0). |
 | `boss(size, { h, d, hole, floor, fn })` | A cylinder on z = 0 with the screw's hole from the top; `'tap'` and `'insert'` leave a `floor` (default 1), `'clearance'` goes through. |
-| `nutTrap(size, { depth, fit })` | Cutter for a hex nut pocket, a slide fit bigger across the flats. |
+| `nutTrap(size, { depth, clearance })` | Cutter for a hex nut pocket, `clearance` (default a slide fit) bigger across the flats on every side. |
 
 ### Components
 
-Common parts as a `Component`: a colored `body`, the `cutout` to subtract from the enclosure, and named `points`, moved together by `translate`, `rotate`, `mirror`, `transform`, `place(frame)` and `align(target, options)`. Dimensions are nominal: measure yours. Each takes `clearance` (default `fit('slide')`) and `fn`.
+Common parts as a `Component`: a colored `body`, the `cutout` to subtract from the enclosure, and named `points`, moved together by `translate`, `rotate`, `mirror`, `transform`, `place(frame)` and `align(target, options)`. Dimensions are nominal: measure yours. Each takes `clearance` (default `fit('slide')`), and those with round parts `fn`.
 
 | Function | Notes |
 | --- | --- |
 | `usbC()` | Receptacle with its mouth at x = 0 facing -X; the cutout runs out to x = -12. Point `mouth`. |
-| `proMicro({ length, width, thickness, usbDrop })` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X; sizes default to 34 × 17 × 1.6. Cutout: the connector only. Point `usb`. |
+| `proMicro({ length, width, thickness, usbDrop, usbOverhang })` | nRF52840 Pro Micro on z = 0 from x = 0, USB-C at -X; sizes default to 34 × 17 × 1.6. Cutout: the connector only. Point `usb`. |
 | `oled091({ board, glass, active, glassShift, activeShift })` | 0.91" OLED, board on z = 0, centered, seen from +Z; shift the glass and active area if yours are off center. Cutout: pocket and window. |
 | `ec11({ shaft })` | Rotary encoder, mounting face at z = 0, shaft up. Cutout: the bushing's hole, through a panel on either side of the face. Point `face`. |
 | `led5({ d, h, flange })` | 5 mm LED on z = 0, or any size. Cutout: the hole from the flange up. |
-| `cell({ d, l })` | Cylindrical cell along +X resting on z = 0, an 18650 by default. Cutout: a cradle. |
+| `cell({ d, length })` | Cylindrical cell along +X resting on z = 0, an 18650 by default. Cutout: a cradle. |
 
 ### Lofts and threads
 
@@ -373,8 +373,9 @@ Common parts as a `Component`: a colored `body`, the `cutout` to subtract from t
 | `arrange(parts, { gap = 5, columns })` | Spreads parts over the bed for a print layout: a row along +X (or rows of `columns`, each starting at the same X), `gap` apart, the whole layout centered on the origin. A part may be an array of solids that move together. Lay them flat first. |
 | `polarPoint(r, degrees, center)` | The point at an angle on a circle, or on an ellipse with `r: [rx, ry]`. |
 | `range(start, end, step = 1)` | Includes `end`, like OpenSCAD's `[start : step : end]`. |
+| `parseColor(c, alpha?)` | `[r, g, b, a]` from 0 to 1, from anything `color()` takes: a CSS name, `#rgb`, `#rrggbb`, `#rrggbbaa` or channels. |
 | `product(...lists)` | Every combination, like `for (x = xs, y = ys)`: `product([1, 2], ['a', 'b'])` gives `[[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]`. |
-| `memo(fn)` | Builds once per set of arguments. In `cadcode dev` and the playground the result outlives the run, so a save that leaves the function and its arguments as they were skips it: `const ring = memo((teeth, module) => ...)`. The key is the function's source, its arguments and the resolution; a helper it calls or a variable it reads from outside (such as `p`) is not part of it, so pass those as arguments. Arguments are plain data; the result is shapes or arrays of them. |
+| `memo(fn)` | Builds once per set of arguments. In `cadcode dev` and the playground the result outlives the run, so a save that leaves the function and its arguments as they were skips it: `const ring = memo((teeth, module) => ...)`. The key is the function's source, its arguments, the resolution and the fits set with `setFit`; a helper it calls or a variable it reads from outside (such as `p`) is not part of it, so pass those as arguments. Arguments are plain data; the result is shapes or arrays of them. |
 | `setResolution({ fn, fa, fs })` | Default segment count for curves, with the same rules as OpenSCAD's `$fn`, `$fa` and `$fs`. Any primitive also takes its own `fn`. |
 
 ### Importing files
