@@ -97,7 +97,7 @@ export default (p) => {
   // Cards for the display: an SD with its clipped corner, and a plain microSD.
   // The SD card stands in XZ, its thickness centred on y = 0; corner 2 is the clipped one.
   const sdOutline = polygon([[-SD.w / 2, 0], [SD.w / 2, 0], [SD.w / 2, SD.h], [-SD.w / 2, SD.h]], { chamfer: { 2: 4 } });
-  const sdCard = () => plane.XZ.offset(-SD.t / 2).extrude(sdOutline.translate([0, -p.sdDepth]), SD.t);
+  const sdCard = () => plane.XZ.extrude(sdOutline.translate([0, -p.sdDepth]), SD.t, { center: true });
   const microCard = () => cube([MICRO.w, MICRO.t, MICRO.h]).translate([-MICRO.w / 2, -MICRO.t / 2, -p.microDepth]);
   const sdColors = ['#1d4e89', '#d1495b', '#1d4e89', '#edae49', '#1d4e89', '#00798c'];
   const cards = () => [

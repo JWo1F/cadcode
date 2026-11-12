@@ -75,7 +75,7 @@ export default (p) => {
   // Window through a wall, drawn on its outside face at [u, v], with an optional recess for the plug.
   const window = (face, [u, v], [w, h, r = 1], recess) => [
     face.extrude(rounded(w, h, r).translate([u, v]), -p.wall, { through: true }),
-    recess && face.offset(1).extrude(rounded(...recess).translate([u, v]), -(p.wall / 2 + 1)),
+    recess && face.extrude(rounded(...recess).translate([u, v]), -p.wall / 2, { through: 'start' }),
   ];
 
   const holes = product([3.5, 61.5], [3.5, 52.5]);
@@ -94,7 +94,7 @@ export default (p) => {
       window(end, [by(45.75), boardTop + 6.75], [17, 14.6]), // Ethernet
       // SD card underneath the board's left end, with a scoop above for a fingernail
       left.extrude(square([13, 2.6]).translate([by(28) - 6.5, boardZ - 2.3]), -p.wall, { through: true }),
-      left.offset(1).extrude(scoop.translate([by(28), boardZ - 1]), -(p.wall / 2 + 1)),
+      left.extrude(scoop.translate([by(28), boardZ - 1]), -p.wall / 2, { through: 'start' }),
     ];
   };
 

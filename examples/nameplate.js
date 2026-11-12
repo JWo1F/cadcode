@@ -68,7 +68,7 @@ export default (p) => {
   const letters = p.raised ? face.extrude(lettering, p.depth) : null;
   const plate = () => {
     const body = frame ? slab.union(frame) : slab;
-    return p.raised ? body : body.subtract(face.offset(1).extrude(lettering, -(p.depth + 1)));
+    return p.raised ? body : body.subtract(face.extrude(lettering, -p.depth, { through: 'start' }));
   };
 
   return {

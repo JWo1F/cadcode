@@ -50,11 +50,10 @@ export default (p) => {
   // The side profile is drawn with the front at u = 0 and v up. Its plane runs u along -X from
   // X = foot, so the front ends up at +X, facing the default camera, and extrudes along +Y.
   const s = sketch(frameAt([p.foot, 0, 0], [0, 1, 0]));
-  const a = (p.angle * Math.PI) / 180;
   const seatBack = p.lipT + p.seatDepth;
   const desk = s.line([0, 0], [p.foot, 0]);
   // The phone leans on the plate's face, from the seat up `back` at `angle`.
-  const plateFace = s.line([seatBack, p.seatZ], [seatBack + p.back * Math.cos(a), p.seatZ + p.back * Math.sin(a)]);
+  const plateFace = s.line([seatBack, p.seatZ], { angle: p.angle, length: p.back });
   const plateBack = plateFace.parallel(-p.plate);
   const front = plateFace.end; // top of the plate, phone side
   const top = plateBack.end;
@@ -63,7 +62,7 @@ export default (p) => {
   // Convex corners rounded, the two inside corners at the seat filleted.
   const outline = s.polygon(
     [desk.start, desk.end, top, front, plateFace.start, [p.lipT, p.seatZ], [p.lipT, p.seatZ + p.lip], [0, p.seatZ + p.lip]],
-    { round: { 0: 1.5, 1: 1.5, 2: 1.5, 3: 1.5, 4: 3, 5: 3, 6: 1.5, 7: 1.5 } },
+    { round: (i) => (i === 4 || i === 5 ? 3 : 1.5) },
   );
   // The window between the plate, the base and the rear strut, a wall in from each; its front edge
   // (the post) stands a wall behind the seat.

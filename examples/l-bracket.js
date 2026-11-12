@@ -54,7 +54,7 @@ export default (p) => {
 
   // The L, its outer corners rounded and the inside corner filleted.
   const profile = s.polygon([shelf.start, shelf.end, shelfTop.end, inner, wallFace.end, wall.end], {
-    round: { 0: p.corner, 1: p.corner, 2: p.corner, 3: p.fillet, 4: p.corner, 5: p.corner },
+    round: (i) => (i === 3 ? p.fillet : p.corner),
   });
 
   // The gusset reaches the same fraction along each leg's inside face, and is sunk 1 mm into both

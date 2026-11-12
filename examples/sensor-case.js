@@ -125,7 +125,7 @@ export default (p) => {
     const shell = roundedBox(iL + 2 * wall, iW + 2 * wall, iH + floorT, cornerR).translate([-wall, -wall, -floorT]);
     // Cuts drawn on a side of the shell: clean through the wall, or a pocket `depth` deep from outside
     const through = (side, shape) => shell.face(side).extrude(shape, -wall, { through: true });
-    const pocket = (side, shape, depth) => shell.face(side).offset(1).extrude(shape, -(depth + 1));
+    const pocket = (side, shape, depth) => shell.face(side).extrude(shape, -depth, { through: 'start' });
     const poreH = poreZ1 - poreZ0;
     return union(
       difference(

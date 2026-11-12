@@ -57,7 +57,7 @@ export default (p) => {
   // On the top face: raised out of it, or engraved into it with the cutter reaching 1 above.
   const top = body.face('+Z');
   const raisedLogo = p.raised ? top.extrude(mark, p.depth) : null;
-  const tag = () => (p.raised ? body : body.subtract(top.offset(1).extrude(mark, -(p.depth + 1))));
+  const tag = () => (p.raised ? body : body.subtract(top.extrude(mark, -p.depth, { through: 'start' })));
 
   return {
     assembly: () => [tag().color('#3a6ea5'), raisedLogo?.color('#f4f1de')],

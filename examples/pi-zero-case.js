@@ -77,7 +77,7 @@ export default (p) => {
     const window = (ww, hh) => square([ww - 2, hh - 2], { center: true }).offset(1).translate([u, v]);
     return [
       face.extrude(window(w, h), -p.wall, { through: true }),
-      recess && face.offset(1).extrude(window(recess[0], recess[1]), -(p.wall / 2 + 1)),
+      recess && face.extrude(window(recess[0], recess[1]), -p.wall / 2, { through: 'start' }),
     ];
   };
 
@@ -103,7 +103,7 @@ export default (p) => {
       .intersect(square([20, 10]).translate([by(p.sdY) - 10, boardTop - 0.5]));
     const sd = [
       left.extrude(square([13, 3]).translate([by(p.sdY) - 6.5, boardTop - 0.5]), -p.wall, { through: true }),
-      left.offset(1).extrude(scoop, -(0.9 + 1)), // stops short of the lid groove behind it
+      left.extrude(scoop, -0.9, { through: 'start' }), // stops short of the lid groove behind it
     ];
 
     // Ribbon cable out of the right end

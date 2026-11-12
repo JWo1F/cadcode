@@ -82,7 +82,7 @@ export default (p) => {
   const fin = () => {
     const s = p.finSpan;
     const outline = polygon([[3, 52], [12, 41], [21, 27], [s - 3, 13], [s, 5], [s, 0], [s - 10, 0], [12, 6], [3, 13]], { round: 1.5 });
-    return plane.XZ.offset(-p.finT / 2).extrude(outline, p.finT);
+    return plane.XZ.extrude(outline, p.finT, { center: true });
   };
   // A fin and its mirror image make a pair; the pairs are turned round the axis.
   const fins = () => {

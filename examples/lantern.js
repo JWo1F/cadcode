@@ -128,7 +128,7 @@ export default (p) => {
     const ringR = rc - 1;
     const bar = cube([2 * rc - 1, 3, 2], { center: true }).translate([0, 0, zTop - 1]);
     const ring = circle(ringR).subtract(circle(ringR - 2.4)).translate([0, zTop - 1 + ringR]);
-    const loop = plane.XZ.offset(-1.5).extrude(ring, 3);
+    const loop = plane.XZ.extrude(ring, 3, { center: true });
     return body.union(bar, loop);
   };
 
