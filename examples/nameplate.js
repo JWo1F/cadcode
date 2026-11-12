@@ -51,17 +51,12 @@ export default (p) => {
   const { min, max } = lettering.bounds();
   const width = max[0] - min[0] + 2 * p.margin;
   const height = max[1] - min[1] + 2 * p.margin;
-  const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2];
-  const atCenter = (shape) => shape.translate([center[0] - width / 2, center[1] - height / 2, 0]);
-
-  const slab = atCenter(cube([width, height, p.thick], { round: { z: p.round } }));
+  const slab = cube([width, height, p.thick], { round: { z: p.round } }).align(lettering, { x: 'center', y: 'center' });
   const frame =
     p.border > 0 &&
-    atCenter(
-      cube([width, height, p.depth], { round: { z: p.round } })
-        .subtract(cube([width - 2 * p.border, height - 2 * p.border, p.depth + 2], { round: { z: Math.max(p.round - p.border, 0.01) } }).translate([p.border, p.border, -1]))
-        .translate([0, 0, p.thick]),
-    );
+    cube([width, height, p.depth], { round: { z: p.round } })
+      .subtract(cube([width - 2 * p.border, height - 2 * p.border, p.depth + 2], { round: { z: Math.max(p.round - p.border, 0.01) } }).translate([p.border, p.border, -1]))
+      .align(slab, { x: 'center', y: 'center', z: 'after' });
 
   // Raised letters stand on the face; engraved ones are cut from it, starting a little above.
   const face = slab.face('+Z');

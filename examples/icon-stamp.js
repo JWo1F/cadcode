@@ -61,8 +61,8 @@ export default async (p) => {
   const flareH = plateR - knobR; // 45°, no supports
 
   const knob = cylinder({ r: knobR, h: p.knobH, round: { bottom: 3 } });
-  const flare = cylinder({ r1: knobR, r2: plateR, h: flareH }).translate([0, 0, p.knobH]);
-  const plate = cylinder({ r: plateR, h: p.thick }).translate([0, 0, p.knobH + flareH]);
+  const flare = cylinder({ r1: knobR, r2: plateR, h: flareH }).align(knob, { z: 'after' });
+  const plate = cylinder({ r: plateR, h: p.thick }).align(flare, { z: 'after' });
   const relief = plate.face('+Z').extrude(face, p.relief);
 
   return { stamp: () => knob.union(flare, plate, relief) };

@@ -2,7 +2,7 @@
 title: Grid organizer
 description: A drawer tray of pockets with finger scoops, any number of rows and columns.
 ---*/
-import { cube, hull, product, range, setResolution, sphere, square } from 'cadcode';
+import { cube, grid, hull, setResolution, sphere, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -40,19 +40,16 @@ export default (p) => {
       straight,
       [-1, 1].map((s) => sphere(p.scoop).translate([s * (p.cell / 2 - p.scoop), -p.cell / 2 + p.scoop, p.scoop])),
       // Floor behind the scoop.
-      square([p.cell - 2 * r, p.cell - p.scoop - 2 * r], { center: true })
-        .offset(r)
+      square([p.cell, p.cell - p.scoop], { center: true, round: r })
         .translate([0, p.scoop / 2])
         .extrude(0.01),
     );
-    return scoop.translate([p.cell / 2, p.cell / 2, p.floor]);
+    return scoop.translate([0, 0, p.floor]);
   };
 
   const organizer = () =>
     roundedBox(L, W, p.height, p.corner).subtract(
-      product(range(0, p.cols - 1), range(0, p.rows - 1)).map(([c, r]) =>
-        pocket().translate([p.wall + c * (p.cell + p.wall), p.wall + r * (p.cell + p.wall), 0]),
-      ),
+      grid(pocket(), { pitch: p.cell + p.wall, count: [p.cols, p.rows] }).translate([L / 2, W / 2, 0]),
     );
 
   console.log(`outer ${L.toFixed(1)} × ${W.toFixed(1)} × ${p.height} mm`);

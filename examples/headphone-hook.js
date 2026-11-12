@@ -59,9 +59,7 @@ export default (p) => {
 
   // The strap's cross-section: thickness along u, width along v from the bed up, edges rounded.
   const section = () =>
-    square([p.t - 2 * p.edge, p.width - 2 * p.edge], { center: true })
-      .offset(p.edge)
-      .translate([0, p.width / 2]);
+    square([p.t, p.width], { center: true, round: p.edge }).translate([0, p.width / 2]);
 
   // The strap along a line of the sketch, and round a circle of it from one angle to another.
   const straight = (line) => frameAt([...line.start, 0], [...line.direction, 0]).extrude(section(), line.length);
@@ -98,8 +96,7 @@ export default (p) => {
     const [R, band] = [88, 7]; // headband radius and thickness
     const apex = z + p.t / 2; // the band's inside rests on the saddle's top
     const cy = apex - R; // the band's centre
-    const ring = square([band, 34], { center: true })
-      .offset(2)
+    const ring = square([band + 4, 38], { center: true, round: 2 })
       .translate([R + band / 2, 0])
       .revolve({ angle: 200 })
       .rotate(-10); // symmetric about +Y

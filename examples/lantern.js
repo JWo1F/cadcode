@@ -2,7 +2,7 @@
 title: Lantern
 description: A hexagonal tealight lantern with honeycomb windows and a roof that drops on.
 ---*/
-import { circle, cube, cylinder, plane, polygon, range, setResolution, sphere, union } from 'cadcode';
+import { circle, cube, cylinder, grid, plane, polar, polygon, setResolution, sphere, square, union } from 'cadcode';
 
 setResolution({ fn: 64 });
 
@@ -62,21 +62,9 @@ export default (p) => {
     const halfW = p.radius / 2 - p.margin;
     const v0 = p.floor + p.below;
     const v1 = p.height - p.above;
-    const across = Math.sqrt(3) * p.cell; // flat to flat, horizontally
-    const pitch = across + p.strut;
-    const rowPitch = (pitch * Math.sqrt(3)) / 2;
-    const rows = Math.floor((v1 - v0 - 2 * p.cell) / rowPitch) + 1;
-    const top = v0 + p.cell + (v1 - v0 - 2 * p.cell - (rows - 1) * rowPitch) / 2; // centre the block
-    const cells = [];
-    range(0, rows - 1).forEach((row) => {
-      const v = top + row * rowPitch;
-      const shift = row % 2 ? pitch / 2 : 0;
-      range(-5, 5).forEach((col) => {
-        const u = col * pitch + shift;
-        if (Math.abs(u) + across / 2 <= halfW) cells.push(circle({ r: p.cell, fn: 6 }).rotate(90).translate([u, v]));
-      });
-    });
-    return union(cells);
+    const pitch = Math.sqrt(3) * p.cell + p.strut; // flat to flat, horizontally, plus a strut
+    const face = square([2 * halfW, v1 - v0]).translate([-halfW, v0]);
+    return grid(circle({ r: p.cell, fn: 6 }).rotate(90), { pitch: [pitch, (pitch * Math.sqrt(3)) / 2], within: face, stagger: true });
   };
 
   // The window pattern pushed through each face. A hexagon from fn: 6 has corners at 0, 60, ...
@@ -84,7 +72,7 @@ export default (p) => {
   // shell's -Y side, whose u and v are X and Z.
   const windowCutters = (shell) => {
     const cutter = shell.face('-Y').extrude(windows(), -p.wall, { through: true });
-    return range(0, 5).map((i) => cutter.rotate(60 * i));
+    return polar(cutter, { count: 6 });
   };
 
   const body = () => {

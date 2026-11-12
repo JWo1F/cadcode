@@ -9,7 +9,7 @@ description: A J-hook for 1/4" pegboard that locks into two holes so it cannot t
 //
 //   cadcode dev examples/pegboard-hook.js
 //   cadcode stl examples/pegboard-hook.js --part hook
-import { circle, cube, cylinder, linearExtrude, polygon, product, range, setResolution, square, union } from 'cadcode';
+import { circle, cube, cylinder, grid, linearExtrude, polygon, setResolution, slot, square, union } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -69,10 +69,8 @@ export default (p) => {
       .intersect(square([p.bendR + p.tipH + 1, p.bendR + p.tipH + 1]).translate([0, -p.bendR - p.tipH - 1]))
       .translate(c);
     const w = p.tipH;
-    const tip = union(
-      square([w, p.tipLen]).translate([c[0] + p.bendR + (p.tipH - w) / 2, c[1]]),
-      circle(w / 2).translate([c[0] + p.bendR + p.tipH / 2, c[1] + p.tipLen]),
-    );
+    const tipX = c[0] + p.bendR + p.tipH / 2;
+    const tip = slot([tipX, c[1]], [tipX, c[1] + p.tipLen], w); // its lower end lies inside the ring
     return union(plate, upper, lower, arm, ring, tip)
       .offset(2)
       .offset(-2) // fillets in the inside corners
@@ -103,8 +101,8 @@ export default (p) => {
   // A patch of board, three holes by four, around the hook's two holes.
   const board = () => {
     const panel = cube([p.boardT, 3 * p.pitch, 4 * p.pitch]).translate([-p.boardT, -1.5 * p.pitch, -1.5 * p.pitch]);
-    const holes = product([-1, 0, 1], range(-1, 2)).map(([y, z]) => circle({ d: p.holeD }).translate([y * p.pitch, z * p.pitch]));
-    return panel.subtract(panel.face('+X').extrude(union(holes), -p.boardT, { through: true }));
+    const holes = grid(circle({ d: p.holeD }), { pitch: p.pitch, count: [3, 4] }).translate([0, p.pitch / 2]);
+    return panel.subtract(panel.face('+X').extrude(holes, -p.boardT, { through: true }));
   };
 
   // A roll of tape threaded onto the arm, its core resting on the arm's top edge.

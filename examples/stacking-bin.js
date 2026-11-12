@@ -52,9 +52,7 @@ export default (p) => {
   const rise = p.wall + p.fit; // the 45° flare from the step out to the full wall
 
   // Every outline is the outer one shrunk with offset, so all the corners stay concentric.
-  const outer = square([p.width - 2 * p.corner, p.depth - 2 * p.corner])
-    .translate([p.corner, p.corner])
-    .offset(p.corner);
+  const outer = square([p.width, p.depth], { round: p.corner });
   const inner = outer.offset(-p.wall);
   const stepOutline = inner.offset(-p.fit);
   const stepInner = stepOutline.offset(-p.wall);

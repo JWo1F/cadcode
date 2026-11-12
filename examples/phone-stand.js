@@ -9,7 +9,7 @@ description: A desk stand for a phone in its case, with a slot for the charging 
 //
 //   cadcode dev examples/phone-stand.js
 //   cadcode stl examples/phone-stand.js --part stand
-import { circle, cube, frameAt, setResolution, sketch, square, union } from 'cadcode';
+import { cube, frameAt, setResolution, sketch, slot, square } from 'cadcode';
 
 setResolution({ fn: 48 });
 
@@ -80,8 +80,8 @@ export default (p) => {
 
   // Round-ended slot from under the phone out through the lip.
   const slotEnd = seatBack - p.slotW / 2 - 1;
-  const slot = () =>
-    union(square([slotEnd + 1, p.slotW]).translate([-1, -p.slotW / 2]), circle(p.slotW / 2).translate([slotEnd, 0]))
+  const cut = () =>
+    slot([-p.slotW / 2 - 1, 0], [slotEnd, 0], p.slotW)
       .extrude(p.seatZ + p.lip)
       .translate([0, p.width / 2, p.slotFloor]);
 
@@ -89,7 +89,7 @@ export default (p) => {
   // to the stand's front.
   const turn = (solid) => solid.rotate(180).translate([p.foot, p.width, 0]);
 
-  const stand = () => body().subtract(turn(slot()));
+  const stand = () => body().subtract(turn(cut()));
 
   // A phone in a case, for the assembly view.
   // Its back-bottom edge, moved to the origin, tilts back and sits in the corner between seat and plate.

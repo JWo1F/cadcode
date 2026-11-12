@@ -8,7 +8,7 @@ description: An oval dish with draining ribs, standing in an optional drip tray.
 //
 //   cadcode dev examples/soap-dish.js
 //   cadcode stl examples/soap-dish.js --part dish
-import { cube, cylinder, hull, polygon, product, range, setResolution, sphere, square } from 'cadcode';
+import { cube, cylinder, grid, hull, polygon, product, range, setResolution, slot, sphere, square } from 'cadcode';
 
 setResolution({ fn: 72 });
 
@@ -99,10 +99,9 @@ export default (p) => {
     const slots = product(xs, gaps)
       .filter(([x, y]) => Math.hypot((Math.abs(x) + p.slotLen / 2) / p.oval, y) < floorR - 3)
       .map(([x, y]) =>
-        square([p.slotLen - p.slotW, 0.01], { center: true })
-          .offset(p.slotW / 2)
+        slot([x - (p.slotLen - p.slotW) / 2, y], [x + (p.slotLen - p.slotW) / 2, y], p.slotW)
           .extrude(p.wall + 2)
-          .translate([x, y, -1]),
+          .translate([0, 0, -1]),
       );
     return shell.union(ribs).subtract(slots);
   };
@@ -111,11 +110,10 @@ export default (p) => {
   const trayR = p.r + p.trayGap + p.wall;
   const tray = () => {
     const { shell } = bowl(trayR, p.trayH, p.round, 2, p.wall);
-    const posts = product([-1, 1], [-1, 1]).map(([sx, sy]) =>
-      cylinder({ d: 6, h: p.wall + p.post - 1 })
-        .union(sphere({ d: 6, fn: 24 }).scale([1, 1, 0.34]).translate([0, 0, p.wall + p.post - 1]))
-        .translate([sx * (p.r - p.round - p.flare) * 0.55 * p.oval, sy * (p.r - p.round - p.flare) * 0.55, 0]),
-    );
+    const reach = (p.r - p.round - p.flare) * 0.55;
+    const post = cylinder({ d: 6, h: p.wall + p.post - 1 })
+      .union(sphere({ d: 6, fn: 24 }).scale([1, 1, 0.34]).translate([0, 0, p.wall + p.post - 1]));
+    const posts = grid(post, { pitch: [2 * reach * p.oval, 2 * reach], count: 2 });
     return shell.union(posts);
   };
 
