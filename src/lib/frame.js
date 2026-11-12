@@ -89,6 +89,32 @@ export class Frame {
   }
 
   /**
+   * A cutter for a hole clean through `depth` of material behind the frame's plane: `shape` extruded
+   * into the part, reaching 1 past both ends so no skin is left. Subtract it from the part.
+   * `shell.face('-X').hole(window, wall)` is a window through a wall `wall` thick.
+   * @param {import('./shapes.js').Shape2} shape
+   * @param {number} depth
+   * @returns {import('./shapes.js').Solid}
+   */
+  hole(shape, depth) {
+    if (!(typeof depth === 'number' && depth > 0)) throw new Error(`Frame.hole(): depth must be more than 0, got ${depth}`);
+    return this.extrude(shape, -depth, { through: true });
+  }
+
+  /**
+   * A cutter for a pocket `depth` deep into the part from the frame's plane: `shape` extruded into
+   * the part, reaching 1 back out past the plane so the opening is clean. Subtract it from the part.
+   * `shell.face('-Y').pocket(notch, 1.4)` sinks a notch 1.4 into the side at -Y.
+   * @param {import('./shapes.js').Shape2} shape
+   * @param {number} depth
+   * @returns {import('./shapes.js').Solid}
+   */
+  pocket(shape, depth) {
+    if (!(typeof depth === 'number' && depth > 0)) throw new Error(`Frame.pocket(): depth must be more than 0, got ${depth}`);
+    return this.extrude(shape, -depth, { through: 'start' });
+  }
+
+  /**
    * Moves a solid, a point or a component built around the origin onto the frame: its X and Y go to
    * the frame's u and v, its Z along the normal.
    * @template {import('./shapes.js').Solid | import('./shapes.js').Point | import('./components.js').Component} T
@@ -119,17 +145,24 @@ function axisFrame(axis, normalSign, at) {
  * pointing out. Local u and v are the other two world axes in order (Y and Z on an X face, X and Z
  * on a Y face, X and Y on a Z face), seen from outside: on `+X`, `-Y` and `+Z` they are world
  * coordinates, on `-X`, `+Y` and `-Z` u runs against its world axis, so a drawing reads the right
- * way round from outside and nothing placed there is mirrored.
+ * way round from outside and nothing placed there is mirrored. With `world`, u and v run along
+ * their world axes on every side: the frame is then a mirror image on `-X`, `+Y` and `-Z`.
  * @param {string} name
  * @param {{ min: number[], max: number[] }} bounds
+ * @param {boolean} [world]
  * @returns {Frame}
  */
-export function faceFrame(name, bounds) {
+export function faceFrame(name, bounds, world = false) {
   const match = /^([+-])([XYZ])$/.exec(name);
   if (!match) throw new Error(`face(): name must be one of +X, -X, +Y, -Y, +Z, -Z, got ${JSON.stringify(name)}`);
   const [, sign, axis] = match;
   const k = AXES.indexOf(/** @type {'X' | 'Y' | 'Z'} */ (axis));
-  return axisFrame(axis, sign === '+' ? 1 : -1, sign === '+' ? bounds.max[k] : bounds.min[k]);
+  const frame = axisFrame(axis, sign === '+' ? 1 : -1, sign === '+' ? bounds.max[k] : bounds.min[k]);
+  if (!world) return frame;
+  // u back along its world axis wherever axisFrame reversed it.
+  const m = [...frame.matrix];
+  if (m[0] + m[1] + m[2] < 0) for (const i of [0, 1, 2]) m[i] = -m[i];
+  return new Frame(m);
 }
 
 /**

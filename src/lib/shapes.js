@@ -461,11 +461,15 @@ export class Solid {
    * are Y and Z on an X side, X and Z on a Y side, X and Y on a Z side, seen from outside: world
    * coordinates on `+X`, `-Y` and `+Z`; on `-X`, `+Y` and `-Z` u runs the other way (u = -y on `-X`),
    * so what is drawn there reads right from outside and what is placed there is not mirrored.
-   * `box.face('-X').extrude(window, -wall, { through: true })` cuts a window through the wall at -X.
+   * `box.face('-X').hole(window, wall)` cuts a window through the wall at -X.
+   * `{ world: true }` keeps u and v along their world axes on every side, for cuts laid out in world
+   * coordinates: `face('+Y', { world: true })` has u = x. On `-X`, `+Y` and `-Z` that frame is a mirror
+   * image, so text drawn there reads mirrored from outside and a part placed there is mirrored.
    * @param {'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} name
+   * @param {{ world?: boolean }} [options]
    */
-  face(name) {
-    return faceFrame(name, this.bounds());
+  face(name, options = {}) {
+    return faceFrame(name, this.bounds(), options.world ?? false);
   }
 
   /**

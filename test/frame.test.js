@@ -130,3 +130,24 @@ test('every frame is a rotation, so nothing placed on one is mirrored', () => {
   ];
   for (const f of frames) near(det(f), 1);
 });
+
+test('hole and pocket cut into the part; a world face keeps world axes', () => {
+  const box = cube([10, 10, 10]);
+  const minus = box.face('-X');
+  // A hole reaches 1 past both ends of the wall, a pocket 1 back out past the face only.
+  assert.deepEqual(minus.hole(square(2), 2).bounds().min[0], -1);
+  near(minus.hole(square(2), 2).bounds().max[0], 3);
+  near(minus.pocket(square(2), 2).bounds().max[0], 2);
+  near(box.subtract(minus.pocket(square(2).translate([-6, 4]), 2)).volume(), 1000 - 8); // u = -y on -X
+  assert.throws(() => minus.hole(square(2), 0), /depth must be more than 0/);
+  assert.throws(() => minus.pocket(square(2), -1), /depth must be more than 0/);
+  // World axes on every side: [1, 2] is at world [1, 2] along the face's two axes.
+  for (const [side, at] of [['-X', [1, 2]], ['+Y', [1, 2]], ['-Z', [1, 2]], ['+X', [1, 2]]]) {
+    const cut = box.face(side, { world: true }).hole(square([1, 1]).translate(at), 1);
+    const { min } = cut.bounds();
+    const axes = { X: [1, 2], Y: [0, 2], Z: [0, 1] }[side[1]];
+    close(axes.map((k) => min[k]), at, 1e-9);
+    near(box.subtract(cut).volume(), 998); // depth 1, reaching 1 past it
+  }
+  close(box.face('-X', { world: true }).normal, [-1, 0, 0], 1e-12);
+});

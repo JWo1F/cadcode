@@ -1349,16 +1349,20 @@ lid.subtract(knob.cutout)`,
         id: 'solid-face',
         name: 'face',
         owner: 'Solid',
-        signature: '.face(name)',
+        signature: '.face(name, options)',
         summary: 'The frame on one side of the solid\'s bounding box, its normal pointing out. Its u and v are Y and Z on an X side, X and Z on a Y side, X and Y on a Z side, seen from outside: world coordinates on `+X`, `-Y` and `+Z`, and u runs against its axis on `-X`, `+Y` and `-Z`. So a hole at world `[y, z]` is drawn at `[y, z]` on `+X` and at `[-y, z]` on `-X`.',
-        params: [{ name: 'name', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side: `\'+X\'` is the one at the largest X, `\'-X\'` at the smallest.' }],
+        params: [
+          { name: 'name', type: "'+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'", text: 'The side: `\'+X\'` is the one at the largest X, `\'-X\'` at the smallest.' },
+          { name: 'options.world', type: 'boolean', default: 'false', text: 'Keep u and v along their world axes on every side, so a cut laid out in world coordinates is drawn at them: on `+Y` u = x, on `-X` u = y. On `-X`, `+Y` and `-Z` that frame is a mirror image: text drawn there reads mirrored from outside and a part placed there is mirrored.' },
+        ],
         returns: 'Frame',
         notes: [
           'The side comes from the bounding box, not from the faces of the mesh: on a rounded or sloped part it is the plane that touches it.',
-          'Every frame is a rotation: text drawn on any side reads the right way round from outside, and a part placed there is not mirrored.',
+          'Without `world`, every frame is a rotation: text drawn on any side reads the right way round from outside, and a part placed there is not mirrored.',
         ],
         example: `const usb = square([9, 3.3], { center: true }).offset(0.5).translate([-usbY, usbZ]) // u = -y on -X
-box.subtract(box.face('-X').extrude(usb, -wall, { through: true }))`,
+box.subtract(box.face('-X').hole(usb, wall))
+box.face('+Y', { world: true }).hole(vents.translate([x0, z0]), wall) // u = x`,
       },
       {
         id: 'solid-surfaceAt',
@@ -1417,6 +1421,32 @@ dome.subtract(knob.extrude(circle({ d: 7.4 }), -10, { through: true }))`,
 lid.extrude(window, -wall, { through: true })        // through the lid
 lid.extrude(label, -0.6, { through: 'start' })       // a 0.6 deep pocket
 plane.XZ.extrude(fin, 2, { center: true })           // a 2 thick fin on y = 0`,
+      },
+      {
+        id: 'frame-hole',
+        name: 'hole',
+        owner: 'Frame',
+        signature: '.hole(shape, depth)',
+        summary: 'A cutter for a hole clean through `depth` of material behind the plane: `shape` extruded into the part, reaching 1 past both ends so no skin is left. The same as `.extrude(shape, -depth, { through: true })`.',
+        params: [
+          { name: 'shape', type: 'Shape2', text: 'The outline, in the frame\'s u and v.' },
+          { name: 'depth', type: 'number', text: 'How thick the material is, such as the wall. More than 0.' },
+        ],
+        returns: 'Solid',
+        example: `box.subtract(box.face('-X').hole(window, wall))`,
+      },
+      {
+        id: 'frame-pocket',
+        name: 'pocket',
+        owner: 'Frame',
+        signature: '.pocket(shape, depth)',
+        summary: 'A cutter for a pocket `depth` deep into the part from the plane, reaching 1 back out past it so the opening is clean. The same as `.extrude(shape, -depth, { through: \'start\' })`.',
+        params: [
+          { name: 'shape', type: 'Shape2', text: 'The outline, in the frame\'s u and v.' },
+          { name: 'depth', type: 'number', text: 'How deep the pocket goes. More than 0.' },
+        ],
+        returns: 'Solid',
+        example: `box.subtract(box.face('+Z').pocket(label, 0.6))`,
       },
       {
         id: 'frame-offset',
