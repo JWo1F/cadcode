@@ -11,6 +11,10 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `polygon(points, { round, chamfer })` rounds or cuts its corners: every one, or some by index. An inside corner rounds into a fillet.
 - `sketch(frame)` gives construction geometry to work points out with: lines through points or at an angle, `parallel`, `perpendicular`, circles, and `intersect`. A sketch returned in a part is drawn in place in the viewer and in PNGs, and never exported.
 
+### Changed
+
+- The examples cut and place features with faces and frames instead of rotate chains, and l-bracket, phone-stand and headphone-hook build their profiles from sketches, with a `sketch` part that shows the construction lines.
+
 ## [0.11.1] - 2026-11-11
 
 ### Changed
