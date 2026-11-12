@@ -47,6 +47,34 @@ export function segmentsFor(r, fn) {
   return Math.ceil(Math.max(Math.min(360 / resolution.fa, (r * 2 * Math.PI) / resolution.fs), 5));
 }
 
+/**
+ * @internal Points on the circle of radius `r` around `center`, from the angle `from` turning `turn`
+ * radians (counter-clockwise when positive), both ends included, with as many segments as that
+ * share of a full circle gets.
+ * @param {number[]} center @param {number} r @param {number} from @param {number} turn @param {number | undefined} fn
+ * @returns {Vec2[]}
+ */
+export function arcPoints(center, r, from, turn, fn) {
+  const steps = Math.max(1, Math.ceil((segmentsFor(r, fn) * Math.abs(turn)) / (2 * Math.PI)));
+  return Array.from({ length: steps + 1 }, (_, k) => {
+    const t = from + (turn * k) / steps;
+    return /** @type {Vec2} */ ([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]);
+  });
+}
+
+/**
+ * @internal The short way round the circle around `center` from `a` to `b`, as `arcPoints`: the
+ * round of a corner, between the points where it touches the two sides.
+ * @param {number[]} center @param {number} r @param {number[]} a @param {number[]} b @param {number | undefined} fn
+ */
+export function shortArc(center, r, a, b, fn) {
+  const from = Math.atan2(a[1] - center[1], a[0] - center[0]);
+  let turn = Math.atan2(b[1] - center[1], b[0] - center[0]) - from;
+  if (turn > Math.PI) turn -= 2 * Math.PI;
+  if (turn < -Math.PI) turn += 2 * Math.PI;
+  return arcPoints(center, r, from, turn, fn);
+}
+
 // ---------------------------------------------------------------------------
 // Colors travel with the geometry: color() stamps a fresh mesh ID on the solid,
 // and manifold keeps per-triangle IDs through booleans, so a union of colored
@@ -914,15 +942,7 @@ function cornered(op, points, specs, fn) {
     const [bx, by] = [c.u[0] + c.v[0], c.u[1] + c.v[1]];
     const bl = Math.hypot(bx, by);
     const center = [p[0] + (bx / bl) * (r / Math.sin(c.half)), p[1] + (by / bl) * (r / Math.sin(c.half))];
-    const from = Math.atan2(a[1] - center[1], a[0] - center[0]);
-    let sweep = Math.atan2(b[1] - center[1], b[0] - center[0]) - from;
-    if (sweep > Math.PI) sweep -= 2 * Math.PI;
-    if (sweep < -Math.PI) sweep += 2 * Math.PI;
-    const steps = Math.max(1, Math.ceil((segmentsFor(r, fn) * Math.abs(sweep)) / (2 * Math.PI)));
-    for (let k = 0; k <= steps; k++) {
-      const t = from + (sweep * k) / steps;
-      out.push([center[0] + r * Math.cos(t), center[1] + r * Math.sin(t)]);
-    }
+    out.push(...shortArc(center, r, a, b, fn));
   });
   // Cuts that meet in the middle of a side leave the same point twice.
   return out.filter((p, i) => {

@@ -4,7 +4,7 @@
 // rounded box's floor. A fillet subtracts (on an outside edge) or adds (on an inside one) the sliver
 // between the corner and an arc, swept along the run; a chamfer does the same with a straight cut.
 
-import { Solid, polygon, segmentsFor } from './shapes.js';
+import { Solid, polygon, shortArc } from './shapes.js';
 import { vec3 } from './vec.js';
 
 /** @typedef {[number, number, number]} Vec3 */
@@ -265,15 +265,7 @@ function section(edge, kind, size, fn) {
   // round meets both faces exactly where it touches them.
   if (center) {
     const [c, a, b] = [center, T2, T1].map(flat);
-    const from = Math.atan2(a[1] - c[1], a[0] - c[0]);
-    let turn = Math.atan2(b[1] - c[1], b[0] - c[0]) - from;
-    if (turn > Math.PI) turn -= 2 * Math.PI;
-    if (turn < -Math.PI) turn += 2 * Math.PI;
-    const steps = Math.max(1, Math.ceil((segmentsFor(size, fn) * Math.abs(turn)) / (2 * Math.PI)));
-    for (let k = 1; k < steps; k++) {
-      const t = from + (turn * k) / steps;
-      pts.push([c[0] + size * Math.cos(t), c[1] + size * Math.sin(t)]);
-    }
+    pts.push(...shortArc(c, size, a, b, fn).slice(1, -1));
   }
   return polygon(counterClockwise(pts));
 }
