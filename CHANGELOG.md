@@ -4,6 +4,8 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-11-13
+
 ### Changed
 
 - Solids and 2D shapes are built when their geometry is first needed, and each intermediate result is freed as soon as the next step is built. A loop like `plate = plate.subtract(hole)` with 1000 holes went from 2.5 GB and 7 s to 23 MB and 0.2 s; with 4000 it no longer runs out of memory.
@@ -199,7 +201,8 @@ First release.
 - The dev server, whose live three.js viewer reloads on save and downloads STL.
 - The cadcode agent skill and the first examples.
 
-[Unreleased]: https://github.com/JWo1F/cadcode/compare/1352a4e...HEAD
+[Unreleased]: https://github.com/JWo1F/cadcode/compare/0d0891f...HEAD
+[0.16.1]: https://github.com/JWo1F/cadcode/compare/1352a4e...0d0891f
 [0.16.0]: https://github.com/JWo1F/cadcode/compare/81e43c6...1352a4e
 [0.15.0]: https://github.com/JWo1F/cadcode/compare/03842cf...81e43c6
 [0.14.0]: https://github.com/JWo1F/cadcode/compare/6c34691...03842cf
