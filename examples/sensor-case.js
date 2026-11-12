@@ -116,9 +116,8 @@ export default (p) => {
 
   const box = () => {
     const shell = tray([iL, iW, iH], { wall, floor: floorT, round: cornerR });
-    // Cuts drawn on a side of the shell: clean through the wall, or a pocket `depth` deep from outside
-    const through = (side, shape) => shell.face(side).extrude(shape, -wall, { through: true });
-    const pocket = (side, shape, depth) => shell.face(side).extrude(shape, -depth, { through: 'start' });
+    // A side of the shell to cut into, drawn in world coordinates: (x, z) on a Y side, (y, z) on an X side, (x, y) below
+    const side = (name) => shell.face(name, { world: true });
     const poreH = poreZ1 - poreZ0;
     return union(
       difference(
@@ -129,16 +128,15 @@ export default (p) => {
 
         // Fingernail notch in the long side, clear of the snap groove: a gap to pry the lid up from,
         // 0.6 mm of wall left inside
-        pocket('-Y', square([8, 1.2 + 1]).translate([2, iH - 1.2]), wall - 0.6),
+        side('-Y').pocket(square([8, 1.2 + 1]).translate([2, iH - 1.2]), wall - 0.6),
 
         // Snap grooves
         product(bumpXs, [0, iW]).map(([x, y]) => snapLine(bumpLen + 1).translate([x, y, iH - lipD / 2])),
 
         // Sensor compartment pores: end wall, side walls, floor
-        through('+X', poreGrid(iW, poreH).translate([0, poreZ0])),
-        through('-Y', poreGrid(sensL, poreH).translate([sx0, poreZ0])),
-        through('+Y', poreGrid(sensL, poreH).translate([sx0, poreZ0]).mirror([1, 0])), // u = -x seen from +Y
-        shell.face('-Z').extrude(poreGrid(sensL, iW).translate([sx0, 0]).mirror([1, 0]), -floorT, { through: true }), // u = -x from below
+        side('+X').hole(poreGrid(iW, poreH).translate([0, poreZ0]), wall),
+        ['-Y', '+Y'].map((name) => side(name).hole(poreGrid(sensL, poreH).translate([sx0, poreZ0]), wall)),
+        side('-Z').hole(poreGrid(sensL, iW).translate([sx0, 0]), floorT),
       ),
 
       // Divider with a hole for the wires
@@ -168,7 +166,7 @@ export default (p) => {
     const top = cube([iL + 2 * wall, iW + 2 * wall, lidT], { round: { z: cornerR } });
     const pores = poreGrid(sensL - fit - lipT, iW - 2 * (fit + lipT)).translate([sx0 + wall, wall + fit + lipT]); // inside the skirt
     return union(
-      top.subtract(top.face('+Z').extrude(pores, -lidT, { through: true })).translate([-wall, -wall, iH]),
+      top.subtract(top.face('+Z').hole(pores, lidT)).translate([-wall, -wall, iH]),
 
       // Skirt with snap bumps
       difference(
