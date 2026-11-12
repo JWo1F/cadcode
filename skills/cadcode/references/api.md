@@ -76,6 +76,8 @@ booleans or a part's export.
 | `.volume()`, `.surfaceArea()` | |
 | `.bounds()` | `{ min: [x, y, z], max: [x, y, z] }` |
 | `.isEmpty()` | |
+| `.at(side = 'center')` | `Point` at the bbox center or a side's center (`'+X'`…`'-Z'`). |
+| `.align(target, { x, y, z, gap = 0 })` | Translate so bboxes line up per axis: `'min'`/`'max'` flush on that side (gap = inset), `'center'`, `'before'`/`'after'` wholly past target's min/max (gap = clearance). Target: Solid, Shape2, Point or `[x, y, z]`. Omitted axes don't move. Prefer over hand-computed `translate` from another part's dimensions. |
 
 ## `Shape2` methods
 
@@ -90,6 +92,7 @@ booleans or a part's export.
 | `.revolve({ angle = 360, fn })` | `rotate_extrude`: the shape's X becomes the radius, Y becomes Z. |
 | `.sweep(path, { closed = false, twist = 0, scale = 1, up })` | Along `path`, `[x, y, z]` points. The drawing's +Z follows the path, carried without twist (rotation-minimizing); `up: v` keeps its +Y toward `v` instead. Starts as `extrude` would on a path along +Z. `closed` loops back to the first point (no scale; twist only in whole turns). Corners mitered. A path tighter than the profile self-intersects: no check. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
+| `.at(side)`, `.align(target, { x, y, gap })` | As for `Solid`, X/Y only; `at` returns `[x, y]`. |
 
 ## Functions
 

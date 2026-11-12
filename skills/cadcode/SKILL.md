@@ -152,6 +152,10 @@ window through the wall. Negative depth goes into the part, positive out of it; 
 overshoot of 1 at both ends, `through: 'start'` only outside (a blind pocket), `center: true` straddles the plane. `plane.XZ.offset(y0)` is a plane through y = y0, `dome.surfaceAt('+Z', [x, y])` the frame on a curved
 surface (its normal square to it), `frameAt(point, normal)` one at any point, and `frame.place(solid)` puts a solid built at the origin onto any of them (Z along the normal).
 
+**Place parts by each other, not by arithmetic.** `pad.align(floor, { x: 'center', y: 'center', z: 'after' })`
+stands a pad centered on a floor; `'before'`/`'after'` put a part wholly past the target's side, `'min'`/`'max'`
+flush with it, `gap` adds clearance. `box.at('+Y')` is the center of a side, as a pivot or target.
+
 **Work points out with a sketch, not arithmetic.** `const s = sketch(frame)`; `s.line(a, b).parallel(d)`,
 `.perpendicular(p)`, `.intersect(other)`, `s.circle(c, r)` give `[x, y]` points for `s.polygon(...)` and
 `s.extrude(...)`. Add the sketch to the part's return (`[body, s]`) and its guides show in the viewer and in

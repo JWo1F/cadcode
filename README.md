@@ -220,6 +220,8 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.slice(z)` | The 2D cross-section at height `z`. |
 | `.project()` | The 2D outline seen from above. |
 | `.volume()`, `.surfaceArea()`, `.bounds()`, `.isEmpty()` | `bounds()` returns `{ min: [x, y, z], max: [x, y, z] }`. |
+| `.at(side = 'center')` | A `point` at the center of the bounding box or of a side, `'+X'` … `'-Z'`. |
+| `.align(target, { x, y, z, gap })` | Lines up with another shape or a point by bounding boxes, per axis: `'min'`, `'center'`, `'max'`, or `'before'` / `'after'` to sit wholly past its min or max side. `gap` leaves space. `pad.align(floor, { x: 'center', y: 'center', z: 'after' })` stands the pad centered on the floor. |
 
 ### 2D shape methods
 
@@ -233,6 +235,7 @@ difference(base, holes.map(([x, y]) => cylinder({ d: 3, h: 10 }).translate([x, y
 | `.revolve({ angle, fn })` | Revolves the shape around the Y axis into a solid around Z, like `rotate_extrude`. |
 | `.sweep(path, { closed, twist, scale, up })` | Sweeps the shape along a path of `[x, y, z]` points, for handles, pipes and springs. The shape stands across the path, its drawing's +Z along it, and is carried along without twisting; `up: [0, 0, 1]` instead keeps its +Y toward that direction. `closed: true` joins the path's end to its start. `twist` (degrees, counterclockwise) and `scale` work as in `extrude`. Corners are mitered. |
 | `.area()`, `.bounds()`, `.isEmpty()`, `.toPolygons()` | |
+| `.at(side)`, `.align(target, { x, y, gap })` | As for solids, in X and Y; `at` returns `[x, y]`. |
 
 ### Functions
 

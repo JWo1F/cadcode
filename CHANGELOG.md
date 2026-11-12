@@ -10,6 +10,7 @@ Notable changes to cadcode. The format follows [Keep a Changelog](https://keepac
 - `solid.surfaceAt(side, [u, v])` is the frame where the solid is first met looking in from a side, with the surface's normal: for a hole or a boss square to a dome.
 - `polygon(points, { round, chamfer })` rounds or cuts its corners: every one, some by index, or each by a function of its index and point. An inside corner rounds into a fillet.
 - `square(size, { round, chamfer })` rounds or cuts its corners inside the same size, and `slot(from, to, width)` makes a stadium for slotted holes and ports.
+- `.at(side)` is the center of a shape's bounding box or one of its sides, and `.align(target, { x, y, z, gap })` lines a shape up with another by their boxes: centered, flush with a side, or standing past it.
 - `sketch(frame)` gives construction geometry to work points out with: lines through points, or at an angle, endless or for a length, `parallel`, `perpendicular`, circles, and `intersect`. A sketch returned in a part is drawn in place in the viewer and in PNGs, and never exported.
 
 ### Changed

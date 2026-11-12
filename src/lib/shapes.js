@@ -168,6 +168,84 @@ function pivotOf(target) {
 
 /** @typedef {{ around?: Point | Solid | Shape2 | number[] }} RotateOptions */
 
+/**
+ * @typedef {'min' | 'center' | 'max' | 'before' | 'after'} AlignTo How one axis lines up with the target:
+ *   `min`, `center`, `max` match that side or the middle of the two boxes; `before` puts this one wholly
+ *   on the target's min side and `after` on its max side, touching it
+ */
+/**
+ * @typedef {object} AlignOptions
+ * @property {AlignTo} [x]
+ * @property {AlignTo} [y]
+ * @property {AlignTo} [z]
+ * @property {number} [gap] space left from the target: `before` and `after` move away from it, `min`
+ *   and `max` move inwards from that side; `center` ignores it
+ */
+
+const ALIGNMENTS = ['min', 'center', 'max', 'before', 'after'];
+
+/**
+ * The bounding box of what something is aligned to: a shape's, or a point as a box of no size.
+ * @param {string} op
+ * @param {Point | Solid | Shape2 | number[]} target
+ * @returns {{ min: number[], max: number[] }}
+ */
+function targetBox(op, target) {
+  if (target instanceof Solid || target instanceof Shape2) return target.bounds();
+  if (target instanceof Point) return { min: target.toArray(), max: target.toArray() };
+  if (Array.isArray(target)) {
+    const p = toVec3(target);
+    return { min: p, max: p };
+  }
+  throw new Error(`${op}(): the target must be a solid, a 2D shape, a point or [x, y, z]`);
+}
+
+/**
+ * How far to move a box so it lines up with a target box as `options` says, axis by axis.
+ * @param {string} op
+ * @param {{ min: number[], max: number[] }} own
+ * @param {{ min: number[], max: number[] }} target
+ * @param {AlignOptions} options
+ * @param {string[]} axes
+ */
+function alignment(op, own, target, options, axes) {
+  const known = new Set([...axes, 'gap']);
+  for (const key of Object.keys(options)) {
+    if (!known.has(key)) throw new Error(`${op}(): unknown option "${key}"; it takes ${axes.join(', ')} and gap`);
+  }
+  const gap = options.gap ?? 0;
+  return axes.map((axis, k) => {
+    const how = options[axis];
+    if (how === undefined) return 0;
+    if (!ALIGNMENTS.includes(how)) throw new Error(`${op}(): ${axis} must be one of ${ALIGNMENTS.join(', ')}, got ${JSON.stringify(how)}`);
+    const [lo, hi, tlo, thi] = [own.min[k], own.max[k], target.min[k], target.max[k]];
+    switch (how) {
+      case 'min': return tlo + gap - lo;
+      case 'max': return thi - gap - hi;
+      case 'center': return (tlo + thi) / 2 - (lo + hi) / 2;
+      case 'before': return tlo - gap - hi;
+      case 'after': return thi + gap - lo;
+    }
+  });
+}
+
+/**
+ * A point on a bounding box: its center, or the center of one side.
+ * @param {string} op
+ * @param {{ min: number[], max: number[] }} box
+ * @param {string} side
+ * @param {string[]} axes
+ */
+function anchor(op, box, side, axes) {
+  const center = box.min.map((lo, k) => (lo + box.max[k]) / 2);
+  if (side === 'center') return center;
+  const match = /^([+-])([XYZ])$/.exec(side);
+  const k = match ? axes.indexOf(match[2].toLowerCase()) : -1;
+  if (k < 0) throw new Error(`${op}(): side must be 'center' or one of ${axes.flatMap((a) => [`+${a.toUpperCase()}`, `-${a.toUpperCase()}`]).join(', ')}, got ${JSON.stringify(side)}`);
+  center[k] = match[1] === '+' ? box.max[k] : box.min[k];
+  return center;
+}
+
 /** A 3D solid. Every method returns a new solid; solids are never modified in place. */
 export class Solid {
   /** @internal */
@@ -297,6 +375,28 @@ export class Solid {
    */
   face(name) {
     return faceFrame(name, this.bounds());
+  }
+
+  /**
+   * A point on the bounding box: `'center'`, or the center of a side, `'+X'` at the largest X and so on.
+   * Use it as a pivot, or to place and align other parts by.
+   * @param {'center' | '+X' | '-X' | '+Y' | '-Y' | '+Z' | '-Z'} [side]
+   * @returns {Point}
+   */
+  at(side = 'center') {
+    return new Point(/** @type {Vec3} */ (anchor('at', this.bounds(), side, ['x', 'y', 'z'])));
+  }
+
+  /**
+   * Moves the solid to line up with another shape, a point or `[x, y, z]`, axis by axis by bounding
+   * boxes: `pad.align(floor, { x: 'center', y: 'center', z: 'after' })` centers the pad on the floor
+   * and stands it on top. An axis left out does not move.
+   * @param {Solid | Shape2 | Point | number[]} target
+   * @param {AlignOptions} options
+   * @returns {Solid}
+   */
+  align(target, options) {
+    return this.translate(alignment('align', this.bounds(), targetBox('align', target), options, ['x', 'y', 'z']));
   }
 
   /**
@@ -491,6 +591,26 @@ export class Shape2 {
   /** The outline as arrays of points. @returns {Vec2[][]} */
   toPolygons() {
     return this.section.toPolygons().map((poly) => poly.map((p) => [p[0], p[1]]));
+  }
+
+  /**
+   * A point on the bounding box: `'center'`, or the center of a side, `'+X'` at the largest X and so on.
+   * @param {'center' | '+X' | '-X' | '+Y' | '-Y'} [side]
+   * @returns {Vec2}
+   */
+  at(side = 'center') {
+    return /** @type {Vec2} */ (anchor('at', this.bounds(), side, ['x', 'y']));
+  }
+
+  /**
+   * Moves the shape to line up with another shape or a point, by X and Y as `Solid.align` does.
+   * @param {Shape2 | Solid | Point | number[]} target
+   * @param {{ x?: AlignTo, y?: AlignTo, gap?: number }} options
+   * @returns {Shape2}
+   */
+  align(target, options) {
+    const box = targetBox('align', target);
+    return this.translate(alignment('align', this.bounds(), { min: box.min.slice(0, 2), max: box.max.slice(0, 2) }, options, ['x', 'y']));
   }
 }
 
